@@ -1,0 +1,59 @@
+{
+  "name": "@imagekit/video-player",
+  "version": "1.0.0",
+  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Angular)",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && npm run build-css",
+    "dev": "tsup --watch & npm run watch-css",
+    "build-css": "sass --load-path=../node_modules javascript/styles/index.scss dist/styles.css",
+    "watch-css": "sass --watch --load-path=../node_modules javascript/styles/index.scss dist/styles.css"
+  },
+  "peerDependencies": {
+    "react": "^17 || ^18",
+    "react-dom": "^17 || ^18",
+    "@angular/core": "^12 || ^13 || ^14 || ^15"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@imagekit/javascript": "^5.0.0",
+    "tsup": "^8.3.5",
+    "typescript": "^5.0.0",
+    "sass": "^1.75.0",
+    "video.js": "^8.20.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

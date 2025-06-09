@@ -1,0 +1,51 @@
+/* chapters.css */
+
+/* 1) The chapter‐segment overlay (invisible except for tooltip & boundary) */
+.vjs-chapter-segment {
+    position: absolute;
+    top: 0;                  /* align to top of .vjs-progress-holder */
+    height: 100%;            /* fill the progress‐bar’s height */
+    /* No background color here; the bar itself shows played/unplayed states */
+    cursor: pointer;
+    pointer-events: auto;    /* allow hover/click inside segment */
+    z-index: 2;              /* above the progress‐bar fill, below controls */
+  }
+  
+  /* 2) The vertical boundary line between chapters */
+  .vjs-chapter-boundary {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 2px;               /* a thin separator */
+    background-color: #cccccc; /* light‐grey line—tweak as needed */
+    pointer-events: none;      /* let the segment beneath receive mouse events */
+    z-index: 3;                /* sit slightly above the segment */
+  }
+  
+  /* 3) Tooltip inside each chapter segment */
+  .vjs-chapter-segment-tooltip {
+    position: absolute;
+    /* Instead of bottom: 100%; use something like: */
+    bottom: calc(100% + 20px);
+    left: 0;                     /* will be shifted horizontally in JS */
+    transform: translateX(-50%);
+    display: none;
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    font-size: 12px;
+    line-height: 1.2;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    /* no arrow (::after) needed */
+    z-index: 2;                  /* the stacking order doesn’t matter here */
+    opacity: 0;
+    transition: opacity 0.1s ease;
+  }
+  /* Show + fade‐in on hover */
+  .vjs-chapter-segment:hover > .vjs-chapter-segment-tooltip {
+    display: block;
+    opacity: 1;
+  }
+  

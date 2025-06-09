@@ -1,0 +1,22 @@
+.thumbnail-preview {
+    position: absolute;
+    bottom: 55px;
+    pointer-events: none;
+    display: none;
+    z-index: 0;
+  }
+  
+  .thumbnail {
+    position: absolute;
+    height: 100%;
+    background-size: auto;
+    background-repeat: no-repeat;
+    pointer-events: none; 
+    display: none;
+    transform: translateX(-50%) translateY(-100%);
+  }
+  
+  .video-js .thumbnail-preview .thumbnail {
+    border: 2px solid #fff;
+    border-radius:5px;
+  }

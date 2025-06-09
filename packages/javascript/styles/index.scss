@@ -1,0 +1,15 @@
+// import videojs css
+@use "video.js/dist/video-js.css";
+
+// @use all modules
+@use "../modules/http-source-selector/plugin.scss";
+
+@use "../modules/playlist/playlist-ui.scss";
+
+@use "../modules/chapters/chapter.css";
+
+@use "../modules/recommendations-overlay/recommendation-overlay.css";
+
+@use "../modules/seek-thumbnails/seek-thumbnails.css";
+
+@use "../modules/subtitles/subtitles.css";

@@ -1,0 +1,16 @@
+{
+  "name": "imagekit-video-player",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "packages",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "lerna run build",
+    "dev":   "lerna run build && lerna run dev --parallel"
+  },
+  "devDependencies": {
+    "lerna": "^8.1.8"
+  }
+}
