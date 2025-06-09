@@ -18,6 +18,11 @@
       "import": "./dist/react/index.mjs",
       "require": "./dist/react/index.js"
     },
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "import": "./dist/angular/index.mjs",
+      "require": "./dist/angular/index.js"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
@@ -26,13 +31,14 @@
   "scripts": {
     "build": "tsup && npm run build-css",
     "dev": "tsup --watch & npm run watch-css",
-    "build-css": "sass --load-path=../node_modules javascript/styles/index.scss dist/styles.css",
-    "watch-css": "sass --watch --load-path=../node_modules javascript/styles/index.scss dist/styles.css"
+    "build-css": "sass --load-path=node_modules javascript/styles/index.scss dist/styles.css",
+    "watch-css": "sass --watch --load-path=node_modules javascript/styles/index.scss dist/styles.css"
   },
   "peerDependencies": {
     "react": "^17 || ^18",
     "react-dom": "^17 || ^18",
-    "@angular/core": "^12 || ^13 || ^14 || ^15"
+    "@angular/core": "^17.0.0 || ^18.0.0 || ^20.0.0",
+    "@angular/common": "^17.0.0 || ^18.0.0 || ^20.0.0"
   },
   "peerDependenciesMeta": {
     "react": {

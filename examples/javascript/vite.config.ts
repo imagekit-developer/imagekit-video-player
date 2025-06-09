@@ -13,7 +13,7 @@ export default defineConfig({
   resolve: {
     alias: {
       // This creates a direct alias to your package's root
-      '@imagekit/video-player': path.resolve(__dirname, '../../packages'),
+      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player'),
     },
   },
 });

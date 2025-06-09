@@ -13,6 +13,8 @@ import {
     PlaylistOptions
 } from '@imagekit/video-player'
 
+import '@imagekit/video-player/dist/styles.css';
+
 export default function App() {
     const playerRef = useRef<IKVideoPlayerRef>(null);
 

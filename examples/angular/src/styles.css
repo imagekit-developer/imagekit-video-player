@@ -1,0 +1,11 @@
+/* You can add global styles to this file, and also import other style files */
+/* src/styles.css */
+@import '@imagekit/video-player/styles.css';
+
+/* You can add other global styles below */
+body {
+  font-family: sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 2rem;
+}

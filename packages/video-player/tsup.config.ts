@@ -7,6 +7,7 @@ export default defineConfig({
     'index': 'javascript/index.ts',
     // This will generate `dist/react/index.{js,mjs,d.ts}`
     'react/index': 'react-wrapper/index.ts',
+    'angular/index': 'angular/index.ts',
   },
   // The single output directory
   outDir: 'dist',

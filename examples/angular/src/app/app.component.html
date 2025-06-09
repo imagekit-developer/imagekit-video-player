@@ -1,0 +1,21 @@
+<div style="max-width: 800px; margin: 2rem auto;">
+    <h1>ImageKit Video Player (Angular) Example</h1>
+  
+    <button (click)="onLogCurrentTime()">
+      Log current time & ensure player is playing
+    </button>
+  
+    <div style="margin-top: 1rem;">
+      <ik-video-player
+        [ikOptions]="ikOptions"
+        [videoJsOptions]="{
+          controls: true,
+          fluid: true,
+          muted: false
+        }"
+        [playlist]="playlist"
+        [className]="'my-custom-player-container'"
+        [ngStyle]="playerStyles"
+      ></ik-video-player>
+    </div>
+  </div>
