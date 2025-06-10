@@ -23,6 +23,7 @@ export class PlaylistManager {
   private autoAdvance_: AutoAdvance;
   private playlistMenu?: PlaylistMenu;
   private playerOptions_: PlayerOptions;
+  private playlistContainer_?: HTMLElement;
 
   constructor(player: Player, playerOptions: PlayerOptions) {
     this.player_ = player;
@@ -52,10 +53,17 @@ export class PlaylistManager {
 
       // Wrap the player's outer element in a container
       const playerEl = this.player_.el();
-      const wrapper = document.createElement('div');
-      wrapper.className = 'player-container';
-      playerEl.parentNode?.insertBefore(wrapper, playerEl);
-      wrapper.appendChild(playerEl);
+
+      // Check if the container already exists to avoid re-wrapping
+      let wrapper = playerEl.parentElement;
+      if (!wrapper || !wrapper.classList.contains('player-container')) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'player-container';
+        playerEl.parentNode?.insertBefore(wrapper, playerEl);
+        wrapper.appendChild(playerEl);
+      }
+
+      this.playlistContainer_ = wrapper as HTMLElement; // Store reference to the container
 
       // Load the playlist if provided
       if (sources && Array.isArray(sources)) {
@@ -66,6 +74,12 @@ export class PlaylistManager {
       }
       this.configure(opts || {});
       this.initMenu_(opts || {});
+
+      // **KEY CHANGE**: Call the new layout method
+      this.updateLayout_(opts || {});
+
+      // Add a listener for player resize events
+      this.player_.on('playerresize', () => this.updateLayout_(opts || {}));
       return this;
     };
 
@@ -73,7 +87,33 @@ export class PlaylistManager {
     // this.initMenu_({});
   }
 
-  /** @private Initialize or re-initialize the UI component */
+  /**
+  * @private Applies dynamic styles to the player and playlist container.
+  */
+  private updateLayout_(opts: PlaylistOptions) {
+    if (!this.playlistContainer_) {
+      return;
+    }
+
+    const playerWidth = this.player_.width() ?? 960;
+    const playerHeight = this.player_.height() ?? 540;
+    const isHorizontal = opts.widgetProps?.direction === 'horizontal';
+
+    if (isHorizontal) {
+      // Horizontal Playlist Layout
+      const playlistHeight = playerHeight * 0.25; // Making playlist 25% of player height
+      this.playlistContainer_.style.width = `${playerWidth}px`;
+      this.playlistContainer_.style.height = `${playerHeight + playlistHeight}px`;
+      (this.playlistMenu!.el() as HTMLElement).style.height = `${playlistHeight}px`;
+    } else {
+      // Vertical Playlist Layout
+      const playlistWidth = playerWidth * 0.25; // Making playlist 25% of player width
+      this.playlistContainer_.style.width = `${playerWidth + playlistWidth}px`;
+      this.playlistContainer_.style.height = `${playerHeight}px`;
+      (this.playlistMenu!.el() as HTMLElement).style.width = `${playlistWidth}px`;
+    }
+  }
+
   private initMenu_(opts: PlaylistOptions) {
     // tear down old
     this.playlistMenu?.dispose();
@@ -82,41 +122,31 @@ export class PlaylistManager {
     const defaults = {
       className: 'vjs-playlist',
       playOnSelect: true,
-      supportsCssPointerEvents
+      supportsCssPointerEvents: supportsCssPointerEvents
+    };
+    
+    // merge in widgetProps
+    const uiOpts = videojs.mergeOptions(defaults, opts.widgetProps || {});
+
+    // Create a new, clean options object with only the properties we need.
+    const menuOptions = {
+      className: uiOpts.className,
+      horizontal: uiOpts.direction === 'horizontal',
+      // playOnSelect: uiOpts.playOnSelect,
+      showDescription: uiOpts.showDescription,
+      supportsCssPointerEvents: uiOpts.supportsCssPointerEvents
     };
 
-    // merge in widgetProps
-    const uiOpts = videojs.mergeOptions(defaults, opts.widgetProps || {}) as any;
+    // 1. Instantiate the PlaylistMenu with the clean menuOptions.
+    const menu = new PlaylistMenu(this.player_, this.playlist_, menuOptions, this.playerOptions_);
 
-    // determine container:
-    // 1) user-provided el, if valid
-    // 2) first empty .className in DOM
-    // 3) fallback to player.el()
-    let container: HTMLElement;
-    if (uiOpts.el && videojs.dom.isEl(uiOpts.el)) {
-      container = uiOpts.el;
-    } else {
-      const found = document.querySelector(`.${uiOpts.className}`) as HTMLElement;
-      if (found && found.childElementCount === 0) {
-        container = found;
-      } else {
-        // container = this.player_.el();
-        // Fallback: create a new div next to the player
-        const wrapper = this.player_.el().parentElement!;
-        container = document.createElement('div');
-        container.className = uiOpts.className;
-        wrapper.appendChild(container);
-      }
+    // 2. Append the menu's element directly to our main wrapper.
+    if (this.playlistContainer_) {
+        this.playlistContainer_.appendChild(menu.el());
+        this.playlistContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
     }
-    uiOpts.el = container;
 
-    // instantiate & expose
-    const menu = new PlaylistMenu(this.player_, this.playlist_, {}, this.playerOptions_);
-
-    // **NEW**: actually attach it
-    //   .el() is the Component API for "get my root element"
-    container.appendChild(menu.el());
-
+    // 3. Store the reference to the new menu.
     this.playlistMenu = menu;
     (this.player_ as any).playlistMenu = menu;
   }

@@ -122,7 +122,6 @@ export class PlaylistMenuItem extends Component {
 
     // Title container contains title and "up next"
     const titleContainerEl = document.createElement('div');
-
     titleContainerEl.className = 'vjs-playlist-title-container';
     this.thumbnail.appendChild(titleContainerEl);
 
@@ -130,11 +129,10 @@ export class PlaylistMenuItem extends Component {
     // Up next
     const upNextEl = document.createElement('span');
     const upNextText = this.localize('Up Next');
-
     upNextEl.className = 'vjs-up-next-text';
     upNextEl.appendChild(document.createTextNode(upNextText));
     upNextEl.setAttribute('title', upNextText);
-    titleContainerEl.appendChild(upNextEl);
+    this.thumbnail.appendChild(upNextEl);
 
     // Title and description
     const title = this.options_.item.info?.title || this.localize('Untitled Video');
@@ -142,7 +140,7 @@ export class PlaylistMenuItem extends Component {
     titleEl.className = 'vjs-playlist-name';
     titleEl.textContent = title;
     titleEl.title = title;
-    li.appendChild(titleEl);
+    titleContainerEl.appendChild(titleEl); 
 
 
 
