@@ -17,7 +17,7 @@
     top: 0;
     height: 100%;
     width: 2px;               /* a thin separator */
-    background-color: #cccccc; /* light‐grey line—tweak as needed */
+    background-color: black; /* light‐grey line—tweak as needed */
     pointer-events: none;      /* let the segment beneath receive mouse events */
     z-index: 3;                /* sit slightly above the segment */
   }
@@ -26,7 +26,7 @@
   .vjs-chapter-segment-tooltip {
     position: absolute;
     /* Instead of bottom: 100%; use something like: */
-    bottom: calc(100% + 20px);
+    bottom: calc(100% + 40px);
     left: 0;                     /* will be shifted horizontally in JS */
     transform: translateX(-50%);
     display: none;
