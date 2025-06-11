@@ -60,16 +60,4 @@ export class AppComponent {
   playerStyles = {
     width: '100%'
   };
-
-  // This method is called when the button is clicked in the template.
-  onLogCurrentTime(): void {
-    // @todo correct type
-    const player: any = this.playerComponent?.getPlayer();
-    if (player) {
-      console.log('Current time:', player.currentTime());
-      player.play(); // you can call any Video.js method
-    } else {
-        console.error('Player instance not available yet.');
-    }
-  }
 }

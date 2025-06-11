@@ -18,27 +18,27 @@
       "import": "./dist/react/index.mjs",
       "require": "./dist/react/index.js"
     },
-    "./angular": {
-      "types": "./dist/angular/index.d.ts",
-      "import": "./dist/angular/index.mjs",
-      "require": "./dist/angular/index.js"
-    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "tsup && npm run build-css",
-    "dev": "tsup --watch & npm run watch-css",
-    "build-css": "sass --load-path=node_modules javascript/styles/index.scss dist/styles.css",
-    "watch-css": "sass --watch --load-path=node_modules javascript/styles/index.scss dist/styles.css"
+    "build": "pnpm run build:tsup && pnpm run build:css && pnpm run build:angular",
+    "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
+    "build:angular": "ng-packagr -p ng-package.json",
+    "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
+    "dev": "pnpm run build && (pnpm run dev:tsup & pnpm run dev:css & pnpm run dev:angular)",
+    "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
+    "dev:angular": "ng-packagr -p ng-package.json --watch",
+    "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
   },
   "peerDependencies": {
+    "@angular/common": "^17.0.0 || ^18.0.0 || ^20.0.0",
+    "@angular/core": "^17.0.0 || ^18.0.0 || ^20.0.0",
     "react": "^17 || ^18",
     "react-dom": "^17 || ^18",
-    "@angular/core": "^17.0.0 || ^18.0.0 || ^20.0.0",
-    "@angular/common": "^17.0.0 || ^18.0.0 || ^20.0.0"
+    "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -47,19 +47,28 @@
     "react-dom": {
       "optional": true
     },
+    "vue": {
+      "optional": true
+    },
     "@angular/core": {
+      "optional": true
+    },
+    "@angular/common": {
       "optional": true
     }
   },
   "devDependencies": {
+    "@angular/compiler-cli": "^20.0.0",
+    "@imagekit/javascript": "^5.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
-    "@imagekit/javascript": "^5.0.0",
-    "tsup": "^8.3.5",
-    "typescript": "^5.0.0",
-    "sass": "^1.75.0",
-    "video.js": "^8.20.0",
+    "ng-packagr": "^20.0.0",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "sass": "^1.75.0",
+    "tsup": "^8.3.5",
+    "typescript": "~5.8.0",
+    "video.js": "^8.20.0",
+    "vue": "^3.0.0"
   }
 }

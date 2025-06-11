@@ -7,7 +7,7 @@ export default defineConfig({
     'index': 'javascript/index.ts',
     // This will generate `dist/react/index.{js,mjs,d.ts}`
     'react/index': 'react-wrapper/index.ts',
-    'angular/index': 'angular/index.ts',
+    // 'vue/index': 'vue/index.ts'
   },
   // The single output directory
   outDir: 'dist',
@@ -20,7 +20,7 @@ export default defineConfig({
   treeshake: false,
   clean: true, // Clean the entire dist folder once
   // This onSuccess script will run after all builds are complete
-  onSuccess: "npm run build-css",
+  onSuccess: "npm run build:css",
   // Loaders apply to all entry points
   loader: {
     // This tells tsup to not bundle CSS, but reference it as a file.

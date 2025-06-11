@@ -1,0 +1,544 @@
+==> ./tsconfig.app.json <==
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/app",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts"
+  ]
+}
+
+==> ./README.md <==
+# MyAngularApp
+
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.0.1.
+
+## Development server
+
+To start a local development server, run:
+
+```bash
+ng serve
+```
+
+Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+## Code scaffolding
+
+Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+
+```bash
+ng generate component component-name
+```
+
+For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+
+```bash
+ng generate --help
+```
+
+## Building
+
+To build the project run:
+
+```bash
+ng build
+```
+
+This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+
+## Running unit tests
+
+To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+
+```bash
+ng test
+```
+
+## Running end-to-end tests
+
+For end-to-end (e2e) testing, run:
+
+```bash
+ng e2e
+```
+
+Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+
+## Additional Resources
+
+For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+==> ./angular.json <==
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "my-angular-app": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": {
+          "standalone": false
+        },
+        "@schematics/angular:directive": {
+          "standalone": false
+        },
+        "@schematics/angular:pipe": {
+          "standalone": false
+        }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "app",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:application",
+          "options": {
+            "browser": "src/main.ts",
+            "polyfills": [
+              "zone.js"
+            ],
+            "tsConfig": "tsconfig.app.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ],
+            "server": "src/main.server.ts",
+            "outputMode": "server",
+            "ssr": {
+              "entry": "src/server.ts"
+            }
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "4kB",
+                  "maximumError": "8kB"
+                }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular/build:dev-server",
+          "configurations": {
+            "production": {
+              "buildTarget": "my-angular-app:build:production"
+            },
+            "development": {
+              "buildTarget": "my-angular-app:build:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "extract-i18n": {
+          "builder": "@angular/build:extract-i18n"
+        },
+        "test": {
+          "builder": "@angular/build:karma",
+          "options": {
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "tsConfig": "tsconfig.spec.json",
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "public"
+              }
+            ],
+            "styles": [
+              "src/styles.css"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
+==> ./package.json <==
+{
+  "name": "my-angular-app",
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "serve:ssr:my-angular-app": "node dist/my-angular-app/server/server.mjs"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^20.0.0",
+    "@angular/compiler": "^20.0.0",
+    "@angular/core": "^20.0.0",
+    "@angular/forms": "^20.0.0",
+    "@angular/platform-browser": "^20.0.0",
+    "@angular/platform-server": "^20.0.0",
+    "@angular/router": "^20.0.0",
+    "@angular/ssr": "^20.0.1",
+    "express": "^5.1.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "zone.js": "~0.15.0",
+    "@imagekit/video-player": "workspace:*"
+  },
+  "devDependencies": {
+    "@angular/build": "^20.0.1",
+    "@angular/cli": "^20.0.1",
+    "@angular/compiler-cli": "^20.0.0",
+    "@types/express": "^5.0.1",
+    "@types/jasmine": "~5.1.0",
+    "@types/node": "^20.17.19",
+    "jasmine-core": "~5.7.0",
+    "karma": "~6.4.0",
+    "karma-chrome-launcher": "~3.2.0",
+    "karma-coverage": "~2.2.0",
+    "karma-jasmine": "~5.1.0",
+    "karma-jasmine-html-reporter": "~2.1.0",
+    "typescript": "~5.8.2"
+  }
+}
+==> ./tsconfig.json <==
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve"
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "typeCheckHostBindings": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}
+
+==> ./tsconfig.spec.json <==
+/* To learn more about Typescript configuration file: https://www.typescriptlang.org/docs/handbook/tsconfig-json.html. */
+/* To learn more about Angular compiler options: https://angular.dev/reference/configs/angular-compiler-options. */
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./out-tsc/spec",
+    "types": [
+      "jasmine"
+    ]
+  },
+  "include": [
+    "src/**/*.ts"
+  ]
+}
+
+==> ./src/app/app.routes.server.ts <==
+import { RenderMode, ServerRoute } from '@angular/ssr';
+
+export const serverRoutes: ServerRoute[] = [
+  {
+    path: '**',
+    renderMode: RenderMode.Prerender
+  }
+];
+
+==> ./src/app/app.spec.ts <==
+import { TestBed } from '@angular/core/testing';
+import { App } from './app';
+
+describe('App', () => {
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [
+        App
+      ],
+    }).compileComponents();
+  });
+
+  it('should create the app', () => {
+    const fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    expect(app).toBeTruthy();
+  });
+
+  it('should render title', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, my-angular-app');
+  });
+});
+
+==> ./src/app/app.ts <==
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.html',
+  standalone: false,
+  styleUrl: './app.css'
+})
+export class App {
+  protected title = 'my-angular-app';
+}
+
+==> ./src/app/app.component.ts <==
+// src/app/app.component.ts
+
+import { Component, ViewChild } from '@angular/core';
+import { IkVideoPlayerComponent } from '@imagekit/video-player/angular';
+import type { PlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
+import type Player from 'video.js/dist/types/player';
+
+@Component({
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  // Use @ViewChild to get a reference to our component instance in the template.
+  // This is the Angular equivalent of React's `useRef` for component instances.
+  @ViewChild(IkVideoPlayerComponent) playerComponent?: IkVideoPlayerComponent;
+
+  // Define component properties for player options and sources
+  ikOptions: PlayerOptions = {
+    imagekitId: 'YOUR_IMAGEKIT_ID', // Remember to replace this
+    seekThumbnails: true,
+    logo: {
+      showLogo: true,
+      logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
+      logoOnclickUrl: 'https://imagekit.io/',
+    },
+  };
+
+  playlist: {
+    sources: SourceOptions[];
+    options?: PlaylistOptions;
+  } = {
+    sources: [
+      {
+        src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
+        info: { title: 'Dog', subtitle: 'Dog wearing cap', description: 'This is a video containing dog wearing cap.' }
+      },
+      {
+        src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
+        info: { title: 'Human', subtitle: 'Human lying in grass', description: 'This is a video showing human lying on the grass.' },
+      },
+      {
+        src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4',
+        info: { title: 'Bird', subtitle: 'Bird on a branch', description: 'This video depicts bird chirping.' },
+      },
+    ],
+    options: {
+      autoAdvance: true,
+      repeat: true,
+      presentUpcoming: 10,
+    }
+  };
+
+  // Define styles as an object for [ngStyle]
+  playerStyles = {
+    width: '100%'
+  };
+
+  // This method is called when the button is clicked in the template.
+  onLogCurrentTime(): void {
+    const player: Player | undefined = this.playerComponent?.getPlayer();
+    if (player) {
+      console.log('Current time:', player.currentTime());
+      player.play(); // you can call any Video.js method
+    } else {
+        console.error('Player instance not available yet.');
+    }
+  }
+}
+==> ./src/app/app-module.ts <==
+// import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+// import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
+
+// import { App } from './app';
+
+// @NgModule({
+//   declarations: [
+//     App
+//   ],
+//   imports: [
+//     BrowserModule
+//   ],
+//   providers: [
+//     provideBrowserGlobalErrorListeners(),
+//     provideClientHydration(withEventReplay())
+//   ],
+//   bootstrap: [App]
+// })
+// export class AppModule { }
+
+// src/app/app.module.ts
+
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+
+// 1. Import your custom video player component
+import { IkVideoPlayerComponent } from '@imagekit/video-player/angular';
+
+import { AppComponent } from './app.component';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    IkVideoPlayerComponent, // 2. Add the component to the declarations array
+  ],
+  imports: [
+    BrowserModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule { }
+
+==> ./src/app/app.module.server.ts <==
+import { NgModule } from '@angular/core';
+import { provideServerRendering, withRoutes } from '@angular/ssr';
+import { App } from './app';
+import { AppModule } from './app-module';
+import { serverRoutes } from './app.routes.server';
+
+@NgModule({
+  imports: [AppModule],
+  providers: [provideServerRendering(withRoutes(serverRoutes))],
+  bootstrap: [App],
+})
+export class AppServerModule {}
+
+==> ./src/main.ts <==
+import { platformBrowser } from '@angular/platform-browser';
+import { AppModule } from './app/app-module';
+
+platformBrowser().bootstrapModule(AppModule, {
+  ngZoneEventCoalescing: true,
+})
+  .catch(err => console.error(err));
+
+==> ./src/main.server.ts <==
+export { AppServerModule as default } from './app/app.module.server';
+
+==> ./src/server.ts <==
+import {
+  AngularNodeAppEngine,
+  createNodeRequestHandler,
+  isMainModule,
+  writeResponseToNodeResponse,
+} from '@angular/ssr/node';
+import express from 'express';
+import { join } from 'node:path';
+
+const browserDistFolder = join(import.meta.dirname, '../browser');
+
+const app = express();
+const angularApp = new AngularNodeAppEngine();
+
+/**
+ * Example Express Rest API endpoints can be defined here.
+ * Uncomment and define endpoints as necessary.
+ *
+ * Example:
+ * ```ts
+ * app.get('/api/{*splat}', (req, res) => {
+ *   // Handle API request
+ * });
+ * ```
+ */
+
+/**
+ * Serve static files from /browser
+ */
+app.use(
+  express.static(browserDistFolder, {
+    maxAge: '1y',
+    index: false,
+    redirect: false,
+  }),
+);
+
+/**
+ * Handle all other requests by rendering the Angular application.
+ */
+app.use((req, res, next) => {
+  angularApp
+    .handle(req)
+    .then((response) =>
+      response ? writeResponseToNodeResponse(response, res) : next(),
+    )
+    .catch(next);
+});
+
+/**
+ * Start the server if this module is the main entry point.
+ * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
+ */
+if (isMainModule(import.meta.url)) {
+  const port = process.env['PORT'] || 4000;
+  app.listen(port, (error) => {
+    if (error) {
+      throw error;
+    }
+
+    console.log(`Node Express server listening on http://localhost:${port}`);
+  });
+}
+
+/**
+ * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
+ */
+export const reqHandler = createNodeRequestHandler(app);

@@ -1,0 +1,20 @@
+{
+    "version": 1,
+    "newProjectRoot": ".",
+    "projects": {
+      "video-player-angular": {
+        "projectType": "library",
+        "root": "",
+        "sourceRoot": "",
+        "prefix": "ik",
+        "architect": {
+          "build": {
+            "builder": "@angular-devkit/build-angular:ng-packagr",
+            "options": {
+              "project": "ng-package.json"
+            }
+          }
+        }
+      }
+    }
+  }

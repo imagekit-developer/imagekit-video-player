@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "NodeNext", // <-- CHANGE THIS
+    "moduleResolution": "NodeNext", // <-- CHANGE THIS
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "vue": [
+        "./node_modules/vue"
+      ]
+    },
+  },
+  "include": [
+    "javascript/**/*",
+    "react-wrapper/**/*",
+  
+  ],
+  "exclude": [
+    "angular-wrapper/**/*",
+      "vue/**/*"
+  ]
+}
