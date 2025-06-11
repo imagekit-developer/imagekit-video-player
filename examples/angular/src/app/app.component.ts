@@ -1,7 +1,7 @@
 // src/app/app.component.ts
 
 import { Component, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common'; // <-- Import CommonModule for ngStyle
+import { CommonModule } from '@angular/common';
 import { IkVideoPlayerComponent } from '@imagekit/video-player/angular';
 import type { PlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
 // import type Player from 'video.js/dist/types/player';
@@ -9,10 +9,10 @@ import type { PlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/vi
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  standalone: true, // <-- 1. Mark AppComponent as standalone
+  standalone: true,
   imports: [
-    CommonModule, // <-- 2. Import CommonModule for ngStyle
-    IkVideoPlayerComponent, // <-- 3. Import your player component directly here
+    CommonModule,
+    IkVideoPlayerComponent,
   ],
 })
 export class AppComponent {

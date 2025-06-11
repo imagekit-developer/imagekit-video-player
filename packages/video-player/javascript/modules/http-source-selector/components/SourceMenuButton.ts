@@ -7,6 +7,7 @@ class SourceMenuButton extends MenuButton {
   constructor(player, options) {
     super(player, options);
 
+    // @ts-ignore
     const qualityLevels = this.player().qualityLevels();
 
     // Handle options: default bias
@@ -23,6 +24,7 @@ class SourceMenuButton extends MenuButton {
     }
 
     // Bind update to qualityLevels changes
+    // @ts-ignore
     this.player().qualityLevels().on(['change', 'addqualitylevel'], videojs.bind(this, this.update));
   }
 
@@ -37,11 +39,13 @@ class SourceMenuButton extends MenuButton {
   }
 
   update() {
+    // @ts-ignore
     return super.update();
   }
 
   createItems() {
     const menuItems = [];
+    // @ts-ignore
     const levels = this.player().qualityLevels();
     const labels = [];
 

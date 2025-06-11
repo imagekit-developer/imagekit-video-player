@@ -44,6 +44,7 @@ export class PlaylistMenuItem extends Component {
   private playerOptions: PlayerOptions;
 
   constructor(player: Player, playlist: Playlist, options: PlaylistMenuItemOptions, playerOptions: PlayerOptions) {
+    // @ts-ignore
     super(player, { ...options, playerOptions: playerOptions });
     this.item = options.item;
     this.playOnSelect = !!options.playOnSelect;
@@ -156,4 +157,5 @@ export class PlaylistMenuItem extends Component {
   }
 }
 
+// @ts-ignore
 videojs.registerComponent('PlaylistMenuItem', PlaylistMenuItem);

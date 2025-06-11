@@ -14,19 +14,14 @@
       "ES2022",
       "dom"
     ],
-    // --- KEY CHANGES BELOW ---
     "baseUrl": ".",
-    // "paths": {
-    //   "../javascript": [
-    //     "./dist/index.d.ts" // Point to the TSUP-generated type definition file
-    //   ]
-    // }
+    "rootDir": "."
   },
   "angularCompilerOptions": {
     "compilationMode": "full"
   },
   "include": [
-    "angular/**/*.ts" // ONLY compile the angular source files
+    "**/*.ts"
   ],
   "exclude": [
     "dist/**/*", // Exclude the dist folder to prevent circular dependencies

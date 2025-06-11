@@ -14,8 +14,10 @@ class SourceMenuItem extends MenuItem
   handleClick() {
     var selected = this.options_;
     // console.log("Changing quality to:", selected.label);
+    // @ts-ignore
     super.handleClick();
 
+    // @ts-ignore
     var levels = this.player().qualityLevels();
     for(var i = 0; i < levels.length; i++) {
       if (selected.index == levels.length) {
@@ -30,11 +32,13 @@ class SourceMenuItem extends MenuItem
   }
 
   update() {
+    // @ts-ignore
     var selectedIndex = this.player().qualityLevels().selectedIndex;
+    // @ts-ignore
     this.selected(this.options_.index == selectedIndex);
   }
 }
 
-
+// @ts-ignore
 Component.registerComponent('SourceMenuItem', SourceMenuItem);
 export default SourceMenuItem;

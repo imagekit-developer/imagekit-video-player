@@ -7,7 +7,6 @@
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "exports": {
-    "./package.json": "./package.json",
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
@@ -18,17 +17,22 @@
       "import": "./dist/react/index.mjs",
       "require": "./dist/react/index.js"
     },
+    "./angular": {
+      "types": "./dist/angular/index.d.ts",
+      "import": "./dist/angular/fesm2022/imagekit-video-player.mjs",
+      "require": "./dist/angular/fesm2022/imagekit-video-player.mjs"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "pnpm run build:tsup && pnpm run build:css && pnpm run build:angular",
+    "build": "yarn run build:tsup && yarn run build:css && yarn run build:angular",
     "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
-    "build:angular": "ng-packagr -p ng-package.json",
+    "build:angular": "node package.js",
     "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
-    "dev": "pnpm run build && (pnpm run dev:tsup & pnpm run dev:css & pnpm run dev:angular)",
+    "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css & yarn run dev:angular)",
     "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
     "dev:angular": "ng-packagr -p ng-package.json --watch",
     "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
@@ -41,6 +45,12 @@
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "@angular/common": {
+      "optional": true
+    },
+    "@angular/core": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -49,16 +59,14 @@
     },
     "vue": {
       "optional": true
-    },
-    "@angular/core": {
-      "optional": true
-    },
-    "@angular/common": {
-      "optional": true
     }
   },
   "devDependencies": {
+    "@angular/cli": "^20.0.1",
+    "@angular/common": "^20.0.2",
+    "@angular/compiler": "^20.0.0",
     "@angular/compiler-cli": "^20.0.0",
+    "@angular/core": "^20.0.2",
     "@imagekit/javascript": "^5.0.0",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",

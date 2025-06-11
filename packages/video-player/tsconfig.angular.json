@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../ng_build",
+    "rootDir": "./",
+    "baseUrl": "./",
+    "declaration": true,
+    "inlineSources": true,
+    "target": "es2015",
+    "lib": ["dom", "es2018"]
+  },
+  "angularCompilerOptions": {
+    "compilationMode": "full",
+    "skipTemplateCodegen": false,
+    "strictMetadataEmit": true,
+    "fullTemplateTypeCheck": true,
+    "strictInjectionParameters": true,
+    "enableResourceInlining": true
+  },
+  "include": [
+    "./**/*.ts"
+  ]
+}

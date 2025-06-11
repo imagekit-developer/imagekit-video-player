@@ -24,7 +24,7 @@ const registerPlugin = videojs.registerPlugin || videojs.plugin;
 * @param    {Object} [options={}]
 *           A plain object containing options for the plugin.
 */
-const onPlayerReady = (player, options) =>
+const onPlayerReady = (player: any, options: any) =>
 {
   player.addClass('vjs-http-source-selector');
   // console.log("videojs-http-source-selector initialized!");
@@ -41,7 +41,7 @@ const onPlayerReady = (player, options) =>
   * We have to wait for the manifest to load before we can scan renditions for resolutions/bitrates to populate selections
   *
   **/
-  player.on(['loadedmetadata'], function(e)
+  player.on(['loadedmetadata'], function(e: any)
   {
     var qualityLevels = player.qualityLevels();
     // videojs.log('loadmetadata event');
@@ -73,8 +73,10 @@ const onPlayerReady = (player, options) =>
   * @param    {Object} [options={}]
   *           An object of options left to the plugin author to define.
   */
-  const httpSourceSelector = function(options) {
+  const httpSourceSelector = function(options: any) {
+    // @ts-ignore
     this.ready(() => {
+      // @ts-ignore
       onPlayerReady(this, videojs.mergeOptions(defaults, options));
       //this.getChild('controlBar').addChild('SourceMenuButton', {});
     });

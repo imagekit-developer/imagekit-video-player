@@ -69,6 +69,7 @@ export class SeekThumbnailsManager {
       player.el().appendChild(mgr.container_);
 
       // 6) Wire up hover handlers (store references so we can remove them later)
+      // @ts-ignore
       const progress = player.controlBar.progressControl;
 
       // Make named functions and store on `mgr`
@@ -101,6 +102,7 @@ export class SeekThumbnailsManager {
     }
 
     // 2) Unbind the handlers we attached
+    // @ts-ignore
     const progress = player.controlBar.progressControl;
     if (this.mouseMoveHandler) {
       progress.off('mousemove', this.mouseMoveHandler);
@@ -122,7 +124,7 @@ export class SeekThumbnailsManager {
  */
 function onMouseMove(e: MouseEvent, player: Player, mgr: SeekThumbnailsManager) {
   if (!mgr['container_']) return;
-
+// @ts-ignore
   const barRect = player.controlBar.progressControl.el().getBoundingClientRect();
   const pct = (e.clientX - barRect.left) / barRect.width;
   const time = pct * player.duration();

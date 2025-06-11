@@ -87,7 +87,7 @@ export class ShoppableManager {
     this.shoppable_.products.forEach((prod) => {
       const item = document.createElement('a');
       item.className = 'vjs-shoppable-item';
-      item.setAttribute('data-product-id', prod.productId);
+      item.setAttribute('data-product-id', String(prod.productId));
 
       const img = document.createElement('img');
       img.className = 'vjs-shoppable-item-img';

@@ -12,18 +12,9 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "vue": [
-        "./node_modules/vue"
-      ]
-    },
+      "vue": ["./node_modules/vue"]
+    }
   },
-  "include": [
-    "javascript/**/*",
-    "react-wrapper/**/*",
-  
-  ],
-  "exclude": [
-    "angular-wrapper/**/*",
-      "vue/**/*"
-  ]
+  "include": ["javascript/**/*", "react-wrapper/**/*"],
+  "exclude": ["angular-wrapper/**/*", "vue/**/*"]
 }

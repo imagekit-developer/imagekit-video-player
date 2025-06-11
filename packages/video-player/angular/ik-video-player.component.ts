@@ -1,66 +1,22 @@
 import {
-    Component,
-    Input,
-    ViewChild,
-    ElementRef,
-    OnChanges,
-    OnDestroy,
-    SimpleChanges,
-  } from '@angular/core';
-  import { CommonModule } from '@angular/common'; // <-- 1. IMPORT CommonModule
-  // import { videoPlayer } from '../javascript';
-  import type { IKVideoPlayerProps } from './interfaces';
-  import type Player from 'video.js/dist/types/player';
-// import { PlayerOptions } from 'javascript';
-import videojs from 'video.js';
-
-// import type { Transformation }from '@imagekit/javascript'
-
-
-export interface PlayerOptions {
-    /** Your ImageKit ID */
-    imagekitId: string;
-    /** 'left' | 'right' floating thumbnail when scrolled out */
-    floatingWhenNotVisible?: 'left' | 'right' | null;
-    /** Hide right-click context menu */
-    hideContextMenu?: boolean;
-    /** Logo config */
-    logo?: {
-        showLogo: boolean;
-        logoImageUrl: string;
-        logoOnclickUrl: string;
-    };
-    /** Enable seek thumbnails */
-    seekThumbnails?: boolean;
-    /** ABS (HLS/DASH) config */
-    abs?: {
-        protocol: 'hls' | 'dash';
-        sr: number[];
-    };
-    /** Global ImageKit transformations */
-    transformation?: Array<String>;
-    /** Retry attempts */
-    maxTries?: number;
-    /** Timeout per try in ms */
-    videoTimeoutInMS?: number;
-    /** Percent-based events */
-    playedEventPercents?: number[];
-    /** Time-based events (seconds) */
-    playedEventTimes?: number[];
-    /** Delay per try in ms */
-    delayInMS?: number;
-    /** Signer function for generating signed url */
-    signerFn?: (src: string) => Promise<string>;
-}
-
-
-
+  Component,
+  Input,
+  ViewChild,
+  ElementRef,
+  OnChanges,
+  OnDestroy,
+  SimpleChanges,
+} from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { videoPlayer } from '../javascript';
+import type { IKVideoPlayerProps } from './interfaces';
+import type Player from 'video.js/dist/types/player';
 
 @Component({
   selector: 'ik-video-player',
   templateUrl: './ik-video-player.component.html',
-  standalone: true, // <-- 2. ADD this line
-  imports: [CommonModule], // <-- 3. ADD this line
+  standalone: true,
+  imports: [CommonModule],
 })
 export class IkVideoPlayerComponent implements OnChanges, OnDestroy {
   @Input() ikOptions!: IKVideoPlayerProps['ikOptions'];
@@ -133,16 +89,4 @@ export class IkVideoPlayerComponent implements OnChanges, OnDestroy {
       this.player.dispose();
     }
   }
-}
-
-function videoPlayer(nativeElement: HTMLVideoElement, ikOptions: PlayerOptions, videoJsOptions: any): Player {
-  const player = videojs(nativeElement, videoJsOptions);
-
-  // Apply ImageKit-specific options if provided
-  if (ikOptions) {
-    // Example: Set custom attributes or configurations
-    console.log(ikOptions)
-  }
-
-  return player;
 }

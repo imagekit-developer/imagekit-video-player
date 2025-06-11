@@ -69,6 +69,7 @@ export class PlaylistMenu extends Component {
   /** Video.js will call this once to build a `<div>` for us. */
   createEl(): HTMLElement {
     const cls = this.options_.className || 'vjs-playlist-menu';
+    // @ts-ignore
     return videojs.dom.createEl('div', { className: cls });
   }
 
@@ -127,6 +128,6 @@ export class PlaylistMenu extends Component {
     this.el_.innerHTML = '';
   }
 }
-
+// @ts-ignore
 videojs.registerComponent('PlaylistMenu', PlaylistMenu);
 export default PlaylistMenu;

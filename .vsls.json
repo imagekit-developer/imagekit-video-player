@@ -1,6 +1,0 @@
-{
-    "gitignore": "none",
-    "excludeFiles": ["node_modules/**/*"],
-    "hideFiles": ["secrets.txt"]
-  }
-  

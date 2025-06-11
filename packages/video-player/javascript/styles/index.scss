@@ -1,5 +1,5 @@
 // import videojs css
-@use "video.js/dist/video-js.css";
+@use "../../../../node_modules/video.js/dist/video-js.css";
 
 // @use all modules
 @use "../modules/http-source-selector/plugin.scss";

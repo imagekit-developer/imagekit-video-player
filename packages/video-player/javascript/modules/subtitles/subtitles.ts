@@ -63,6 +63,7 @@ async function setupSubtitles(params: {
     const entries = raw as TranscriptEntry[];
 
     // 2. Flatten into word list
+    // @ts-ignore
     const allWords = entries.flatMap(e => e.words);
 
     // 3. Build WebVTT string
