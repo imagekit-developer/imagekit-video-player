@@ -1,5 +1,3 @@
-/* shoppable.css - FINAL VERSION */
-
 /* This class on the main player shrinks the video to make space */
 .video-js.shoppable-panel-visible .vjs-tech,
 .video-js.shoppable-panel-visible .vjs-control-bar {
@@ -7,6 +5,8 @@
   transition: width 0.35s ease-in-out;
 }
 
+/* The bar's main container. It covers the whole player but is not visible
+   and does not intercept clicks, acting only as a positioning parent. */
 .vjs-shoppable-bar {
   position: absolute;
   top: 0;
@@ -18,6 +18,7 @@
   z-index: 10;
 }
 
+/* The inner container that holds the panel and toggle. THIS is the element that slides. */
 .vjs-shoppable-bar-inner {
   position: absolute;
   top: 0;
@@ -26,11 +27,12 @@
   height: 100%;
   transform: translateX(100%); /* Start completely off-screen */
   transition: transform 0.35s ease-in-out;
-  pointer-events: all; 
+  pointer-events: all; /* Allow clicks on its children (panel and toggle) */
 }
 
+/* When visible, slide the inner container left to reveal the panel and toggle */
 .video-js.shoppable-panel-visible .vjs-shoppable-bar-inner {
-  transform: translateX(0%); 
+  transform: translateX(0%); /* Leaves the rightmost 20% visible */
 }
 
 .video-js.shoppable-panel-hidden .vjs-shoppable-bar-inner {
@@ -38,12 +40,13 @@
   transition: none; /* Hide immediately on initial load */
 }
 
+/* The panel containing the products, positioned on the far right of the inner container */
 .vjs-shoppable-panel {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100%;/* The visible width of the panel */
   overflow-y: auto;
   background: rgba(255, 255, 255, 0.98);
   box-shadow: -3px 0 10px rgba(0,0,0,0.2);
@@ -54,6 +57,7 @@
   display: none;
 }
 
+/* The toggle button, also inside the inner container */
 .vjs-shoppable-toggle {
   position: absolute;
   top: 15px;
@@ -71,7 +75,6 @@
   transition: background-color 0.2s;
 }
 
-/* --- NEW: Tada Animation --- */
 .vjs-shoppable-toggle.animate,
 .vjs-shoppable-toggle:hover {
   animation: tada 1s infinite;
@@ -84,8 +87,6 @@
   100% { transform: scale3d(1, 1, 1); }
 }
 
-
-/* --- NEW: Icon Swapping Logic --- */
 .vjs-shoppable-toggle-icon {
   width: 50%;
   height: 50%;
@@ -97,7 +98,6 @@
   transition: opacity 0.2s;
 }
 
-/* Default state (Panel Hidden): Show Open Icon, Hide Close Icon */
 .vjs-shoppable-toggle .icon-open {
   opacity: 1;
 }
@@ -105,7 +105,6 @@
   opacity: 0;
 }
 
-/* Panel Visible State: Hide Open Icon, Show Close Icon */
 .video-js.shoppable-panel-visible .vjs-shoppable-toggle .icon-open {
   opacity: 0;
 }
@@ -113,8 +112,7 @@
   opacity: 1;
 }
 
-/* --- Rest of CSS is unchanged --- */
-
+/* --- Item, Hotspot, and other styles --- */
 .vjs-shoppable-item {
   display: block;
   position: relative;
@@ -150,7 +148,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .vjs-shoppable-hotspot {
   position: absolute;
   width: 24px;
@@ -187,6 +184,7 @@
   pointer-events: none;
 }
 
+/* --- POST-PLAY OVERLAY --- */
 .vjs-shoppable-postplay-overlay {
   position: absolute;
   top: 0;
@@ -199,46 +197,96 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
 }
 .vjs-shoppable-postplay-title {
   color: #fff;
   font-size: 24px;
   margin-bottom: 24px;
+  font-weight: bold;
 }
 .vjs-shoppable-postplay-carousel {
   display: flex;
   gap: 20px;
+  overflow-x: auto;
+  max-width: 100%;
+  padding-bottom: 20px; /* Space for scrollbar */
 }
 .vjs-shoppable-postplay-card {
-  cursor: pointer;
+  position: relative; /* Needed for the hover overlay */
+  flex-shrink: 0; /* Prevent cards from shrinking */
   text-align: center;
   color: #fff;
   font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.vjs-shoppable-postplay-card:hover {
+  transform: scale(1.05); /* Card gets bigger on hover */
 }
 .vjs-shoppable-postplay-card img {
-  width: 150px;
-  height: 150px;
+  width: 160px;
+  height: 160px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 8px;
-  border: 2px solid transparent;
-  transition: border-color 0.2s;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
-.vjs-shoppable-postplay-card:hover img {
-  border-color: #2563eb;
+.vjs-shoppable-postplay-card-title {
+  max-width: 160px;
+  font-weight: 500;
+  line-height: 1.3;
 }
+
+.vjs-shoppable-postplay-card-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 160px; /* Match image width */
+    height: 160px; /* Match image height */
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px;
+    box-sizing: border-box;
+    border-radius: 12px; /* Match image radius */
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none; /* Allows click to go through to the card */
+}
+.vjs-shoppable-postplay-card:hover .vjs-shoppable-postplay-card-overlay {
+    opacity: 1;
+}
+
 .vjs-shoppable-replay-btn {
   margin-top: 30px;
-  padding: 10px 20px;
-  background: #fff;
-  color: #000;
+  padding: 12px 24px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #111;
   border: none;
-  border-radius: 5px;
+  border-radius: 25px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s, transform 0.2s;
 }
 .vjs-shoppable-replay-btn:hover {
-  background: #eee;
+  background-color: #fff;
+  transform: scale(1.05);
+}
+.vjs-shoppable-replay-btn::before {
+  content: '⟳'; /* Replay icon */
+  font-size: 20px;
 }
 
 .vjs-hidden {
