@@ -7,7 +7,6 @@ ngPackagrImport.ngPackagr()
   .build()
   .then(() => {
     console.log('Build completed successfully');
-
     fs.unlinkSync('./dist/angular/package.json');
     fs.unlinkSync('./dist/angular/.npmignore');
   })

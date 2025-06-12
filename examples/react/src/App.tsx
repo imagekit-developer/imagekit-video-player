@@ -23,9 +23,9 @@ export default function App() {
         imagekitId: 'YOUR_IMAGEKIT_ID',
         seekThumbnails: true,
         logo: {
-          showLogo: true,
-          logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
-          logoOnclickUrl: 'https://imagekit.io/',
+            showLogo: true,
+            logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
+            logoOnclickUrl: 'https://imagekit.io/',
         },
     };
 
@@ -81,39 +81,20 @@ export default function App() {
         }
     };
 
-    // Handler to demonstrate how to grab the raw player instance
-    const onLogCurrentTime = () => {
-        const player = playerRef.current?.getPlayer();
-        if (player) {
-            console.log('Current time:', player.currentTime());
-            player.play(); // you can call any Video.js method
-        }
-    };
-
     return (
-        <div style={{ maxWidth: 800, margin: '2rem auto' }}>
-            <h1>ImageKit Video Player (React) Example</h1>
-
-            <button onClick={onLogCurrentTime}>
-                Log current time & ensure player is playing
-            </button>
-
-            <div style={{ marginTop: '1rem' }}>
-                <IKVideoPlayer
-                    ref={playerRef}
-                    ikOptions={ikOptions}
-                    videoJsOptions={{
-                        controls: true,
-                        fluid: true,
-                        muted: false
-                    }}
-                    // Only one of `source` or `playlist` should be set:
-                    playlist={playlist}
-                    // playlist={playlist}
-                    className="my-custom-player-container"
-                    style={{ width: '100%' }}
-                />
-            </div>
+        <div>
+            <IKVideoPlayer
+                ref={playerRef}
+                ikOptions={ikOptions}
+                videoJsOptions={{
+                    controls: true,
+                    muted: false,
+                    height: 540,
+                    width: 960,
+                }}
+                playlist={playlist}
+            />
         </div>
+
     );
 }

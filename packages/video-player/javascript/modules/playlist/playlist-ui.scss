@@ -13,35 +13,39 @@ $placeholder-background-color: #303030;
 // --- Main Layout (Now fully dynamic) ---
 
 .player-container {
-  display: flex;
+  display: grid; /* Use Grid for perfect ratio control */
   margin: 0 auto 20px;
   background: #1a1a1a;
-  // REMOVED hardcoded width and height
+
+  /* Default to vertical layout: player is 4 parts, playlist is 1 part */
+  /* This makes the playlist exactly 25% of the player's width */
+  grid-template-columns: 4fr 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "player playlist";
+  // @todo should this overflow: hidden; be here?
+  // overflow: hidden;
 }
 
 .video-js {
-  flex: 1 1 auto; // Let the player size itself naturally
-  min-width: 0;
-  height: auto; // Let height be determined by container
+  grid-area: player;
+  min-width: 0;  /* Required for grid/flex items */
+  min-height: 0; /* Required for grid/flex items */
 }
 
 .vjs-playlist {
-  flex-shrink: 0; // Prevent the playlist from shrinking
-  height: 100%;
+  grid-area: playlist;
+  min-height: 0; /* Required for grid/flex items */
   overflow: auto;
 }
 
 // Horizontal Playlist Layout Structure
 .player-container.vjs-playlist-horizontal-container {
-  flex-direction: column;
-
-  .video-js {
-    height: auto;
-  }
-  .vjs-playlist {
-    width: 100%;
-    height: auto; // Height will be set by JS
-  }
+  /* For horizontal, player is 4 parts high, playlist is 1 part high */
+  grid-template-columns: 1fr;
+  grid-template-rows: 4fr 1fr;
+  grid-template-areas:
+    "player"
+    "playlist";
 }
 
 // --- Playlist & Item Styling ---
@@ -211,5 +215,3 @@ $placeholder-background-color: #303030;
     text-shadow: none;
   }
 }
-
-// ... (rest of the file is the same)

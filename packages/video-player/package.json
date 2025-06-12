@@ -17,6 +17,11 @@
       "import": "./dist/react/index.mjs",
       "require": "./dist/react/index.js"
     },
+    "./vue": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
     "./angular": {
       "types": "./dist/angular/index.d.ts",
       "import": "./dist/angular/fesm2022/imagekit-video-player.mjs",

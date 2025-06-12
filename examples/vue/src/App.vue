@@ -1,23 +1,17 @@
 <template>
   <div class="container">
     <h1>ImageKit Video Player (Vue) Example</h1>
-
-    <button @click="logCurrentTime">
-      Log current time & ensure player is playing
-    </button>
-
-    <div class="player-container">
+    <div>
       <IKVideoPlayer
         ref="playerRef"
         :ikOptions="ikOptions"
         :videoJsOptions="{
           controls: true,
-          fluid: true,
           muted: false,
+          height: 540,
+          width: 960,
         }"
         :playlist="playlist"
-        class-name="my-custom-player-container"
-        :style="{ width: '100%' }"
       />
     </div>
   </div>
@@ -30,7 +24,9 @@ import { IKVideoPlayer } from '@imagekit/video-player/vue';
 import type { PlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
 
 // Create a ref to get access to the component's exposed methods
-const playerRef = ref<InstanceType<typeof IKVideoPlayer> | null>(null);
+import type { IKVideoPlayerRef } from '@imagekit/video-player/vue';
+
+const playerRef = ref<IKVideoPlayerRef | null>(null);
 
 const ikOptions: PlayerOptions = {
   imagekitId: 'YOUR_IMAGEKIT_ID', // Remember to replace this
@@ -45,35 +41,11 @@ const playlist: {
     { src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4' },
     { src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4' },
   ],
-  options: { autoAdvance: true },
-};
-
-const logCurrentTime = () => {
-  const player = playerRef.value?.getPlayer();
-  if (player) {
-    console.log('Current time:', player.currentTime());
-    player.play();
-  }
+  options: { autoAdvance: 5 }, // Set autoAdvance to a valid number (e.g., 5 seconds)
 };
 </script>
 
-<style scoped>
-.container {
-  max-width: 800px;
-  margin: 2rem auto;
-  font-family: sans-serif;
-}
-.player-container {
-  margin-top: 1rem;
-  border: 1px solid #ccc;
-}
-button {
-  padding: 8px 16px;
-  cursor: pointer;
-}
-</style>
-
 <style>
 /* Global import for video-js styles */
-@import '@imagekit/video-player/styles.css';
+@import '@imagekit/video-player/dist/styles.css';
 </style>

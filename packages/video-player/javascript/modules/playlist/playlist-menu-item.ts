@@ -97,7 +97,9 @@ export class PlaylistMenuItem extends Component {
        preparePosterSrc(this.options_.item, this.options_.playerOptions)
          .then(url => {
            // remove spinner
-           this.spinnerEl.remove();
+           if (this.spinnerEl) {
+            this.spinnerEl.remove();
+          }
    
            // create & insert image
            this.imgEl = document.createElement('img');
@@ -107,8 +109,14 @@ export class PlaylistMenuItem extends Component {
            this.thumbnail.appendChild(this.imgEl);
          })
          .catch(err => {
+          this.player_.error({
+            message: `Failed to load poster for playlist item: ${err.message}`,
+            cause: err
+          });
            // poster generation failed: remove spinner and show placeholder
-           this.spinnerEl.remove();
+           if (this.spinnerEl) {
+            this.spinnerEl.remove();
+          }
            this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
          });
 

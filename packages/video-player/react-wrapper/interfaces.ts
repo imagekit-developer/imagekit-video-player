@@ -21,10 +21,6 @@ export interface IKVideoPlayerProps {
         sources: SourceOptions[];
         options?: PlaylistOptions;
     };
-    /** Optional CSS className on the <video> element */
-    className?: string;
-    /** Optional inline style on the <video> element */
-    style?: React.CSSProperties;
 }
 
 /** Methods exposed via ref */

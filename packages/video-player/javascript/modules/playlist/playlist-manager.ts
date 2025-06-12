@@ -23,11 +23,13 @@ export class PlaylistManager {
   private autoAdvance_: AutoAdvance;
   private playlistMenu?: PlaylistMenu;
   private playerOptions_: PlayerOptions;
-  private playlistContainer_?: HTMLElement;
+  private playerContainer_?: HTMLElement;
+  private playlistOptions_: PlaylistOptions;
 
   constructor(player: Player, playerOptions: PlayerOptions) {
     this.player_ = player;
     this.playerOptions_ = playerOptions;
+    this.playlistOptions_ = {};
     this.playlist_ = new Playlist({
       onError: msg => player.error(msg),
       onWarn: msg => player.log.warn(msg)
@@ -63,7 +65,7 @@ export class PlaylistManager {
         wrapper.appendChild(playerEl);
       }
 
-      this.playlistContainer_ = wrapper as HTMLElement; // Store reference to the container
+      this.playerContainer_ = wrapper as HTMLElement; // Store reference to the container
 
       // Load the playlist if provided
       if (sources && Array.isArray(sources)) {
@@ -72,47 +74,85 @@ export class PlaylistManager {
           onWarn: msg => player.log.warn(msg)
         }));
       }
+
+      this.playlistOptions_ = opts || {};
       this.configure(opts || {});
       this.initMenu_(opts || {});
-
-      // **KEY CHANGE**: Call the new layout method
-      this.updateLayout_(opts || {});
+     
 
       // Add a listener for player resize events
-      this.player_.on('playerresize', () => this.updateLayout_(opts || {}));
+      this.player_.one('loadedmetadata', () => this.updateLayout_());
+
       return this;
     };
 
+
+
     // 2) Create the (empty) menu on startup
     // this.initMenu_({});
+
+    this.player_.on('playerresize', () => this.updateLayout_());
+
   }
 
   /**
   * @private Applies dynamic styles to the player and playlist container.
   */
-  private updateLayout_(opts: PlaylistOptions) {
-    if (!this.playlistContainer_) {
+  // inside PlaylistManager class
+private updateLayout_() {
+  if (!this.playerContainer_) {
       return;
-    }
-
-    const playerWidth = this.player_.width() ?? 960;
-    const playerHeight = this.player_.height() ?? 540;
-    const isHorizontal = opts.widgetProps?.direction === 'horizontal';
-
-    if (isHorizontal) {
-      // Horizontal Playlist Layout
-      const playlistHeight = playerHeight * 0.25; // Making playlist 25% of player height
-      this.playlistContainer_.style.width = `${playerWidth}px`;
-      this.playlistContainer_.style.height = `${playerHeight + playlistHeight}px`;
-      (this.playlistMenu!.el() as HTMLElement).style.height = `${playlistHeight}px`;
-    } else {
-      // Vertical Playlist Layout
-      const playlistWidth = playerWidth * 0.25; // Making playlist 25% of player width
-      this.playlistContainer_.style.width = `${playerWidth + playlistWidth}px`;
-      this.playlistContainer_.style.height = `${playerHeight}px`;
-      (this.playlistMenu!.el() as HTMLElement).style.width = `${playlistWidth}px`;
-    }
   }
+
+  // A) First, check if the player is in fluid mode.
+  // @ts-ignore
+  const isFluid = this.player_.options_.fluid;
+
+  if (isFluid) {
+      // For fluid players, we MUST let CSS control the layout.
+      // We remove any inline styles to give control back to the stylesheet.
+      this.playerContainer_.style.width = '';
+      this.playerContainer_.style.height = '';
+      if (this.playlistMenu) {
+          (this.playlistMenu.el() as HTMLElement).style.width = '';
+          (this.playlistMenu.el() as HTMLElement).style.height = '';
+      }
+      // Let the CSS (Flexbox or Grid) handle the rest.
+      return;
+  }
+
+  // B) If we are here, it's a FIXED-SIZE player. Proceed with JS calculations.
+
+  // IMPORTANT: Check if the player has a size yet. If not, exit.
+  // The 'playerresize' event will call this function again later.
+  const playerWidth = this.player_.width();
+  const playerHeight = this.player_.height();
+
+  if (!playerWidth || !playerHeight) {
+      // Exit if dimensions are 0, preventing the 0x0 bug.
+      return;
+  }
+
+  const opts = this.playlistOptions_ || {};
+  const isHorizontal = opts.widgetProps?.direction === 'horizontal';
+
+  // C) Now, perform the same calculations as before, but with valid dimensions.
+  if (isHorizontal) {
+      const playlistHeight = playerHeight * 0.25;
+      this.playerContainer_.style.width = `${playerWidth}px`;
+      this.playerContainer_.style.height = `${playerHeight + playlistHeight}px`;
+      if (this.playlistMenu) {
+          (this.playlistMenu.el() as HTMLElement).style.height = `${playlistHeight}px`;
+      }
+  } else { // Vertical
+      const playlistWidth = playerWidth * 0.25;
+      this.playerContainer_.style.width = `${playerWidth + playlistWidth}px`;
+      this.playerContainer_.style.height = `${playerHeight}px`;
+      if (this.playlistMenu) {
+          (this.playlistMenu.el() as HTMLElement).style.width = `${playlistWidth}px`;
+      }
+  }
+}
 
   private initMenu_(opts: PlaylistOptions) {
     // tear down old
@@ -141,9 +181,9 @@ export class PlaylistManager {
     const menu = new PlaylistMenu(this.player_, this.playlist_, menuOptions, this.playerOptions_);
 
     // 2. Append the menu's element directly to our main wrapper.
-    if (this.playlistContainer_) {
-        this.playlistContainer_.appendChild(menu.el());
-        this.playlistContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
+    if (this.playerContainer_) {
+        this.playerContainer_.appendChild(menu.el());
+        this.playerContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
     }
 
     // 3. Store the reference to the new menu.

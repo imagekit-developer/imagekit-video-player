@@ -7,10 +7,11 @@ import {
 import { videoPlayer } from '../javascript';
 
 import type { IKVideoPlayerProps, IKVideoPlayerRef } from './interfaces';
+import React from 'react';
 
 const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
   (
-    { ikOptions, videoJsOptions = {}, source, playlist, className, style },
+    { ikOptions, videoJsOptions = {}, source, playlist },
     ref
   ) => {
     // A ref to the actual <video> element
@@ -79,8 +80,7 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
     return (
       <video
         ref={videoRef}
-        className={`video-js ${className || ''}`}
-        style={style}
+        className={`video-js vjs-default-skin`}
         controls
         preload="auto"
       />
