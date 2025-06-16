@@ -6,6 +6,8 @@ import { AutoAdvance } from './auto-advance';
 import { PlaylistMenu } from './playlist-menu';
 import type { SourceOptions, PlaylistOptions, PlayerOptions } from '../../interfaces';
 import { isIndexInBounds } from './utils';
+import './present-upcoming';
+import { PresentUpcoming } from './present-upcoming';
 
 // detect pointer-events support
 const supportsCssPointerEvents = (() => {
@@ -25,6 +27,8 @@ export class PlaylistManager {
   private playerOptions_: PlayerOptions;
   private playerContainer_?: HTMLElement;
   private playlistOptions_: PlaylistOptions;
+  private presentUpcomingComponent_?: PresentUpcoming;
+  private presentUpcomingThreshold_: number | null = null;
 
   constructor(player: Player, playerOptions: PlayerOptions) {
     this.player_ = player;
@@ -78,7 +82,7 @@ export class PlaylistManager {
       this.playlistOptions_ = opts || {};
       this.configure(opts || {});
       this.initMenu_(opts || {});
-     
+
 
       // Add a listener for player resize events
       this.player_.one('loadedmetadata', () => this.updateLayout_());
@@ -99,60 +103,60 @@ export class PlaylistManager {
   * @private Applies dynamic styles to the player and playlist container.
   */
   // inside PlaylistManager class
-private updateLayout_() {
-  if (!this.playerContainer_) {
+  private updateLayout_() {
+    if (!this.playerContainer_) {
       return;
-  }
+    }
 
-  // A) First, check if the player is in fluid mode.
-  // @ts-ignore
-  const isFluid = this.player_.options_.fluid;
+    // A) First, check if the player is in fluid mode.
+    // @ts-ignore
+    const isFluid = this.player_.options_.fluid;
 
-  if (isFluid) {
+    if (isFluid) {
       // For fluid players, we MUST let CSS control the layout.
       // We remove any inline styles to give control back to the stylesheet.
       this.playerContainer_.style.width = '';
       this.playerContainer_.style.height = '';
       if (this.playlistMenu) {
-          (this.playlistMenu.el() as HTMLElement).style.width = '';
-          (this.playlistMenu.el() as HTMLElement).style.height = '';
+        (this.playlistMenu.el() as HTMLElement).style.width = '';
+        (this.playlistMenu.el() as HTMLElement).style.height = '';
       }
       // Let the CSS (Flexbox or Grid) handle the rest.
       return;
-  }
+    }
 
-  // B) If we are here, it's a FIXED-SIZE player. Proceed with JS calculations.
+    // B) If we are here, it's a FIXED-SIZE player. Proceed with JS calculations.
 
-  // IMPORTANT: Check if the player has a size yet. If not, exit.
-  // The 'playerresize' event will call this function again later.
-  const playerWidth = this.player_.width();
-  const playerHeight = this.player_.height();
+    // IMPORTANT: Check if the player has a size yet. If not, exit.
+    // The 'playerresize' event will call this function again later.
+    const playerWidth = this.player_.width();
+    const playerHeight = this.player_.height();
 
-  if (!playerWidth || !playerHeight) {
+    if (!playerWidth || !playerHeight) {
       // Exit if dimensions are 0, preventing the 0x0 bug.
       return;
-  }
+    }
 
-  const opts = this.playlistOptions_ || {};
-  const isHorizontal = opts.widgetProps?.direction === 'horizontal';
+    const opts = this.playlistOptions_ || {};
+    const isHorizontal = opts.widgetProps?.direction === 'horizontal';
 
-  // C) Now, perform the same calculations as before, but with valid dimensions.
-  if (isHorizontal) {
+    // C) Now, perform the same calculations as before, but with valid dimensions.
+    if (isHorizontal) {
       const playlistHeight = playerHeight * 0.25;
       this.playerContainer_.style.width = `${playerWidth}px`;
       this.playerContainer_.style.height = `${playerHeight + playlistHeight}px`;
       if (this.playlistMenu) {
-          (this.playlistMenu.el() as HTMLElement).style.height = `${playlistHeight}px`;
+        (this.playlistMenu.el() as HTMLElement).style.height = `${playlistHeight}px`;
       }
-  } else { // Vertical
+    } else { // Vertical
       const playlistWidth = playerWidth * 0.25;
       this.playerContainer_.style.width = `${playerWidth + playlistWidth}px`;
       this.playerContainer_.style.height = `${playerHeight}px`;
       if (this.playlistMenu) {
-          (this.playlistMenu.el() as HTMLElement).style.width = `${playlistWidth}px`;
+        (this.playlistMenu.el() as HTMLElement).style.width = `${playlistWidth}px`;
       }
+    }
   }
-}
 
   private initMenu_(opts: PlaylistOptions) {
     // tear down old
@@ -164,7 +168,7 @@ private updateLayout_() {
       playOnSelect: true,
       supportsCssPointerEvents: supportsCssPointerEvents
     };
-    
+
     // merge in widgetProps
     const uiOpts = videojs.mergeOptions(defaults, opts.widgetProps || {});
 
@@ -182,8 +186,8 @@ private updateLayout_() {
 
     // 2. Append the menu's element directly to our main wrapper.
     if (this.playerContainer_) {
-        this.playerContainer_.appendChild(menu.el());
-        this.playerContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
+      this.playerContainer_.appendChild(menu.el());
+      this.playerContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
     }
 
     // 3. Store the reference to the new menu.
@@ -205,6 +209,19 @@ private updateLayout_() {
     } else if (typeof opts.autoAdvance === 'number') {
       this.autoAdvance_.setDelay(opts.autoAdvance);
     }
+
+    // presentUpcoming
+    if (opts.presentUpcoming === false) {
+      this.presentUpcomingThreshold_ = null;
+    } else if (typeof opts.presentUpcoming === 'number' && opts.presentUpcoming > 0) {
+      this.presentUpcomingThreshold_ = opts.presentUpcoming;
+    } else if (opts.presentUpcoming === true) {
+      this.presentUpcomingThreshold_ = 10; // Default to 10 seconds
+    } else {
+      this.presentUpcomingThreshold_ = null;
+    }
+    this.setupPresentUpcoming_();
+
   }
 
   /** Load a new playlist array */
@@ -268,6 +285,9 @@ private updateLayout_() {
     if (this.autoAdvance_) {
       this.autoAdvance_.fullReset();
     }
+
+    this.presentUpcomingComponent_?.dispose();
+    this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
 
     // Stop handling non-playlist source changes
     this.player_.off('loadstart', this.handleSourceChange_);
@@ -511,4 +531,74 @@ A value of 0 causes the next video to play immediately after the previous one fi
     this.autoAdvance_.fullReset();
     this.playlist_.setCurrentIndex(null);
   }
+
+
+  // if presentUpcoming is set, this will be called to initialise the component
+  private initPresentUpcoming_(opts: PlaylistOptions, player: Player) {
+    // create present upcoming container
+    // show the thumbnail of the next item in the playlist
+    // show the title of the video
+    // container should be at the bottom of the video just above the progress control
+    // when progress control is not visible, when user is not interacting with the video, video is paused or playing, it should slide down (proper transition) to the bottom of the video 
+
+  }
+
+  private setupPresentUpcoming_() {
+    // Always remove the old component first
+    this.presentUpcomingComponent_?.dispose();
+    this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
+  
+    if (this.presentUpcomingThreshold_ === null) {
+      // If the feature is disabled, we're done.
+      return;
+    }
+  
+    // Create and add the new component to the player
+    this.presentUpcomingComponent_ = this.player_.addChild('PresentUpcoming', this.playerOptions_) as PresentUpcoming;
+  
+    // Listen for time updates to know when to show it
+    this.player_.on('timeupdate', this.handleTimeUpdateForUpcoming_);
+  
+    // Also hide it immediately when a new source starts loading
+    this.player_.on('loadstart', () => {
+      this.presentUpcomingComponent_?.hide();
+    });
+  }
+
+
+  private handleTimeUpdateForUpcoming_ = () => {
+    if (!this.presentUpcomingComponent_ || this.presentUpcomingThreshold_ === null) {
+      return;
+    }
+  
+    const currentTime = this.player_.currentTime();
+    const duration = this.player_.duration();
+  
+    // Ensure we have valid numbers to work with
+    if (!currentTime || !duration || !isFinite(duration) || !isFinite(currentTime)) {
+      return;
+    }
+  
+    const remainingTime = duration - currentTime;
+    const isTimeToShow = remainingTime <= this.presentUpcomingThreshold_ && remainingTime > 0;
+  
+    if (isTimeToShow) {
+      // Check if the component is already visible to avoid unnecessary updates
+      if (this.presentUpcomingComponent_.hasClass('vjs-hidden')) {
+        const nextIndex = this.playlist_.getNextIndex();
+  
+        // Only show if there is a next video
+        if (nextIndex !== -1) {
+          const nextItem = this.playlist_.getItems()[nextIndex];
+          this.presentUpcomingComponent_.update(nextItem);
+          this.presentUpcomingComponent_.show();
+        }
+      }
+    } else {
+      // If we are outside the time window, ensure it's hidden
+      if (!this.presentUpcomingComponent_.hasClass('vjs-hidden')) {
+        this.presentUpcomingComponent_.hide();
+      }
+    }
+  };
 }
