@@ -12,7 +12,7 @@ $placeholder-background-color: #303030;
 
 // --- Main Layout (Now fully dynamic) ---
 
-.player-container {
+.ik-player-container {
   display: grid; /* Use Grid for perfect ratio control */
   margin: 0 auto 20px;
   background: #1a1a1a;
@@ -39,7 +39,7 @@ $placeholder-background-color: #303030;
 }
 
 // Horizontal Playlist Layout Structure
-.player-container.vjs-playlist-horizontal-container {
+.ik-player-container.vjs-playlist-horizontal-container {
   /* For horizontal, player is 4 parts high, playlist is 1 part high */
   grid-template-columns: 1fr;
   grid-template-rows: 4fr 1fr;

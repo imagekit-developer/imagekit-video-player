@@ -8,7 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@imagekit/video-player/vue': path.resolve(__dirname, '../../packages/video-player/dist/vue'),
-      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player'),
+      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player/dist'),
     }
   },
 })

@@ -47,5 +47,5 @@ const playlist: {
 
 <style>
 /* Global import for video-js styles */
-@import '@imagekit/video-player/dist/styles.css';
+@import '@imagekit/video-player/styles.css';
 </style>

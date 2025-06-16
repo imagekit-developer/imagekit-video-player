@@ -58,9 +58,9 @@ export class PlaylistManager {
 
       // Check if the container already exists to avoid re-wrapping
       let wrapper = playerEl.parentElement;
-      if (!wrapper || !wrapper.classList.contains('player-container')) {
+      if (!wrapper || !wrapper.classList.contains('ik-player-container')) {
         wrapper = document.createElement('div');
-        wrapper.className = 'player-container';
+        wrapper.className = 'ik-player-container';
         playerEl.parentNode?.insertBefore(wrapper, playerEl);
         wrapper.appendChild(playerEl);
       }
@@ -385,7 +385,8 @@ A value of 0 causes the next video to play immediately after the previous one fi
     this.player_.src(item);
 
     this.player_.ready(() => {
-      this.addItemTextTracks_(item);
+      // @todo commenting it since, we already add text tracks in the player.src call
+      // this.addItemTextTracks_(item);
       this.player_.trigger('playlistitem', item);
     });
   }

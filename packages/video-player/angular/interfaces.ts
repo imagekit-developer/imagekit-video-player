@@ -9,6 +9,4 @@ export interface IKVideoPlayerProps {
         sources: SourceOptions[];
         options?: PlaylistOptions;
     };
-    className?: string;
-    style?: { [key: string]: any };
 }

@@ -94,11 +94,8 @@ export const IKVideoPlayer = defineComponent({
     return h('video', {
       ref: 'videoElement', // Vue will link this string ref to the ref of the same name from setup()
       class: this.playerClass,
-      style: this.style,
       controls: true,
       preload: 'auto',
-      height: "540px",
-      width: "960px",
     });
   },
 });

@@ -1,9 +1,13 @@
 import { initVttRedirect } from './modules/seek-thumbnails/mockSeekThumbnailsVTT';
+import { initSubtitlesRedirect, defaultSubtitlesMap } from './modules/subtitles/mockSubtitlesUrlFetch';
 
 // ————————————————
 // MOCK SETUP (for local/dev/demo only)
 // ————————————————
 initVttRedirect("https://ik.imagekit.io/zuqlyov9d/default.vtt?updatedAt=1747359261941&ik-s=92c20a03ddc26ab8efa179fc0ffa11dc132590e6");
+
+// Initialize subtitles redirect with default mapping
+initSubtitlesRedirect(defaultSubtitlesMap);
 
 import videojs from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
@@ -19,6 +23,7 @@ import './modules/recommendations-overlay/recommendations-overlay';
 import { overrideAddRemoteTextTrack } from './modules/subtitles/subtitles';
 import { ShoppableManager } from './modules/shoppable/shoppable-manager';
 import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc } from './utils';
+import { enableFloatingPlayer } from './modules/floating-player';
 
 const defaults: PlayerOptions = {
   imagekitId: 'random_id',
@@ -48,10 +53,14 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     try {
       validateIKPlayerOptions(this.ikGlobalSettings_);
 
-      overrideAddRemoteTextTrack(this.player);
+      overrideAddRemoteTextTrack(this.player, this.getOriginalFirstSource,  this.ikGlobalSettings_.signerFn);
       this.overrideSrc();
 
       this.playlistManger_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
+
+      if (this.ikGlobalSettings_.floatingWhenNotVisible) {
+        enableFloatingPlayer(this.player, this.ikGlobalSettings_.floatingWhenNotVisible);
+      }
 
       this.player.on('loadstart', async () => {
 
@@ -92,7 +101,6 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         if (src && src.shoppable) {
           this.shoppableManager_ = new ShoppableManager(this.player, src.shoppable);
         }
-
       });
     }
     catch (err) {
@@ -212,12 +220,13 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           return;
         }
         // add chapters track
-        const chaptersTrack = this.player.addRemoteTextTrack({
-          kind: 'chapters',
-          label: 'Chapters',
-          src: 'https://ik.imagekit.io/zuqlyov9d/chapters.vtt',
-          default: false,
-        }, false);
+        // @todo commented this. You are overriding remoteTextTrack. Verify the correctness of this.
+        // const chaptersTrack = this.player.addRemoteTextTrack({
+        //   kind: 'chapters',
+        //   label: 'Chapters',
+        //   src: 'https://ik.imagekit.io/zuqlyov9d/chapters.vtt',
+        //   default: false,
+        // }, false);
         const data = await res.text();
         chapterList = parseChaptersFromVTT(data);
       } catch (e) {
@@ -257,6 +266,22 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
   public getPlaylistManager() {
     return this.playlistManger_;
+  }
+
+  // Helper to get the first source object consistently
+  private getFirstSource = (): SourceOptions | null => {
+    if (!this.currentSource_) {
+      return null;
+    }
+    return Array.isArray(this.currentSource_) ? this.currentSource_[0] : this.currentSource_;
+  }
+
+  // Helper to get original source object consistently
+  private getOriginalFirstSource = (): SourceOptions | null => {
+    if (!this.originalCurrentSource_) {
+      return null;
+    }
+    return Array.isArray(this.originalCurrentSource_) ? this.originalCurrentSource_[0] : this.originalCurrentSource_;
   }
 }
 

@@ -4,6 +4,7 @@ import '@imagekit/video-player/dist/styles.css';
 const player = videoPlayer('video', {
   imagekitId: 'YOUR_IMAGEKIT_ID',
   seekThumbnails: true,
+  floatingWhenNotVisible: "right",
   logo: {
     showLogo: true,
     logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
@@ -278,12 +279,28 @@ const playlistManager = player.playlist({
       chapters: true,
       info: { title: 'Human', subtitle: 'Human lying in grass', description: 'This is a video showing human lying on the grass. He is smiling.' },
       textTracks: [
+        // {
+        //   autoGenerateSubtitles: true,
+        //   maxWords: 4,
+        //   wordHighlight: true,
+        //   default: true // Indicates whether this track is active by default
+        // },
         {
           autoGenerateSubtitles: true,
-          maxWords: 4,
-          wordHighlight: true,
-          default: true // Indicates whether this track is active by default
-        }]
+          translate: [
+            {
+              langCode: 'fr',
+              label: 'French auto-generated',
+              default: true // Indicates whether this track is active by default
+            },
+            {
+              langCode: 'de',
+              label: 'German auto-generated',
+              default: false // Indicates whether this track is active by default
+            }
+          ]
+        }
+      ]
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4',
@@ -762,7 +779,7 @@ const playlistManager = player.playlist({
       // }
     },
   ], options: {
-    autoAdvance: false,
+    autoAdvance: 5,
     repeat: true,
     presentUpcoming: 10,
     widgetProps: { direction: 'vertical' }
