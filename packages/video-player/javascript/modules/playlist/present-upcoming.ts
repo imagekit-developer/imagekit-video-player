@@ -13,6 +13,8 @@ export class PresentUpcoming extends Component {
   private thumbnailEl_: HTMLElement;
   private textEl_: HTMLElement;
   private titleEl_: HTMLElement;
+  private closeButtonEl_: HTMLElement;
+
 
   constructor(player: Player, playerOptions: PlayerOptions) {
     super(player);
@@ -22,9 +24,21 @@ export class PresentUpcoming extends Component {
     this.textEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-text-2' }, {}, 'Next up:') as HTMLElement;
     this.titleEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-title' }) as HTMLElement;
 
+    this.closeButtonEl_ = videojs.dom.createEl('div', {
+      className: 'vjs-up-next-close-button',
+      title: 'Dismiss' // Accessibility: a tooltip for the button
+    }) as HTMLElement;
+
+    this.closeButtonEl_.addEventListener('click', (e) => {
+      e.stopPropagation(); // Stop the click from bubbling up to the parent div
+      this.trigger('dismiss'); // Fire a custom event to notify the manager
+    });
+
     this.el().appendChild(this.thumbnailEl_);
     this.el().appendChild(this.textEl_);
     this.el().appendChild(this.titleEl_);
+    this.el().appendChild(this.closeButtonEl_);
+
 
     // Start hidden
     this.hide();
@@ -36,8 +50,11 @@ export class PresentUpcoming extends Component {
     }) as HTMLElement;
 
     // Make it clickable to advance to the next video immediately
-    el.addEventListener('click', () => {
-      (this.player_ as any).imagekitVideoPlayer().getPlaylistManager().playNext();
+    el.addEventListener('click', (e) => {
+      // Prevent the close button itself from triggering "playNext"
+      if (e.target !== this.closeButtonEl_) {
+        (this.player_ as any).imagekitVideoPlayer().getPlaylistManager().playNext();
+      }
     });
 
     return el;

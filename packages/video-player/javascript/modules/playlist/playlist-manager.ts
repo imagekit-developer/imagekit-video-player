@@ -29,6 +29,8 @@ export class PlaylistManager {
   private playlistOptions_: PlaylistOptions;
   private presentUpcomingComponent_?: PresentUpcoming;
   private presentUpcomingThreshold_: number | null = null;
+  private isUpcomingDismissed_ = false;
+
 
   constructor(player: Player, playerOptions: PlayerOptions) {
     this.player_ = player;
@@ -543,6 +545,12 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   }
 
+  private handleUpcomingDismiss_ = () => {
+    // When dismissed, set the flag and hide the component immediately.
+    this.isUpcomingDismissed_ = true;
+    this.presentUpcomingComponent_?.hide();
+  };
+
   private setupPresentUpcoming_() {
     // Always remove the old component first
     this.presentUpcomingComponent_?.dispose();
@@ -555,6 +563,9 @@ A value of 0 causes the next video to play immediately after the previous one fi
   
     // Create and add the new component to the player
     this.presentUpcomingComponent_ = this.player_.addChild('PresentUpcoming', this.playerOptions_) as PresentUpcoming;
+
+    this.presentUpcomingComponent_.on('dismiss', this.handleUpcomingDismiss_);
+
   
     // Listen for time updates to know when to show it
     this.player_.on('timeupdate', this.handleTimeUpdateForUpcoming_);
@@ -562,6 +573,9 @@ A value of 0 causes the next video to play immediately after the previous one fi
     // Also hide it immediately when a new source starts loading
     this.player_.on('loadstart', () => {
       this.presentUpcomingComponent_?.hide();
+      // --- CHANGE: MOVED TO HERE ---
+      // This is the correct place to reset the dismissed state for the upcoming video.
+      this.isUpcomingDismissed_ = false;
     });
   }
 
@@ -580,7 +594,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
     }
   
     const remainingTime = duration - currentTime;
-    const isTimeToShow = remainingTime <= this.presentUpcomingThreshold_ && remainingTime > 0;
+    const isTimeToShow = remainingTime <= this.presentUpcomingThreshold_ && remainingTime > 0 && !this.isUpcomingDismissed_;
   
     if (isTimeToShow) {
       // Check if the component is already visible to avoid unnecessary updates
@@ -591,6 +605,8 @@ A value of 0 causes the next video to play immediately after the previous one fi
         if (nextIndex !== -1) {
           const nextItem = this.playlist_.getItems()[nextIndex];
           this.presentUpcomingComponent_.update(nextItem);
+          // --- CHANGE: REMOVED FROM HERE ---
+          // this.isUpcomingDismissed_ = false; // This was incorrect.
           this.presentUpcomingComponent_.show();
         }
       }

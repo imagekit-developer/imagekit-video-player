@@ -63,8 +63,10 @@ const playlistManager = player.playlist({
               }
             ],
             onHover: {
-              action: "overlay",
-              args: "Click to see this product in the video"
+              action: "switch",
+              args: {
+                url: "https://ik.imagekit.io/a1yisxurxo/DSC00119.JPG?updatedAt=1748933119715"
+              }
             },
             onClick: {
               action: "seek",
@@ -563,109 +565,42 @@ const playlistManager = player.playlist({
       ],
       chapters: true,
       info: { title: 'Dog 2', subtitle: 'Dog wearing cap', description: 'This is a video containing dog wearing cap.' },
-      // shoppable: {
-      //   transformation: [{ height: "300", width: "400" }],
-      //   products: [
-      //     {
-      //       productId: 1,
-      //       productName: "Sunglasses",
-      //       highlightTime: { start: 0, end: 2 },
-      //       imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-      //       hotspots: [
-      //         {
-      //           time: "00:02",
-      //           x: "50%",
-      //           y: "50%",
-      //           tooltipPosition: "left",
-      //           clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-      //         }
-      //       ],
-      //       onHover: {
-      //         action: "overlay",
-      //         args: "Click to see this product in the video"
-      //       },
-      //       onClick: {
-      //         action: "seek",
-      //         pause: 5,
-      //         args: { time: "00:02" }
-      //       }
-      //     },
-      //     {
-      //       productId: 1,
-      //       productName: "Sunglasses",
-      //       highlightTime: { start: 0, end: 2 },
-      //       imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-      //       hotspots: [
-      //         {
-      //           time: "00:02",
-      //           x: "50%",
-      //           y: "50%",
-      //           tooltipPosition: "left",
-      //           clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-      //         }
-      //       ],
-      //       onHover: {
-      //         action: "overlay",
-      //         args: "Click to see this product in the video"
-      //       },
-      //       onClick: {
-      //         action: "seek",
-      //         pause: 5,
-      //         args: { time: "00:02" }
-      //       }
-      //     },
-      //     {
-      //       productId: 1,
-      //       productName: "Hat",
-      //       highlightTime: { start: 0, end: 2 },
-      //       imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-      //       hotspots: [
-      //         {
-      //           time: "00:02",
-      //           x: "50%",
-      //           y: "50%",
-      //           tooltipPosition: "left",
-      //           clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-      //         }
-      //       ],
-      //       onHover: {
-      //         action: "overlay",
-      //         args: "Click to see this product in the video"
-      //       },
-      //       onClick: {
-      //         action: "seek",
-      //         pause: 5,
-      //         args: { time: "00:04" }
-      //       }
-      //     },
-      //     {
-      //       productId: 1,
-      //       productName: "Shorts",
-      //       highlightTime: { start: 0, end: 2 },
-      //       imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-      //       hotspots: [
-      //         {
-      //           time: "00:02",
-      //           x: "50%",
-      //           y: "50%",
-      //           tooltipPosition: "left",
-      //           clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-      //         }
-      //       ],
-      //       onHover: {
-      //         action: "overlay",
-      //         args: "Click to see this product in the video"
-      //       },
-      //       onClick: {
-      //         action: "seek",
-      //         pause: 5,
-      //         args: { time: "00:06" }
-      //       }
-      //     },
-      //     // …two more products…
-      //   ],
-      //   toggleIconUrl: "https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg"
-      // }
+      recommendations: [
+        {
+          src: 'https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4', info: {
+            title: 'Next Up',
+            subtitle: 'Subtitle that is a little long',
+            description: 'A very long description that will be truncated if it is too long. A very long description that will be truncated if it is too long. A very long description that will be truncated if it is too long. A very long description that will be truncated if it is too long.',
+          },
+          poster: {
+            src: "https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4/ik-thumbnail.jpg"
+          }
+        },
+        {
+          src: 'https://ik.imagekit.io/demo/video2.mp4', info: { title: 'Next Up' },
+          poster: {
+            src: "https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4/ik-thumbnail.jpg"
+          }
+        },
+        {
+          src: 'https://ik.imagekit.io/demo/video2.mp4', info: { title: 'Next Up' },
+          poster: {
+            src: "https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4/ik-thumbnail.jpg"
+          }
+        },
+        {
+          src: 'https://ik.imagekit.io/demo/video2.mp4', info: { title: 'Next Up' },
+          poster: {
+            src: "https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4/ik-thumbnail.jpg"
+          }
+        },
+        {
+          src: 'https://ik.imagekit.io/demo/video2.mp4', info: { title: 'Next Up' },
+          poster: {
+            src: "https://ik.imagekit.io/ikmedia/docs_images/examples/Videos/example_video_2.mp4/ik-thumbnail.jpg"
+          }
+        }
+      ],
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
@@ -779,7 +714,7 @@ const playlistManager = player.playlist({
       // }
     },
   ], options: {
-    autoAdvance: 5,
+    autoAdvance: false,
     repeat: true,
     presentUpcoming: 10,
     widgetProps: { direction: 'vertical' }
@@ -791,11 +726,11 @@ player.on(['loadstart'], () => {
 });
 
 player.on(['loadedmetadata'], () => {
-console.log('Metadata loaded');
+  console.log('Metadata loaded');
 });
 
 player.on(['loadeddata'], () => {
-console.log('data loaded fired');
+  console.log('data loaded fired');
 });
 
 playlistManager.loadFirstItem();

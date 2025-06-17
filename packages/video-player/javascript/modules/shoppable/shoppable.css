@@ -131,7 +131,10 @@
 }
 .vjs-shoppable-item-img {
   width: 100%;
-  height: auto;
+  /* The next 3 lines are the fix for layout shift */
+  aspect-ratio: 1 / 1;            /* Force a square shape, reserving space */
+  object-fit: cover;              /* Fill the space without distorting the image */
+  background-color: rgba(0, 0, 0, 0.05); /* Adds a subtle placeholder background */
   display: block;
 }
 .vjs-shoppable-item-info {
@@ -212,7 +215,23 @@
   overflow-x: auto;
   max-width: 100%;
   padding-bottom: 20px; /* Space for scrollbar */
+  cursor: grab;
+  user-select: none; /* Prevent text selection while dragging */
+ /* --- HIDE SCROLLBAR --- */
+ -ms-overflow-style: none;  /* IE and Edge */
+ scrollbar-width: none;  /* Firefox */
 }
+
+/* Hides scrollbar on Chrome, Safari, and Opera */
+.vjs-shoppable-postplay-carousel::-webkit-scrollbar {
+ display: none;
+}
+
+.vjs-shoppable-postplay-carousel.is-grabbing {
+  /* Change cursor to a 'closed' hand when dragging */
+  cursor: grabbing;
+}
+
 .vjs-shoppable-postplay-card {
   position: relative; /* Needed for the hover overlay */
   flex-shrink: 0; /* Prevent cards from shrinking */
@@ -291,4 +310,28 @@
 
 .vjs-hidden {
   display: none !important;
+}
+
+.vjs-shoppable-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; /* Cover the entire item area */
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+  opacity: 0; /* Start hidden */
+  transition: opacity 0.25s ease-in-out;
+  pointer-events: none; /* Allow hover effects to pass through if needed */
+}
+
+/* Make the overlay visible when hovering over the parent item */
+.vjs-shoppable-item:hover .vjs-shoppable-item-overlay {
+  opacity: 1;
 }

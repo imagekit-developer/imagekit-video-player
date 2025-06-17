@@ -310,7 +310,7 @@ export function videoPlayer(
  if (options.hideContextMenu === true) {
   // If hiding is requested, add a listener that ONLY prevents the default menu.
   // This will disable all right-click menus on the player.
-  player.on('contextmenu', (e) => {
+  player.on('contextmenu', (e: Event) => {
     e.preventDefault();
   });
 } else {
