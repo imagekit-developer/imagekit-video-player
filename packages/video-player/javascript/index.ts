@@ -12,6 +12,7 @@ initSubtitlesRedirect(defaultSubtitlesMap);
 import videojs from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
 import './modules/http-source-selector/plugin';
+import './modules/context-menu/plugin';
 import type { PlayerOptions, RemoteTextTrackOptions } from './interfaces';
 import type Player from 'video.js/dist/types/player';
 import type { SourceOptions } from './interfaces';
@@ -299,11 +300,77 @@ export function videoPlayer(
     plugins: {
       ...(playerOptions.plugins ?? {}),
       httpSourceSelector: { default: 'auto' },
-      imagekitVideoPlayer: options
+      imagekitVideoPlayer: options,
     },
   });
   // @ts-ignore
   player.httpSourceSelector();
+  // @ts-ignore
+ // Explicitly handle both cases for the context menu
+ if (options.hideContextMenu === true) {
+  // If hiding is requested, add a listener that ONLY prevents the default menu.
+  // This will disable all right-click menus on the player.
+  player.on('contextmenu', (e) => {
+    e.preventDefault();
+  });
+} else {
+  // Otherwise, set up our custom, dynamic context menu.
+  
+  /**
+   * Helper function to generate the context menu content
+   * based on the player's current state.
+   */
+  const createContextMenuContent = () => {
+    return [{
+      label: player.paused() ? "Play" : "Pause",
+      listener: function () {
+        if (player.paused()) {
+          player.play();
+        } else {
+          player.pause();
+        }
+      }
+    },
+    {
+      label: player.loop() ? "Unloop" : "Loop",
+      listener: function () {
+        player.loop(!player.loop());
+      }
+    },
+    {
+      label: player.muted() ? "Unmute" : "Mute",
+      listener: function () {
+        player.muted(!player.muted());
+      }
+    },
+    {
+      label: player.isFullscreen() ? "Exit Fullscreen" : "Fullscreen",
+      listener: function () {
+        if (player.isFullscreen()) {
+          player.exitFullscreen();
+        } else {
+          player.requestFullscreen();
+        }
+      }
+    }];
+  };
+
+  // Initialize the context menu with the initial content.
+  // The contextmenuUI plugin internally handles preventDefault for this case.
+  // @ts-ignore
+  player.contextmenuUI({
+    content: createContextMenuContent()
+  });
+
+  // Add an event listener to update the menu content on every right-click
+  player.on('contextmenu', () => {
+    // @ts-ignore
+    player.contextmenuUI({
+        content: createContextMenuContent()
+    });
+  });
+}
+
   return player;
 }
 
