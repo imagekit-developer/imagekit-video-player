@@ -71,8 +71,8 @@ export class ShoppableManager {
     const toggle = document.createElement('div');
     toggle.className = 'vjs-shoppable-toggle';
 
-    const openIconUrl = this.shoppable_.toggleIconUrl || 'https://ik.imagekit.io/zuqlyov9d/shopping-cart-svgrepo-com.svg?updatedAt=1718002012423';
-    const closeIconUrl = 'https://ik.imagekit.io/zuqlyov9d/cross-svgrepo-com.svg?updatedAt=17180872cross';
+    const openIconUrl = this.shoppable_.toggleIconUrl || 'https://imagekit.io/icons/icon-144x144.png';
+    const closeIconUrl = 'https://imagekit.io/icons/icon-144x144.png';
 
     const openIcon = document.createElement('div');
     openIcon.className = 'vjs-shoppable-toggle-icon icon-open';
@@ -211,6 +211,9 @@ export class ShoppableManager {
   }
 
   private onEnded() {
+    if (this.closeBar) {
+      this.closeBar(true);
+    }
     if (this.postPlayOverlay_) {
       this.postPlayOverlay_.classList.remove('vjs-hidden');
       if (this.toggleButton_) this.toggleButton_.classList.add('vjs-hidden');
@@ -405,6 +408,10 @@ export class ShoppableManager {
   }
 
   public destroy() {
+    if(this.closeBar)
+    {
+      this.closeBar(true);
+    }
     if (this.tickHandler_) {
       this.player_.off('timeupdate', this.tickHandler_);
     }

@@ -28,6 +28,7 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
     const setFloating = (isFloating) => {
         const className = `ik-player-floating-${floatPosition}`;
         if (isFloating) {
+            playerElement.classList.remove('shoppable-panel-visible');
             playerElement.classList.add('ik-player-floating', className);
             addCloseButton();
         } else {
@@ -40,15 +41,10 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
     // --- CLOSE BUTTON with SVG ICON ---
     const addCloseButton = () => {
         if (playerElement.querySelector('.ik-floating-close-button')) return;
-        const closeButton = document.createElement('button');
+        const closeButton = document.createElement('div');
         closeButton.className = 'ik-floating-close-button';
         closeButton.setAttribute('aria-label', 'Close floating video');
-        closeButton.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      `;
+        closeButton.innerHTML = "&#10005;";
         closeButton.onclick = (e) => {
             // Stop click from bubbling up to the player and toggling play/pause
             e.stopPropagation();

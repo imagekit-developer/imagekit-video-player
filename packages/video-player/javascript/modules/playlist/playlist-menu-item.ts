@@ -7,24 +7,6 @@ import { preparePosterSrc } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
-function createThumbnail(poster?: string) {
-  const picture = document.createElement('picture');
-  picture.className = 'vjs-playlist-thumbnail';
-
-  if (!poster) {
-    picture.classList.add('vjs-playlist-thumbnail-placeholder');
-    return picture;
-  }
-
-  const img = document.createElement('img');
-  img.loading = 'lazy';
-  img.src = poster;
-  img.alt = '';
-  picture.appendChild(img);
-
-  return picture;
-}
-
 interface PlaylistMenuItemOptions {
   item: SourceOptions;
   showDescription?: boolean;
@@ -79,46 +61,51 @@ export class PlaylistMenuItem extends Component {
     li.tabIndex = 0;
 
     // Thumbnail
-    // console.log("createEl playlistMenuItems", this)
-    // this.thumbnail = createThumbnail(this.options_.item.poster?.src);
-    // li.appendChild(this.thumbnail);
-       // 1) create thumbnail container
-       this.thumbnail = document.createElement('div');
-       this.thumbnail.className = 'vjs-playlist-thumbnail';
-       li.appendChild(this.thumbnail);
-   
-       // 2) spinner
-       this.spinnerEl = document.createElement('div');
-       this.spinnerEl.className = 'vjs-playlist-thumbnail-spinner'; 
-       // you can style this in your SCSS to show a CSS spinner
-       this.thumbnail.appendChild(this.spinnerEl);
-   
-       // 3) kick off async poster load
-       preparePosterSrc(this.options_.item, this.options_.playerOptions)
-         .then(url => {
-           // remove spinner
-           if (this.spinnerEl) {
-            this.spinnerEl.remove();
-          }
-   
-           // create & insert image
-           this.imgEl = document.createElement('img');
-           this.imgEl.loading = 'lazy';
-           this.imgEl.src     = url;
-           this.imgEl.alt     = this.options_.item.info?.title || '';
-           this.thumbnail.appendChild(this.imgEl);
-         })
-         .catch(err => {
-          this.player_.error({
-            message: `Failed to load poster for playlist item: ${err.message}`,
-            cause: err
-          });
-           // poster generation failed: remove spinner and show placeholder
-           if (this.spinnerEl) {
-            this.spinnerEl.remove();
-          }
-           this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
-         });
+  
+    // 1) create thumbnail container
+    this.thumbnail = document.createElement('div');
+    this.thumbnail.className = 'vjs-playlist-thumbnail';
+    li.appendChild(this.thumbnail);
+
+    // 2) spinner
+    this.spinnerEl = document.createElement('div');
+    this.spinnerEl.className = 'vjs-playlist-thumbnail-spinner';
+    // you can style this in your SCSS to show a CSS spinner
+    this.thumbnail.appendChild(this.spinnerEl);
+
+    // 3) kick off async poster load
+    preparePosterSrc(this.options_.item, this.options_.playerOptions)
+      // FIX: Use an arrow function to preserve `this` context
+      .then((url) => {
+        if (!this.el_) {
+          return;
+        }
+
+        if (this.spinnerEl) {
+          this.spinnerEl.remove();
+        }
+
+        this.imgEl = document.createElement('img');
+        this.imgEl.loading = 'lazy';
+        this.imgEl.src = url;
+        this.imgEl.alt = this.options_.item.info?.title || '';
+        this.thumbnail.appendChild(this.imgEl); // `this.thumbnail` is now defined
+      })
+      // FIX: Use an arrow function to preserve `this` context
+      .catch((err) => {
+        if (!this.el_) {
+          return;
+        }
+        this.player_.error({
+          message: `Failed to load poster for playlist item: ${err.message}`,
+          cause: err,
+        });
+        if (this.spinnerEl) {
+          this.spinnerEl.remove();
+        }
+        // `this.thumbnail` is now defined
+        this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
+      });
 
     // Now playing
     const nowPlayingEl = document.createElement('span');
@@ -137,7 +124,7 @@ export class PlaylistMenuItem extends Component {
 
     // Up next
     const upNextEl = document.createElement('span');
-    const upNextText = this.localize('Up Next');
+    const upNextText = this.localize('Next up');
     upNextEl.className = 'vjs-up-next-text';
     upNextEl.appendChild(document.createTextNode(upNextText));
     upNextEl.setAttribute('title', upNextText);
@@ -149,7 +136,7 @@ export class PlaylistMenuItem extends Component {
     titleEl.className = 'vjs-playlist-name';
     titleEl.textContent = title;
     titleEl.title = title;
-    titleContainerEl.appendChild(titleEl); 
+    titleContainerEl.appendChild(titleEl);
 
 
 

@@ -254,7 +254,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
     const overlay = this.player.getChild('RecommendationsOverlay');
     if (overlay) overlay.dispose();
-    this.player.addChild('RecommendationsOverlay', { recommendations: src.recommendations });
+    this.player.addChild('RecommendationsOverlay', { recommendations: src.recommendations, playerOptions: this.ikGlobalSettings_ });
   }
 
   public getCurrentSource() {

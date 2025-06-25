@@ -11,7 +11,7 @@ export class PresentUpcoming extends Component {
   private item_?: SourceOptions;
   private playerOptions_: PlayerOptions;
   private thumbnailEl_: HTMLElement;
-  private textEl_: HTMLElement;
+  // private textEl_: HTMLElement;
   private titleEl_: HTMLElement;
   private closeButtonEl_: HTMLElement;
 
@@ -21,13 +21,15 @@ export class PresentUpcoming extends Component {
     this.playerOptions_ = playerOptions;
 
     this.thumbnailEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-thumbnail' }) as HTMLElement;
-    this.textEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-text-2' }, {}, 'Next up:') as HTMLElement;
-    this.titleEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-title' }) as HTMLElement;
+    // this.textEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-text-2' }, {}, 'Next up:') as HTMLElement;
+    this.titleEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-title' }, {}, "Next up") as HTMLElement;
 
     this.closeButtonEl_ = videojs.dom.createEl('div', {
       className: 'vjs-up-next-close-button',
       title: 'Dismiss' // Accessibility: a tooltip for the button
     }) as HTMLElement;
+
+    this.closeButtonEl_.innerHTML = "&#10005;"
 
     this.closeButtonEl_.addEventListener('click', (e) => {
       e.stopPropagation(); // Stop the click from bubbling up to the parent div
@@ -35,7 +37,7 @@ export class PresentUpcoming extends Component {
     });
 
     this.el().appendChild(this.thumbnailEl_);
-    this.el().appendChild(this.textEl_);
+    // this.el().appendChild(this.textEl_);
     this.el().appendChild(this.titleEl_);
     this.el().appendChild(this.closeButtonEl_);
 
@@ -73,13 +75,13 @@ export class PresentUpcoming extends Component {
     // Clear previous thumbnail
     this.thumbnailEl_.innerHTML = '';
     const title = item.info?.title || this.localize('Untitled Video');
-    this.titleEl_.textContent = title;
+    this.titleEl_.textContent = `Next up: ${title}`;
 
     try {
       const posterUrl = await preparePosterSrc(item, this.playerOptions_);
       const img = document.createElement('img');
       img.src = posterUrl;
-      img.alt = title;
+      img.alt = `Next up: ${title}`;
       this.thumbnailEl_.appendChild(img);
     } catch (e) {
       // If poster fails, show a placeholder
