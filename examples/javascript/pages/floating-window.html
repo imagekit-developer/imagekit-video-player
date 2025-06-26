@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Floating Window Example</title>
+    <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">&larr; Back to examples</a>
+        <h1>Floating Window Example</h1>
+        <p>Scroll down the page to see the player shrink and float in the corner.</p>
+        <video id="player" class="video-js" controls preload="auto" width="960" height="540"></video>
+        <h2>Example Code</h2>
+        <div class="code-block">
+            <pre><code id="code-display" class="language-javascript"></code></pre>
+        </div>
+        <div style="height: 2000px; padding-top: 2rem; border-top: 1px solid #ddd; margin-top: 2rem;">
+            <h2>Scroll down to test...</h2>
+            <p>As you scroll down and the main player leaves the viewport, it will automatically float into the corner so you can keep watching.</p>
+        </div>
+    </div>
+    <script type="module" src="/src/floating-window.ts"></script>
+</body>
+</html>
