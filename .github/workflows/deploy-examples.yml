@@ -25,6 +25,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Enable Corepack to use the yarn version defined in package.json
+      - name: Enable Corepack
+        run: corepack enable
+
+
       - name: Set up Node.js and Yarn
         uses: actions/setup-node@v4
         with:
