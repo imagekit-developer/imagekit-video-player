@@ -1,14 +1,14 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import type { PlayerOptions, SourceOptions } from '../../interfaces';
+import type { PlayerOptions, SourceOptions, Transformation } from '../../interfaces';
 import { Playlist } from './playlist';
 import { preparePosterSrc } from '../../utils';
-
+import { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
 
 const Component = videojs.getComponent('Component');
 
 interface PlaylistMenuItemOptions {
-  item: SourceOptions;
+  item: AugmentedSourceOptions;
   showDescription?: boolean;
   playOnSelect?: boolean;
   children?: any[];
@@ -16,8 +16,15 @@ interface PlaylistMenuItemOptions {
   playerOptions?: PlayerOptions;
 }
 
+const DEFAULT_TRANSFORMATION: Transformation = {
+  width: 400,
+  aspectRatio: '16-9',
+  cropMode: 'pad_resize',
+  background: 'black',
+}
+
 export class PlaylistMenuItem extends Component {
-  private item: SourceOptions;
+  private item: AugmentedSourceOptions;
   private spinnerEl!: HTMLElement;
   private thumbnail!: HTMLElement;
   private imgEl?: HTMLImageElement;
@@ -27,7 +34,7 @@ export class PlaylistMenuItem extends Component {
 
   constructor(player: Player, playlist: Playlist, options: PlaylistMenuItemOptions, playerOptions: PlayerOptions) {
     // @ts-ignore
-    super(player, { ...options, playerOptions: playerOptions });
+    super(player, options);
     this.item = options.item;
     this.playOnSelect = !!options.playOnSelect;
     this.playlist = playlist
@@ -55,13 +62,40 @@ export class PlaylistMenuItem extends Component {
     }
   }
 
+  private getItem() {
+    return this.options_.item;
+  }
+
+  private async getThumbnail() {
+    const item = this.getItem();
+    if (!item) {
+      throw new Error('No item provided for thumbnail');
+    }
+    if (item?.prepared?.playlistThumbnail) {
+      return item.prepared.playlistThumbnail;
+    }
+    if (!item.poster?.transformation) {
+      if (!item.poster) {
+        item.poster = {};
+      }
+      item.poster.transformation = [DEFAULT_TRANSFORMATION]
+
+    }
+    const preparedUrl = await preparePosterSrc(item, (this.player_ as any).imagekitVideoPlayer().getPlayerOptions())
+    if(!this.item.prepared) {
+      this.item.prepared = {};
+    }
+    this.item.prepared.playlistThumbnail = preparedUrl; // Store the prepared URL in the item
+    return preparedUrl;
+  }
+
   createEl(): HTMLElement {
     const li = document.createElement('li');
     li.className = 'vjs-playlist-item';
     li.tabIndex = 0;
 
     // Thumbnail
-  
+
     // 1) create thumbnail container
     this.thumbnail = document.createElement('div');
     this.thumbnail.className = 'vjs-playlist-thumbnail';
@@ -73,8 +107,8 @@ export class PlaylistMenuItem extends Component {
     // you can style this in your SCSS to show a CSS spinner
     this.thumbnail.appendChild(this.spinnerEl);
 
-    // 3) kick off async poster load
-    preparePosterSrc(this.options_.item, this.options_.playerOptions)
+
+    this.getThumbnail()
       // FIX: Use an arrow function to preserve `this` context
       .then((url) => {
         if (!this.el_) {
@@ -86,10 +120,12 @@ export class PlaylistMenuItem extends Component {
         }
 
         this.imgEl = document.createElement('img');
+        this.imgEl.className = 'vjs-playlist-thumbnail-img';
         this.imgEl.loading = 'lazy';
         this.imgEl.src = url;
         this.imgEl.alt = this.options_.item.info?.title || '';
         this.thumbnail.appendChild(this.imgEl); // `this.thumbnail` is now defined
+        this.thumbnail.style.backgroundImage = `url('${url}')`;
       })
       // FIX: Use an arrow function to preserve `this` context
       .catch((err) => {

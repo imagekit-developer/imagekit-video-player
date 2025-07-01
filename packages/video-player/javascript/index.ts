@@ -16,6 +16,7 @@ import './modules/context-menu/plugin';
 import type { PlayerOptions, RemoteTextTrackOptions } from './interfaces';
 import type Player from 'video.js/dist/types/player';
 import type { SourceOptions } from './interfaces';
+import type { AugmentedSourceOptions } from './interfaces/AugementedSourceOptions';
 
 import { PlaylistManager } from './modules/playlist/playlist-manager';
 import { SeekThumbnailsManager } from './modules/seek-thumbnails/seek-thumbnails-manager';
@@ -54,7 +55,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     try {
       validateIKPlayerOptions(this.ikGlobalSettings_);
 
-      overrideAddRemoteTextTrack(this.player, this.getOriginalFirstSource,  this.ikGlobalSettings_.signerFn);
+      overrideAddRemoteTextTrack(this.player, this.getOriginalFirstSource, this.ikGlobalSettings_.signerFn);
       this.overrideSrc();
 
       this.playlistManger_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
@@ -122,7 +123,6 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         return nativeSrc(raw as any);
       }
 
-      // hide the big play button
       const bigPlay = this.player.getChild('BigPlayButton');
       bigPlay && bigPlay.hide();
       // show the spinner
@@ -137,11 +137,36 @@ class ImageKitVideoPlayerPlugin extends Plugin {
       this.originalCurrentSource_ = typeof inputs[0] === 'string' ? { src: inputs[0] } : { ...inputs[0] };
 
       // prepare all of them in parallel
-      Promise.all(inputs.map(i => prepareSource(i, this.ikGlobalSettings_)))
+      Promise.all(inputs.map(i => {
+        if (typeof i === 'object' && this.hasPreparedSrc(i)) {
+          console.log('Using preparedSrc from input:', i.prepared.src);
+          return Promise.resolve(i as SourceOptions);
+        }
+        else {
+          // if prepared.src is not set, prepare the source
+          return prepareSource(i, this.ikGlobalSettings_);
+        }
+      }))
         .then(async (prepared: SourceOptions[]) => {
           // **only** apply if thisCall is still the last one they requested
           if (myCallId === this.srcCallVersion) {
             const { maxTries, videoTimeoutInMS, delayInMS } = this.ikGlobalSettings_;
+            // set prepared.src
+            inputs.forEach((src) => {
+              // @ts-ignore
+              if (!this.hasPreparedSrc(src)) {
+                // if src is not prepared, set the src directly
+
+                // @ts-ignore
+                if (!src.prepared)
+                {
+                  // @ts-ignore
+                  src.prepared = {}
+                }
+                // @ts-ignore
+                src.prepared.src = prepared[0].src;
+              }
+            });
 
             await waitForVideoReady(
               prepared[0].src,
@@ -164,15 +189,36 @@ class ImageKitVideoPlayerPlugin extends Plugin {
             const currentSource_ = Array.isArray(this.currentSource_)
               ? this.currentSource_[0]
               : this.currentSource_;
-            preparePosterSrc(currentSource_, this.ikGlobalSettings_).then(
-              poster => {
-                if (poster) {
-                  this.player.poster(poster);
+            // if poster is already prepared, use it directly
+            // @ts-ignore
+            if (currentSource_?.prepared.poster) {
+              console.log("Using prepared poster src")
+              // @ts-ignore
+              this.player.poster(currentSource_?.prepared.poster);
+            }
+            else {
+              preparePosterSrc(currentSource_, this.ikGlobalSettings_).then(
+                poster => {
+                  // if preparedPosterSrc is not empty, set it
+                  // @ts-ignore
+                  // currentSource_.preparedPosterSrc = poster;
+                  // set the poster on the player
+                  if (poster) {
+                    this.player.poster(poster);
+                  }
+                  // @ts-ignore
+                  if (!currentSource_.prepared) {
+                    // @ts-ignore
+                    currentSource_.prepared = {};
+                  }
+                  // @ts-ignore
+                  currentSource_.prepared.poster = poster;
                 }
-              }
-            ).catch(err => {
-              this.player.error(err.message);
-            });
+              ).catch(err => {
+                this.player.error(err.message);
+              });
+            }
+
 
           }
         })
@@ -253,6 +299,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     if (!src.recommendations) return;
 
     const overlay = this.player.getChild('RecommendationsOverlay');
+    console.log('RecommendationsOverlay:', overlay);
     if (overlay) overlay.dispose();
     this.player.addChild('RecommendationsOverlay', { recommendations: src.recommendations, playerOptions: this.ikGlobalSettings_ });
   }
@@ -284,6 +331,15 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     }
     return Array.isArray(this.originalCurrentSource_) ? this.originalCurrentSource_[0] : this.originalCurrentSource_;
   }
+
+  // Helper to get player options
+  public getPlayerOptions = (): PlayerOptions => {
+    return this.ikGlobalSettings_;
+  }
+
+  private hasPreparedSrc = (opts: SourceOptions): opts is AugmentedSourceOptions => {
+    return (opts as any).prepared && typeof (opts as any).prepared.src === 'string';
+  }
 }
 
 videojs.registerPlugin('imagekitVideoPlayer', ImageKitVideoPlayerPlugin);
@@ -306,70 +362,70 @@ export function videoPlayer(
   // @ts-ignore
   player.httpSourceSelector();
   // @ts-ignore
- // Explicitly handle both cases for the context menu
- if (options.hideContextMenu === true) {
-  // If hiding is requested, add a listener that ONLY prevents the default menu.
-  // This will disable all right-click menus on the player.
-  player.on('contextmenu', (e: Event) => {
-    e.preventDefault();
-  });
-} else {
-  // Otherwise, set up our custom, dynamic context menu.
-  
-  /**
-   * Helper function to generate the context menu content
-   * based on the player's current state.
-   */
-  const createContextMenuContent = () => {
-    return [{
-      label: player.paused() ? "Play" : "Pause",
-      listener: function () {
-        if (player.paused()) {
-          player.play();
-        } else {
-          player.pause();
-        }
-      }
-    },
-    {
-      label: player.loop() ? "Unloop" : "Loop",
-      listener: function () {
-        player.loop(!player.loop());
-      }
-    },
-    {
-      label: player.muted() ? "Unmute" : "Mute",
-      listener: function () {
-        player.muted(!player.muted());
-      }
-    },
-    {
-      label: player.isFullscreen() ? "Exit Fullscreen" : "Fullscreen",
-      listener: function () {
-        if (player.isFullscreen()) {
-          player.exitFullscreen();
-        } else {
-          player.requestFullscreen();
-        }
-      }
-    }];
-  };
+  // Explicitly handle both cases for the context menu
+  if (options.hideContextMenu === true) {
+    // If hiding is requested, add a listener that ONLY prevents the default menu.
+    // This will disable all right-click menus on the player.
+    player.on('contextmenu', (e: Event) => {
+      e.preventDefault();
+    });
+  } else {
+    // Otherwise, set up our custom, dynamic context menu.
 
-  // Initialize the context menu with the initial content.
-  // The contextmenuUI plugin internally handles preventDefault for this case.
-  // @ts-ignore
-  player.contextmenuUI({
-    content: createContextMenuContent()
-  });
+    /**
+     * Helper function to generate the context menu content
+     * based on the player's current state.
+     */
+    const createContextMenuContent = () => {
+      return [{
+        label: player.paused() ? "Play" : "Pause",
+        listener: function () {
+          if (player.paused()) {
+            player.play();
+          } else {
+            player.pause();
+          }
+        }
+      },
+      {
+        label: player.loop() ? "Unloop" : "Loop",
+        listener: function () {
+          player.loop(!player.loop());
+        }
+      },
+      {
+        label: player.muted() ? "Unmute" : "Mute",
+        listener: function () {
+          player.muted(!player.muted());
+        }
+      },
+      {
+        label: player.isFullscreen() ? "Exit Fullscreen" : "Fullscreen",
+        listener: function () {
+          if (player.isFullscreen()) {
+            player.exitFullscreen();
+          } else {
+            player.requestFullscreen();
+          }
+        }
+      }];
+    };
 
-  // Add an event listener to update the menu content on every right-click
-  player.on('contextmenu', () => {
+    // Initialize the context menu with the initial content.
+    // The contextmenuUI plugin internally handles preventDefault for this case.
     // @ts-ignore
     player.contextmenuUI({
-        content: createContextMenuContent()
+      content: createContextMenuContent()
     });
-  });
-}
+
+    // Add an event listener to update the menu content on every right-click
+    player.on('contextmenu', () => {
+      // @ts-ignore
+      player.contextmenuUI({
+        content: createContextMenuContent()
+      });
+    });
+  }
 
   return player;
 }

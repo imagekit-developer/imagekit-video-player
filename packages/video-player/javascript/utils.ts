@@ -14,6 +14,9 @@ export async function prepareSource(
   input: string | SourceOptions,
   opts: PlayerOptions
 ): Promise<SourceOptions> {
+
+    // wait for 10s
+    // await new Promise(resolve => setTimeout(resolve, 5000));
   // turn plain strings into a minimal SourceOptions
   let source: SourceOptions =
     typeof input === 'string' ? { src: input } : { ...input };
@@ -174,6 +177,11 @@ export async function preparePosterSrc(
   input: SourceOptions,
   opts: PlayerOptions
 ): Promise<string> {
+
+  // console.log("preparePosterSrc called for" + JSON.stringify(input))
+
+  // wait for 10s
+  // await new Promise(resolve => setTimeout(resolve, 5000));
   // 1️⃣ Grab the raw video URL
   let videoSrcUrl = input.src;
   let posterSrcUrl: string;
@@ -209,7 +217,7 @@ export async function preparePosterSrc(
     const baseVideoUrl = new URL(videoSrcUrl);
     baseVideoUrl.search = '';
     posterSrcUrl = ikBuild({
-      src: input.poster.src ?? baseVideoUrl.toString(),
+      src: input.poster.src ?? baseVideoUrl.toString() + '/ik-thumbnail.jpg',
       urlEndpoint: '',  // same note: maybe pull from opts.urlEndpoint
       transformation: input.poster.transformation!,
     });

@@ -55,10 +55,14 @@ export class PlaylistMenu extends Component {
     player.on('adend',   () => this.removeClass('vjs-ad-playing'));
 
     // 3) Listen for playlist events
-    player.on(['playlistchange', 'playlistsorted'], () => this.update());
+    player.on(['playlistchange', 'playlistsorted'], () => {
+      console.log("PlaylistMenu: playlistchange event received, updating menu");
+      this.update()});
     player.on('playlistadd',    () => this.update());
     player.on('playlistremove', () => this.update());
-    player.on('loadstart',      () => this.update());
+    player.on('loadstart',      () => {
+      console.log("PlaylistMenu: loadstart event received, updating menu");
+      this.update()});
 
     this.on('dispose', () => this.empty_());
 

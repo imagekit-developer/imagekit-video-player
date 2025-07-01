@@ -53,11 +53,9 @@ player.src({
     src: 'https://ik.imagekit.io/demo/sample-video.mp4',
     textTracks: [
         {
-            src: 'https://ik.imagekit.io/demo/subtitles_en.vtt',
-            kind: 'subtitles',
-            srclang: 'en',
-            label: 'English',
-            default: true,
+            autoGenerateSubtitles: true,
+            maxWords: 4,
+            wordHighlight: true,          
         },
         {
             autoGenerateSubtitles: true,
@@ -65,6 +63,7 @@ player.src({
                 {
                     langCode: 'fr',
                     label: 'French (AI)',
+                    default: true,
                 },
                 {
                     langCode: 'de',

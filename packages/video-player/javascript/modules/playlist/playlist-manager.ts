@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import { omit } from 'lodash'
 
 import { Playlist } from './playlist';
 import { AutoAdvance } from './auto-advance';
@@ -519,7 +520,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const itemList = this.playlist_.getItems();
     return itemList.some((item) => {
       // do a deep comparison of the source object
-      return JSON.stringify(item) === JSON.stringify(src);
+      return JSON.stringify(omit(item, "prepared")) === JSON.stringify(omit(src, "prepared"));
     }
     );
   }
