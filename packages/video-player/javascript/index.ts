@@ -139,7 +139,6 @@ class ImageKitVideoPlayerPlugin extends Plugin {
       // prepare all of them in parallel
       Promise.all(inputs.map(i => {
         if (typeof i === 'object' && this.hasPreparedSrc(i)) {
-          console.log('Using preparedSrc from input:', i.prepared.src);
           return Promise.resolve(i as SourceOptions);
         }
         else {
