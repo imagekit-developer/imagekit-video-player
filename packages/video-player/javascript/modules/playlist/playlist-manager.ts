@@ -1,14 +1,16 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import { omit } from 'lodash'
+import { isEqual, pick } from 'lodash'
 
 import { Playlist } from './playlist';
 import { AutoAdvance } from './auto-advance';
 import { PlaylistMenu } from './playlist-menu';
 import type { SourceOptions, PlaylistOptions, PlayerOptions } from '../../interfaces';
-import { isIndexInBounds } from './utils';
+import { isIndexInBounds, SOURCE_OPTION_KEYS } from './utils';
 import './present-upcoming';
 import { PresentUpcoming } from './present-upcoming';
+import './components/playlist-next-button';
+import './components/playlist-previous-button';
 
 // detect pointer-events support
 const supportsCssPointerEvents = (() => {
@@ -85,6 +87,7 @@ export class PlaylistManager {
       this.playlistOptions_ = opts || {};
       this.configure(opts || {});
       this.initMenu_(opts || {});
+      this.addUiComponents();
 
 
       // Add a listener for player resize events
@@ -227,6 +230,17 @@ export class PlaylistManager {
 
   }
 
+  private addUiComponents() {
+    // @ts-ignore
+    const controlBar = this.player_.getChild('ControlBar');
+       // @ts-ignore
+    const children = controlBar.children();
+       // @ts-ignore
+    controlBar.addChild('PlaylistPreviousButton', {}, children.findIndex(c => c.name_ === 'PlayToggle'));
+       // @ts-ignore
+    controlBar.addChild('PlaylistNextButton', {}, children.findIndex(c => c.name_ === 'PlayToggle') + 1);
+  }
+
   /** Load a new playlist array */
   public setPlaylistItems(sources: SourceOptions[]) {
     this.playlist_.setItems(sources);
@@ -243,6 +257,12 @@ export class PlaylistManager {
     const next = this.playlist_.getNextIndex();
     if (next < 0) { return; }
     this.playAtIndex(next);
+  }
+
+  public playPrevious(): void {
+    const previous = this.playlist_.getPreviousIndex();
+    if (previous < 0) { return; }
+    this.playAtIndex(previous);
   }
 
   /** Play a specific index */
@@ -520,8 +540,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const itemList = this.playlist_.getItems();
     return itemList.some((item) => {
       // do a deep comparison of the source object
-      return JSON.stringify(omit(item, "prepared")) === JSON.stringify(omit(src, "prepared"));
-    }
+      return isEqual(pick(item, SOURCE_OPTION_KEYS), pick(src, SOURCE_OPTION_KEYS))}
     );
   }
 
