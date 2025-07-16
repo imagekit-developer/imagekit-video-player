@@ -14,42 +14,86 @@ const player = videoPlayer('player', {
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-    shoppable: {
-        startState: 'openOnPlay',
-        autoClose: 5, // Auto-close panel after 5s of inactivity
-        products: [
-            {
-                productId: 'sunglasses_01',
-                productName: 'Classic Aviators',
-                imageUrl: 'https://ik.imagekit.io/demo/p/sunglasses.jpeg',
-                highlightTime: { start: 2, end: 5 },
-                onClick: {
-                    action: 'seek',
-                    args: { time: '00:03' }
-                },
-                onHover: {
-                    action: 'overlay',
-                    args: 'Featured Sunglasses'
-                }
-            },
-            {
-                productId: 'watch_02',
-                productName: 'Chronograph Watch',
-                imageUrl: 'https://ik.imagekit.io/demo/p/watch.jpeg',
-                highlightTime: { start: 6, end: 9 },
-                onClick: {
-                    action: 'goto',
-                    args: { url: 'https://imagekit.io' },
-                    pause: true
-                },
-                onHover: {
-                  action: 'switch',
-                  args: { url: 'https://ik.imagekit.io/demo/p/watch_2.jpeg' }
-                }
-            }
-        ]
-    }
+  src: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/shoppable_demo.mp4?updatedAt=1752633516273",
+  shoppable: {
+    products: [
+      {
+        productId: 1,
+        productName: "Classic Aviators",
+        highlightTime: { start: 2, end: 6 }, // Highlight from 0s to 6s
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses3.jpeg?updatedAt=1752632518026",
+        hotspots: [
+          {
+            time: "00:06",
+            x: "50%",
+            y: "25%",
+            tooltipPosition: "left",
+            clickUrl: "https://images.pexels.com/photos/701877/pexels-photo-701877.jpeg"
+          }
+        ],
+        onHover: {
+          action: "overlay",
+          args: "Click to see this product in the video"
+        },
+        onClick: {
+          action: "seek",
+          pause: 5,
+          args: { time: "00:06" }
+        }
+      },
+      {
+        productId: 2,
+        productName: "Wooden frame glasses for personal use",
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses2.jpeg?updatedAt=1752632501675",
+        onHover: {
+          action: "switch",
+          args: {
+            url: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses.jpeg?updatedAt=1752632426600"
+          }
+        },
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: { 
+            url: "https://www.pexels.com/search/wooden%20glasses%20frames/"
+           }
+        }
+      },
+      {
+        productId: 3,
+        productName: "Sunglasses",
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/sunglass.jpeg?updatedAt=1752633002810",
+        onHover: {
+          action: "overlay",
+          args: "Click to go to website"
+        },
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: {
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+
+        }
+      },
+      {
+        productId: 4,
+        productName: "Eye protection",
+        highlightTime: { start: 7, end: 9 }, // Highlight from 0s to 6s
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/protection.jpeg?updatedAt=1752633320623",
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: {
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+        }
+      },
+    ],
+    showPostPlayOverlay: true,
+    autoClose: false,
+    startState: 'open'
+  }
 });
 `;
 
@@ -57,257 +101,88 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 
 // --- Actual Player Initialization ---
 const player = videoPlayer('player', {
-    imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-    shoppable: {
-                transformation: [{ height: "300", width: "400" }],
-                products: [
-                  {
-                    productId: 1,
-                    productName: "Classic Aviators",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:02" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Chronograph Watch",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:02" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Hat",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:04" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  {
-                    productId: 1,
-                    productName: "Shorts",
-                    highlightTime: { start: 0, end: 2 },
-                    imageUrl: "https://ik.imagekit.io/a1yisxurxo/women_in_red_2nd_test_L0pnP7Hb3.jpg?updatedAt=1744896751866",
-                    hotspots: [
-                      {
-                        time: "00:02",
-                        x: "50%",
-                        y: "50%",
-                        tooltipPosition: "left",
-                        clickUrl: "https://imagekit.io/dashboard/media-library/detail/680102eb432c476416cdd342"
-                      }
-                    ],
-                    onHover: {
-                      action: "overlay",
-                      args: "Click to see this product in the video"
-                    },
-                    onClick: {
-                      action: "seek",
-                      pause: 5,
-                      args: { time: "00:06" }
-                    }
-                  },
-                  // …two more products…
-                ],
-                showPostPlayOverlay: true,
-                autoClose: false
-              }
+  src: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/shoppable_demo.mp4?updatedAt=1752633516273",
+  shoppable: {
+    products: [
+      {
+        productId: 1,
+        productName: "Classic Aviators",
+        highlightTime: { start: 2, end: 6 }, // Highlight from 0s to 6s
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses3.jpeg?updatedAt=1752632518026",
+        hotspots: [
+          {
+            time: "00:06",
+            x: "50%",
+            y: "25%",
+            tooltipPosition: "left",
+            clickUrl: "https://images.pexels.com/photos/701877/pexels-photo-701877.jpeg"
+          }
+        ],
+        onHover: {
+          action: "overlay",
+          args: "Click to see this product in the video"
+        },
+        onClick: {
+          action: "seek",
+          pause: 5,
+          args: { time: "00:06" }
+        }
+      },
+      {
+        productId: 2,
+        productName: "Wooden frame glasses for personal use",
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses2.jpeg?updatedAt=1752632501675",
+        onHover: {
+          action: "switch",
+          args: {
+            url: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses.jpeg?updatedAt=1752632426600"
+          }
+        },
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: { 
+            url: "https://www.pexels.com/search/wooden%20glasses%20frames/"
+           }
+        }
+      },
+      {
+        productId: 3,
+        productName: "Sunglasses",
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/sunglass.jpeg?updatedAt=1752633002810",
+        onHover: {
+          action: "overlay",
+          args: "Click to go to website"
+        },
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: {
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+
+        }
+      },
+      {
+        productId: 4,
+        productName: "Eye protection",
+        highlightTime: { start: 7, end: 9 }, // Highlight from 0s to 6s
+        imageUrl: "https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/protection.jpeg?updatedAt=1752633320623",
+        onClick: {
+          action: "goto",
+          pause: true,
+          args: {
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+        }
+      },
+    ],
+    showPostPlayOverlay: true,
+    autoClose: false,
+    startState: 'open'
+  }
 });

@@ -4,8 +4,7 @@
   transition: width 0.35s ease-in-out;
 }
 
-/* The bar's main container. It covers the whole player but is not visible
-   and does not intercept clicks, acting only as a positioning parent. */
+/* The bar's main container */
 .vjs-shoppable-bar {
   position: absolute;
   top: 0;
@@ -17,55 +16,53 @@
   z-index: 10;
 }
 
-/* The inner container that holds the panel and toggle. THIS is the element that slides. */
+/* The inner container that holds the panel and toggle */
 .vjs-shoppable-bar-inner {
   position: absolute;
   top: 0;
   left: 80%;
   width: 20%;
   height: 100%;
-  transform: translateX(100%); /* Start completely off-screen */
+  transform: translateX(100%);
   transition: transform 0.35s ease-in-out;
-  pointer-events: all; /* Allow clicks on its children (panel and toggle) */
+  pointer-events: all;
 }
 
-/* When visible, slide the inner container left to reveal the panel and toggle */
 .video-js.shoppable-panel-visible .vjs-shoppable-bar-inner {
-  transform: translateX(0%); /* Leaves the rightmost 20% visible */
+  transform: translateX(0%);
 }
 
 .video-js.shoppable-panel-hidden .vjs-shoppable-bar-inner {
   transform: translateX(100%);
-  transition: none; /* Hide immediately on initial load */
+  transition: none;
 }
 
-/* The panel containing the products, positioned on the far right of the inner container */
+/* The panel containing the products */
 .vjs-shoppable-panel {
   position: absolute;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 100%;/* The visible width of the panel */
+  width: 100%;
   overflow-y: auto;
   background: rgba(255, 255, 255, 0.5);
-  /* box-shadow: -3px 0 10px rgba(0,0,0,0.2); */
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 .vjs-shoppable-panel::-webkit-scrollbar {
   display: none;
 }
 
-/* The toggle button, also inside the inner container */
+/* The toggle button */
 .vjs-shoppable-toggle {
   position: absolute;
   top: 15px;
-  right: 100%; 
+  right: 100%;
   width: 40px;
   height: 40px;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 5px 0 0 5px;
-  /* box-shadow: -2px 2px 5px rgba(0,0,0,0.2); */
   cursor: pointer;
   z-index: 11;
   display: flex;
@@ -88,6 +85,7 @@
 .vjs-shoppable-toggle .icon-open {
   opacity: 1;
 }
+
 .vjs-shoppable-toggle .icon-close {
   opacity: 1;
 }
@@ -96,6 +94,7 @@
 .vjs-shoppable-toggle-icon:hover {
   animation: tada 1s infinite;
 }
+
 @keyframes tada {
   0% { transform: scale3d(1, 1, 1); }
   10%, 20% { transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg); }
@@ -107,49 +106,132 @@
 .video-js.shoppable-panel-visible .vjs-shoppable-toggle .icon-open {
   opacity: 0;
 }
+
 .video-js.shoppable-panel-visible .vjs-shoppable-toggle .icon-close {
   opacity: 1;
 }
 
-/* --- Item, Hotspot, and other styles --- */
+/* --- Item Layout --- */
+
+/* 1. The main item is now a flex column container */
 .vjs-shoppable-item {
-  display: block;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   margin: 10px;
   border: 2px solid transparent;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   transition: border-color 0.3s, transform 0.2s;
+  background-color: rgba(0, 0, 0, 0.05);
+  text-decoration: none !important; /* Removes the underline */
 }
+
 .vjs-shoppable-item:hover {
   transform: scale(1.03);
 }
+
 .vjs-shoppable-item.active {
   border-color: #2563eb;
 }
-.vjs-shoppable-item-img {
+
+/* 2. NEW container for the image area to define shape and stacking context */
+.vjs-shoppable-image-container {
+  position: relative;
   width: 100%;
-  /* The next 3 lines are the fix for layout shift */
-  aspect-ratio: 1 / 1;            /* Force a square shape, reserving space */
-  object-fit: cover;              /* Fill the space without distorting the image */
-  background-color: rgba(0, 0, 0, 0.05); /* Adds a subtle placeholder background */
-  display: block;
+  aspect-ratio: 1 / 1;
 }
-.vjs-shoppable-item-info {
+
+/* 3. Both images are stacked absolutely inside the new image container */
+.vjs-shoppable-item-img {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 1;
+}
+
+.vjs-shoppable-item-img-alt {
+  opacity: 0;
+}
+
+.vjs-shoppable-item:hover .vjs-shoppable-item-img-alt {
+  opacity: 1;
+}
+
+/* 4. The info block is a normal element that appears below the image container */
+.vjs-shoppable-item-info {
+  position: static;
+  width: 100%;
+  background: rgba(0, 0, 0, 1);
   color: #fff;
   padding: 8px;
   font-size: 14px;
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
   text-overflow: ellipsis;
+  z-index: 2;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Add these properties to the rule above */
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  background: rgba(0, 0, 0, 1);
+
+  /* --- ADD THESE LINES --- */
+  height: 3.5em; /* Give all info blocks a fixed height (adjust value as needed) */
+  display: flex;
+  align-items: center; /* Vertically centers the text */
+  justify-content: center; /* Horizontally centers the text */
+}
+
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item {
+  width: 200px; /* Fixed width for post-play carousel items */
+  flex-shrink: 0; /* Prevents items from shrinking */
+  border: 1px solid rgba(255, 255, 255, 0.4); /* Optional: adds a border for visibility */
+}
+
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item:hover {
+  border: 1px solid rgba(255, 255, 255, 1); /* Optional: adds a border for visibility */
+}
+
+/* 5. The hover overlay for text now covers the image container */
+.vjs-shoppable-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.vjs-shoppable-item:hover .vjs-shoppable-item-overlay {
+  opacity: 1;
+}
+
+/* --- Hotspot Styles --- */
+
 .vjs-shoppable-hotspot {
   position: absolute;
   width: 24px;
@@ -158,6 +240,7 @@
   cursor: pointer;
   z-index: 5;
 }
+
 .vjs-shoppable-hotspot::after {
   content: "";
   display: block;
@@ -172,6 +255,7 @@
   transform: translate(-50%, -50%);
   animation: pulse 2s infinite;
 }
+
 .vjs-shoppable-hotspot-tooltip {
   position: absolute;
   background: rgba(0, 0, 0, 0.8);
@@ -186,14 +270,47 @@
   pointer-events: none;
 }
 
-/* --- POST-PLAY OVERLAY --- */
+/* Tooltip on Top (Default) */
+.vjs-shoppable-hotspot-tooltip.tooltip-position-top {
+  top: -8px;
+  /* Add some space from the hotspot */
+  left: 50%;
+  transform: translate(-50%, -100%);
+}
+
+/* Tooltip on the Bottom */
+.vjs-shoppable-hotspot-tooltip.tooltip-position-bottom {
+  bottom: -8px;
+  /* Add some space from the hotspot */
+  left: 50%;
+  transform: translate(-50%, 100%);
+}
+
+/* Tooltip on the Left */
+.vjs-shoppable-hotspot-tooltip.tooltip-position-left {
+  top: 50%;
+  left: -8px;
+  /* Add some space from the hotspot */
+  transform: translate(-100%, -50%);
+}
+
+/* Tooltip on the Right */
+.vjs-shoppable-hotspot-tooltip.tooltip-position-right {
+  top: 50%;
+  right: -8px;
+  /* Add some space from the hotspot */
+  transform: translate(100%, -50%);
+}
+
+/* --- Post-Play Overlay Styles --- */
+
 .vjs-shoppable-postplay-overlay {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.75);
+  background: rgba(0, 0, 0, 1);
   z-index: 20;
   display: flex;
   flex-direction: column;
@@ -202,38 +319,37 @@
   padding: 20px;
   box-sizing: border-box;
 }
+
 .vjs-shoppable-postplay-title {
   color: #fff;
   font-size: 24px;
   margin-bottom: 24px;
   font-weight: bold;
 }
+
 .vjs-shoppable-postplay-carousel {
   display: flex;
   gap: 20px;
   overflow-x: auto;
   max-width: 100%;
-  padding-bottom: 20px; /* Space for scrollbar */
+  padding-bottom: 20px;
   cursor: grab;
-  user-select: none; /* Prevent text selection while dragging */
- /* --- HIDE SCROLLBAR --- */
- -ms-overflow-style: none;  /* IE and Edge */
- scrollbar-width: none;  /* Firefox */
+  user-select: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Hides scrollbar on Chrome, Safari, and Opera */
 .vjs-shoppable-postplay-carousel::-webkit-scrollbar {
- display: none;
+  display: none;
 }
 
 .vjs-shoppable-postplay-carousel.is-grabbing {
-  /* Change cursor to a 'closed' hand when dragging */
   cursor: grabbing;
 }
 
 .vjs-shoppable-postplay-card {
-  position: relative; /* Needed for the hover overlay */
-  flex-shrink: 0; /* Prevent cards from shrinking */
+  position: relative;
+  flex-shrink: 0;
   text-align: center;
   color: #fff;
   font-size: 14px;
@@ -243,9 +359,11 @@
   align-items: center;
   flex-direction: column;
 }
+
 .vjs-shoppable-postplay-card:hover {
-  transform: scale(1.05); /* Card gets bigger on hover */
+  transform: scale(1.05);
 }
+
 .vjs-shoppable-postplay-card img {
   width: 160px;
   height: 160px;
@@ -254,6 +372,7 @@
   margin-bottom: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
+
 .vjs-shoppable-postplay-card-title {
   max-width: 160px;
   font-weight: 500;
@@ -261,26 +380,27 @@
 }
 
 .vjs-shoppable-postplay-card-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 160px; /* Match image width */
-    height: 160px; /* Match image height */
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 10px;
-    box-sizing: border-box;
-    border-radius: 12px; /* Match image radius */
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-    pointer-events: none; /* Allows click to go through to the card */
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 160px;
+  height: 160px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  pointer-events: none;
 }
+
 .vjs-shoppable-postplay-card:hover .vjs-shoppable-postplay-card-overlay {
-    opacity: 1;
+  opacity: 1;
 }
 
 .vjs-shoppable-replay-btn {
@@ -295,42 +415,43 @@
   font-weight: 600;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   transition: background-color 0.2s, transform 0.2s;
 }
+
 .vjs-shoppable-replay-btn:hover {
   background-color: #fff;
   transform: scale(1.05);
 }
-.vjs-shoppable-replay-btn::before {
-  content: '⟳'; /* Replay icon */
-  font-size: 20px;
-}
+
+/* --- Utility and Spinner Styles --- */
 
 .vjs-hidden {
   display: none !important;
 }
 
-.vjs-shoppable-item-overlay {
+.vjs-shoppable-item-spinner {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%; /* Cover the entire item area */
-  background: rgba(0, 0, 0, 0.65);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 10px;
-  box-sizing: border-box;
-  opacity: 0; /* Start hidden */
-  transition: opacity 0.25s ease-in-out;
-  pointer-events: none; /* Allow hover effects to pass through if needed */
+  top: 50%;
+  left: 50%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: vjs-shoppable-item-spinner 1s linear infinite;
+  z-index: 2;
 }
 
-/* Make the overlay visible when hovering over the parent item */
-.vjs-shoppable-item:hover .vjs-shoppable-item-overlay {
-  opacity: 1;
+@keyframes vjs-shoppable-item-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vjs-shoppable-item-placeholder {
+  background: #303030;
+  height: 100%;
 }
