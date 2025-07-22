@@ -18,7 +18,7 @@ const player = videoPlayer('player', {
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
 });
 `;
 
@@ -31,5 +31,5 @@ const player = videoPlayer('player', {
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
 });

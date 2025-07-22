@@ -116,11 +116,11 @@ export class PlaylistMenu extends Component {
       } else {
         removeSelectedClass(mi);
       }
-      if (i === current + 1) {
-        upNext(mi);
-      } else {
-        notUpNext(mi);
-      }
+      // if (i === current + 1) {
+      //   upNext(mi);
+      // } else {
+      //   notUpNext(mi);
+      // }
     });
   }
 

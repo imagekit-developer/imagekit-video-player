@@ -566,8 +566,14 @@ const player = videoPlayer("player", {
 const playlistManager = player.playlist({
   sources: [
     {
-      src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+      src: 'https://ik.imagekit.io/demo/sample-video.mp4?tr=rt-90,so-2',
       info: { title: 'Sample Video', subtitle: 'A subtitle for the video' },
+      transformation: [
+        {
+          width: 700,
+          height: 500,
+        }
+      ]
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',

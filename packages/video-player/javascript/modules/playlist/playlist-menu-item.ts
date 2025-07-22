@@ -89,103 +89,178 @@ export class PlaylistMenuItem extends Component {
     return preparedUrl;
   }
 
-  createEl(): HTMLElement {
-    const li = document.createElement('li');
-    li.className = 'vjs-playlist-item';
-    li.tabIndex = 0;
+  // createEl(): HTMLElement {
+  //   const li = document.createElement('li');
+  //   li.className = 'vjs-playlist-item';
+  //   li.tabIndex = 0;
 
-    // Thumbnail
+  //   // Thumbnail
 
-    // 1) create thumbnail container
-    this.thumbnail = document.createElement('div');
-    this.thumbnail.className = 'vjs-playlist-thumbnail';
-    li.appendChild(this.thumbnail);
+  //   // 1) create thumbnail container
+  //   this.thumbnail = document.createElement('div');
+  //   this.thumbnail.className = 'vjs-playlist-thumbnail';
+  //   li.appendChild(this.thumbnail);
 
-    // 2) spinner
-    this.spinnerEl = document.createElement('div');
-    this.spinnerEl.className = 'vjs-playlist-thumbnail-spinner';
-    // you can style this in your SCSS to show a CSS spinner
-    this.thumbnail.appendChild(this.spinnerEl);
+  //   // 2) spinner
+  //   this.spinnerEl = document.createElement('div');
+  //   this.spinnerEl.className = 'vjs-playlist-thumbnail-spinner';
+  //   // you can style this in your SCSS to show a CSS spinner
+  //   this.thumbnail.appendChild(this.spinnerEl);
 
 
-    this.getThumbnail()
-      // FIX: Use an arrow function to preserve `this` context
-      .then((url) => {
-        if (!this.el_) {
-          return;
-        }
+  //   this.getThumbnail()
+  //     // FIX: Use an arrow function to preserve `this` context
+  //     .then((url) => {
+  //       if (!this.el_) {
+  //         return;
+  //       }
 
-        if (this.spinnerEl) {
-          this.spinnerEl.remove();
-        }
+  //       if (this.spinnerEl) {
+  //         this.spinnerEl.remove();
+  //       }
 
-        this.imgEl = document.createElement('img');
-        this.imgEl.className = 'vjs-playlist-thumbnail-img';
-        this.imgEl.loading = 'lazy';
-        this.imgEl.src = url;
-        this.imgEl.alt = this.options_.item.info?.title || '';
-        this.thumbnail.appendChild(this.imgEl); // `this.thumbnail` is now defined
-        this.thumbnail.style.backgroundImage = `url('${url}')`;
-      })
-      // FIX: Use an arrow function to preserve `this` context
-      .catch((err) => {
-        if (!this.el_) {
-          return;
-        }
-        this.player_.error({
-          message: `Failed to load poster for playlist item: ${err.message}`,
-          cause: err,
-        });
-        if (this.spinnerEl) {
-          this.spinnerEl.remove();
-        }
-        // `this.thumbnail` is now defined
-        this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
+  //       this.imgEl = document.createElement('img');
+  //       this.imgEl.className = 'vjs-playlist-thumbnail-img';
+  //       this.imgEl.loading = 'lazy';
+  //       this.imgEl.src = url;
+  //       this.imgEl.alt = this.options_.item.info?.title || '';
+  //       this.thumbnail.appendChild(this.imgEl); // `this.thumbnail` is now defined
+  //       this.thumbnail.style.backgroundImage = `url('${url}')`;
+  //     })
+  //     // FIX: Use an arrow function to preserve `this` context
+  //     .catch((err) => {
+  //       if (!this.el_) {
+  //         return;
+  //       }
+  //       this.player_.error({
+  //         message: `Failed to load poster for playlist item: ${err.message}`,
+  //         cause: err,
+  //       });
+  //       if (this.spinnerEl) {
+  //         this.spinnerEl.remove();
+  //       }
+  //       // `this.thumbnail` is now defined
+  //       this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
+  //     });
+
+  //   // Now playing
+  //   const nowPlayingEl = document.createElement('span');
+  //   const nowPlayingText = this.localize('Now Playing');
+
+  //   nowPlayingEl.className = 'vjs-playlist-now-playing-text';
+  //   nowPlayingEl.appendChild(document.createTextNode(nowPlayingText));
+  //   nowPlayingEl.setAttribute('title', nowPlayingText);
+  //   this.thumbnail.appendChild(nowPlayingEl);
+
+  //   // Title container contains title and "up next"
+  //   const titleContainerEl = document.createElement('div');
+  //   titleContainerEl.className = 'vjs-playlist-title-container';
+  //   this.thumbnail.appendChild(titleContainerEl);
+
+
+  //   // Up next
+  //   const upNextEl = document.createElement('span');
+  //   const upNextText = this.localize('Next up');
+  //   upNextEl.className = 'vjs-up-next-text';
+  //   upNextEl.appendChild(document.createTextNode(upNextText));
+  //   upNextEl.setAttribute('title', upNextText);
+  //   this.thumbnail.appendChild(upNextEl);
+
+  //   // Title and description
+  //   const title = this.options_.item.info?.title || this.localize('Untitled Video');
+  //   const titleEl = document.createElement('cite');
+  //   titleEl.className = 'vjs-playlist-name';
+  //   titleEl.textContent = title;
+  //   titleEl.title = title;
+  //   titleContainerEl.appendChild(titleEl);
+
+
+
+  //   if (this.options_.showDescription && this.options_.item.info?.description) {
+  //     const descEl = document.createElement('div');
+  //     descEl.className = 'vjs-playlist-description';
+  //     descEl.textContent = this.options_.item.info.description;
+  //     descEl.title = this.options_.item.info.description;
+  //     titleContainerEl.appendChild(descEl);
+  //   }
+
+  //   return li;
+  // }
+  // src/modules/playlist/playlist-menu-item.ts
+
+// ...
+
+ createEl(): HTMLElement {
+  const li = document.createElement('li');
+  li.className = 'vjs-playlist-item';
+  li.tabIndex = 0;
+
+  // --- NEW STRUCTURE ---
+
+  // 1. Thumbnail Container (for image and overlays)
+  this.thumbnail = document.createElement('div');
+  this.thumbnail.className = 'vjs-playlist-thumbnail';
+  li.appendChild(this.thumbnail);
+
+  // Spinner remains inside the thumbnail container
+  this.spinnerEl = document.createElement('div');
+  this.spinnerEl.className = 'vjs-playlist-thumbnail-spinner';
+  this.thumbnail.appendChild(this.spinnerEl);
+
+  // Async thumbnail loading logic (remains the same)
+  this.getThumbnail()
+    .then((url) => {
+      if (!this.el_) return;
+      if (this.spinnerEl) this.spinnerEl.remove();
+
+      this.imgEl = document.createElement('img');
+      this.imgEl.className = 'vjs-playlist-thumbnail-img';
+      this.imgEl.loading = 'lazy';
+      this.imgEl.src = url;
+      this.imgEl.alt = this.options_.item.info?.title || '';
+      this.thumbnail.appendChild(this.imgEl);
+    })
+    .catch((err) => {
+      if (!this.el_) return;
+      this.player_.error({
+        message: `Failed to load poster for playlist item: ${err.message}`,
+        cause: err,
       });
+      if (this.spinnerEl) this.spinnerEl.remove();
+      this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
+    });
 
-    // Now playing
-    const nowPlayingEl = document.createElement('span');
-    const nowPlayingText = this.localize('Now Playing');
+  // 2. Details Container (for title and description)
+  const detailsEl = document.createElement('div');
+  detailsEl.className = 'vjs-playlist-details';
+  li.appendChild(detailsEl);
 
-    nowPlayingEl.className = 'vjs-playlist-now-playing-text';
-    nowPlayingEl.appendChild(document.createTextNode(nowPlayingText));
-    nowPlayingEl.setAttribute('title', nowPlayingText);
-    this.thumbnail.appendChild(nowPlayingEl);
+  // Title
+  const title = this.options_.item.info?.title || this.localize('Untitled Video');
+  const titleEl = document.createElement('div');
+  titleEl.className = 'vjs-playlist-name';
+  titleEl.textContent = title;
+  titleEl.title = title;
+  detailsEl.appendChild(titleEl);
 
-    // Title container contains title and "up next"
-    const titleContainerEl = document.createElement('div');
-    titleContainerEl.className = 'vjs-playlist-title-container';
-    this.thumbnail.appendChild(titleContainerEl);
-
-
-    // Up next
-    const upNextEl = document.createElement('span');
-    const upNextText = this.localize('Next up');
-    upNextEl.className = 'vjs-up-next-text';
-    upNextEl.appendChild(document.createTextNode(upNextText));
-    upNextEl.setAttribute('title', upNextText);
-    this.thumbnail.appendChild(upNextEl);
-
-    // Title and description
-    const title = this.options_.item.info?.title || this.localize('Untitled Video');
-    const titleEl = document.createElement('cite');
-    titleEl.className = 'vjs-playlist-name';
-    titleEl.textContent = title;
-    titleEl.title = title;
-    titleContainerEl.appendChild(titleEl);
-
-
-
-    if (this.options_.showDescription && this.options_.item.info?.description) {
-      const descEl = document.createElement('div');
-      descEl.className = 'vjs-playlist-description';
-      descEl.textContent = this.options_.item.info.description;
-      descEl.title = this.options_.item.info.description;
-      titleContainerEl.appendChild(descEl);
-    }
-
-    return li;
+  // Description (if available)
+  if (true) {
+    const descEl = document.createElement('div');
+    descEl.className = 'vjs-playlist-description';
+    descEl.textContent = "some description";
+    descEl.title = "some description";
+    detailsEl.appendChild(descEl);
   }
+
+  // --- END NEW STRUCTURE ---
+
+  // NOTE: The old "Now Playing" and "Up Next" text elements are intentionally removed.
+  // Their styling will be handled by CSS on the `li` and thumbnail elements.
+
+  return li;
+}
+
+// ...
 }
 
 // @ts-ignore

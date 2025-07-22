@@ -155,7 +155,7 @@ export class PlaylistManager {
         (this.playlistMenu.el() as HTMLElement).style.height = `${playlistHeight}px`;
       }
     } else { // Vertical
-      const playlistWidth = playerWidth * 0.25;
+      const playlistWidth = playerWidth * 0.45;
       this.playerContainer_.style.width = `${playerWidth + playlistWidth}px`;
       this.playerContainer_.style.height = `${playerHeight}px`;
       if (this.playlistMenu) {

@@ -4,7 +4,7 @@ import { initSubtitlesRedirect, defaultSubtitlesMap } from './modules/subtitles/
 // ————————————————
 // MOCK SETUP (for local/dev/demo only)
 // ————————————————
-initVttRedirect("https://ik.imagekit.io/zuqlyov9d/default.vtt?updatedAt=1747359261941&ik-s=92c20a03ddc26ab8efa179fc0ffa11dc132590e6");
+initVttRedirect("https://ik.imagekit.io/a1yisxurxo/aman/seek-thumbnail/sample.vtt?updatedAt=1752731735247");
 
 // Initialize subtitles redirect with default mapping
 initSubtitlesRedirect(defaultSubtitlesMap);
@@ -101,9 +101,115 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         await this.initRecommendationsOverlay();
 
         if (src && src.shoppable) {
-          this.shoppableManager_ = new ShoppableManager(this.player, src.shoppable);
+          this.shoppableManager_ = new ShoppableManager(this.player, src);
         }
       });
+
+      this.player.ready(function() {
+        const playerEl = player.el(); // Get the main player element
+      
+        /**
+         * When the mouse leaves the player's container.
+         */
+        playerEl.addEventListener('mouseleave', () => {
+          // Only hide the controls if the player is actively playing.
+          if (!player.paused()) {
+            player.addClass('vjs-user-inactive');
+          }
+        });
+      
+        /**
+         * When the mouse re-enters the player's container.
+         */
+        playerEl.addEventListener('mouseenter', () => {
+          // Always show the controls when the mouse comes back.
+          player.removeClass('vjs-user-inactive');
+        });
+      });
+
+//       Assumes 'player' is your initialized video.js player instance
+// e.g., const player = videojs('my-video-id');
+
+this.player.ready(() => {
+  const skipTime = 5; // Amount to skip in seconds
+
+  // --- START: NEW FEEDBACK LOGIC ---
+
+  // 1. Create the feedback element once and store a reference to it
+  const seekFeedbackEl = document.createElement('div');
+  seekFeedbackEl.className = 'vjs-seek-feedback';
+  this.player.el().appendChild(seekFeedbackEl);
+
+  let seekTimeout: ReturnType<typeof setTimeout> | undefined; // To store the timeout ID
+
+  /**
+   * Shows the feedback icon, sets the correct direction, and hides it after a delay.
+   * @param {'forward' | 'backward'} direction - The direction of the seek.
+   */
+  // @ts-ignore
+  function showSeekFeedback(direction: 'forward' | 'backward') {
+    // Clear any previous timeout to handle rapid key presses
+  clearTimeout(seekTimeout);
+
+  // Set icon and positional classes
+  const iconClass = direction === 'forward' ? 'vjs-icon-forward-5' : 'vjs-icon-replay-5';
+  
+  // Set the icon content
+  seekFeedbackEl.innerHTML = `<span class="vjs-icon-placeholder ${iconClass}"></span>`;
+  
+  // --- START: NEW POSITIONING LOGIC ---
+
+  // 1. Remove previous direction classes
+  seekFeedbackEl.classList.remove('is-forward', 'is-backward');
+  
+  // 2. Add the correct new direction class
+  if (direction === 'forward') {
+    seekFeedbackEl.classList.add('is-forward');
+  } else {
+    seekFeedbackEl.classList.add('is-backward');
+  }
+
+  // --- END: NEW POSITIONING LOGIC ---
+
+  // 3. Make the element visible
+  seekFeedbackEl.classList.add('is-visible');
+
+  // Set a timeout to hide the icon after a short period
+  seekTimeout = setTimeout(() => {
+    seekFeedbackEl.classList.remove('is-visible');
+  }, 600); // 600 milliseconds
+  }
+
+  // --- END: NEW FEEDBACK LOGIC ---
+
+
+  // Listen for keydown events on the this.player
+  // @ts-ignore
+  this.player.on('keydown', (event) => {
+    switch (event.key) {
+      case ' ':
+        event.preventDefault();
+        if (this.player.paused()) {
+          this.player.play();
+        } else {
+          this.player.pause();
+        }
+        break;
+
+      case 'ArrowRight':
+        event.preventDefault();
+        this.player.currentTime((this.player.currentTime() ?? 0) + skipTime);
+        showSeekFeedback('forward'); // <-- Trigger feedback
+        break;
+
+      case 'ArrowLeft':
+        event.preventDefault();
+        this.player.currentTime((this.player.currentTime() ?? 0) - skipTime);
+        showSeekFeedback('backward'); // <-- Trigger feedback
+        break;
+    }
+  });
+});
     }
     catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -351,6 +457,35 @@ export function videoPlayer(
 ) {
   const player = videojs(element, {
     ...playerOptions,
+    // playbackRates: [0.5, 1, 1.5, 2],
+    // children: {
+    //   controlBar: {
+    //     fullscreenToggle: false,
+    //     pictureInPictureToggle: false,
+    //     volumePanel: false,
+    //     playbackRateMenuButton: false,
+    //   }
+    // },
+    // controls: false,
+    // autoplay: true,
+    // aspectRatio: '9:16',
+    
+    // responsive: true,
+    // breakpoints: {
+    //   // tiny: 300,
+    //   // xsmall: 400,
+    //   // small: 500,
+    //   // medium: 600,
+    //   // large: 700,
+    //   // xlarge: 800,
+    //   huge: 900
+    // },
+    // controlBar: {
+    //   skipButtons: {
+    //     forward: 10
+    //   }
+    // },
+
     html5: { nativeTextTracks: false },
     plugins: {
       ...(playerOptions.plugins ?? {}),

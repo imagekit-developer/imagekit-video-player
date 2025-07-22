@@ -19,142 +19,101 @@ interface ChapterMarkersProgressBarControlOptions {
   * The class for chapter markers
   */
 class ChapterMarkersProgressBarControl extends Component {
-  /**
-   * Constructor for class
-   *
-   * @param {Player|Object} player The player
-   * @param {options|Object} options player options
-   */
-  constructor(player: Player, options: ChapterMarkersProgressBarControlOptions) {
-    
-    super(player, options);
+  private chapterTooltipContainer: HTMLElement | null = null;
+  private chapters: ChapterMarker[] = [];
 
-    if (options.chapters === undefined) {
-      options.chapters = [];
-    }
+  constructor(player: Player, options: ChapterMarkersProgressBarControlOptions) {
+    super(player, options);
+    this.chapters = options.chapters || [];
 
     player.ready(() => {
-      ChapterMarkersProgressBarControl.addMarkers(options.chapters, player);
+      this.addMarkers(this.chapters, player);
+      this.attachHoverHandlers(player);
     });
   }
 
   /**
-   * addMarkers
-   *
-   * @param {chapters|Object} chapters chapters array
-   * @param {videoDuration|int} videoDuration video duration
+   * Creates the visual elements for chapter markers and a single tooltip container.
    */
-  // static addMarkers(chapters: ChapterMarker[], player: Player) {
-  //   const videoDuration = player.duration();
-  //   if (!videoDuration || videoDuration === 0) {
-  //     return;
-  //   }
-  //   const iMax = chapters.length;
-  //   var playerContainer = player.el();
-  //   const playheadWell = playerContainer.getElementsByClassName('vjs-progress-holder')[0];
+  addMarkers(chapters: ChapterMarker[], player: Player) {
+    const duration = player.duration();
+    if (!duration || duration <= 0) return;
 
-  //   // Loop over each cue point, dynamically create a div for each
-  //   // then place in div progress bar
-  //   for (let i = 0; i < iMax; i++) {
+    const playheadWell = player.el().querySelector('.vjs-progress-holder');
+    if (!playheadWell) return;
+    
+    // Clear any previous markers
+    this.dispose(); 
 
-  //     if(chapters[i].time < 0 || chapters[i].time > videoDuration)
-  //     {
-  //       continue;
-  //     }
+    // Create a single container for the chapter tooltip
+    this.chapterTooltipContainer = document.createElement('div');
+    this.chapterTooltipContainer.className = 'vjs-chapter-tooltip-container'; // New class for styling
+    playheadWell.appendChild(this.chapterTooltipContainer);
 
-  //     const elem = document.createElement('div');
+    chapters.forEach((chapter, idx) => {
+      if (chapter.startTime < 0 || chapter.endTime > duration || chapter.endTime <= chapter.startTime) {
+        return;
+      }
+      
+      const leftPct = (chapter.startTime / duration) * 100;
 
-  //     elem.className = 'vjs-viostream-marker';
-  //     elem.id = 'cp' + i;
+      // Only add boundary markers
+      if (idx > 0) {
+        const boundary = document.createElement('div');
+        boundary.className = 'vjs-chapter-boundary';
+        boundary.style.left = leftPct + '%';
+        playheadWell.appendChild(boundary);
+      }
+    });
+  }
 
-  //     const percentage = (chapters[i].time / videoDuration) * 100;
-  //     elem.style.left = percentage + '%';
-
-  //     const spanToolTip = document.createElement('span');
-
-  //     spanToolTip.className = 'tooltiptext';
-  //     spanToolTip.innerHTML = chapters[i].label;
-  //     elem.appendChild(spanToolTip);
-
-  //     playheadWell.appendChild(elem);
-  //   }
-  // }
-
- /**
-   * For each chapter:
-   *  1) Create a transparent segment div (.vjs-chapter-segment) spanning [startTime,endTime].
-   *  2) Inside it, create a hidden tooltip div that will follow the mouse.
-   *  3) Also, create a vertical boundary line (.vjs-chapter-boundary) at startTime (except the first chapter).
+  /**
+   * Attaches mouse move and leave handlers to the main progress control.
    */
- static addMarkers(chapters: ChapterMarker[], player: Player) {
-  const duration = player.duration();
-  if (!duration || duration <= 0) return;
+  attachHoverHandlers(player: Player) {
+    // @ts-ignore
+    const progressControl = player.controlBar.progressControl;
+    
+    progressControl.on('mousemove', (e: MouseEvent) => {
+      if (!this.chapterTooltipContainer) return;
 
-  const playheadWell = player.el().getElementsByClassName('vjs-progress-holder')[0];
-  if (!playheadWell) return;
+      const barRect = progressControl.el().getBoundingClientRect();
+      const pct = (e.clientX - barRect.left) / barRect.width;
+      const time = pct * player.duration();
 
-  chapters.forEach((chapter, idx) => {
-    // 1) Validate times
-    if (
-      chapter.startTime < 0 ||
-      chapter.endTime > duration ||
-      chapter.endTime <= chapter.startTime
-    ) {
-      return;
-    }
+      // Find the chapter for the current hover time
+      const chapter = this.chapters.find(c => time >= c.startTime && time < c.endTime);
 
-    // 2) Compute left% and width% for this chapter
-    const leftPct = (chapter.startTime / duration) * 100;
-    const widthPct = ((chapter.endTime - chapter.startTime) / duration) * 100;
-
-    // 3) Create the “segment” div
-    const segment = document.createElement('div');
-    segment.className = 'vjs-chapter-segment';
-    segment.style.left = leftPct + '%';
-    segment.style.width = widthPct + '%';
-
-    // 4) Create a tooltip div inside the segment (hidden by default)
-    const tooltip = document.createElement('div');
-    tooltip.className = 'vjs-chapter-segment-tooltip';
-    tooltip.innerText = chapter.label;
-    segment.appendChild(tooltip);
-
-    // 5) Attach mouse events so the tooltip follows the cursor
-    segment.addEventListener('mousemove', (e: MouseEvent) => {
-      // e.offsetX is x-coordinate within this segment
-      const relativeX = e.offsetX;
-      // Move tooltip so its center is under the cursor
-      tooltip.style.left = relativeX + 'px';
-    });
-    segment.addEventListener('mouseenter', () => {
-      tooltip.style.display = 'block';
-    });
-    segment.addEventListener('mouseleave', () => {
-      tooltip.style.display = 'none';
+      if (chapter) {
+        // Update and show the tooltip
+        this.chapterTooltipContainer.innerText = chapter.label;
+        this.chapterTooltipContainer.style.left = `${pct * 100}%`;
+        this.chapterTooltipContainer.style.display = 'block';
+      } else {
+        // Hide if not over a chapter
+        this.chapterTooltipContainer.style.display = 'none';
+      }
     });
 
-    // 6) Append the segment into the progress bar
-    playheadWell.appendChild(segment);
+    progressControl.on('mouseleave', () => {
+      // Hide the tooltip when leaving the progress bar
+      if (this.chapterTooltipContainer) {
+        this.chapterTooltipContainer.style.display = 'none';
+      }
+    });
+  }
 
-    // 7) If this is NOT the first chapter, draw a boundary line at startTime
-    if (idx > 0) {
-      const boundary = document.createElement('div');
-      boundary.className = 'vjs-chapter-boundary';
-      boundary.style.left = leftPct + '%';
-      playheadWell.appendChild(boundary);
-    }
-  });
-}
-
-
-
-  /** On dispose(), remove all .vjs-chapter-segment elements */
+  /**
+   * On dispose, remove all created elements.
+   */
   dispose() {
-    const playheadWell = this.player().el().querySelector('.vjs-progress-holder')
+    const playheadWell = this.player().el().querySelector('.vjs-progress-holder');
     if (playheadWell) {
-      playheadWell.querySelectorAll('.vjs-chapter-segment').forEach((el) => el.remove());
-      playheadWell.querySelectorAll('.vjs-chapter-boundary').forEach((el) => el.remove());    }
-    super.dispose()
+      playheadWell.querySelectorAll('.vjs-chapter-boundary').forEach((el) => el.remove());
+      const tooltip = playheadWell.querySelector('.vjs-chapter-tooltip-container');
+      if (tooltip) tooltip.remove();
+    }
+    super.dispose();
   }
 }
 

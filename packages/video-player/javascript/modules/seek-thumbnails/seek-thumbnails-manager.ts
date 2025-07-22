@@ -119,25 +119,73 @@ export class SeekThumbnailsManager {
 }
 
 /**
+ * Extracts the thumbnail width from the VTT URL hash, or returns a default.
+ * @param url The thumbnail URL.
+ * @returns The width of the thumbnail frame.
+ */
+function getThumbnailWidthFromUrl(url: URL): number {
+  const m = url.hash.match(/xywh=(\d+),(\d+),(\d+),(\d+)/);
+  if (m && m[3]) {
+    // The 'w' value from xywh=x,y,w,h
+    return parseInt(m[3], 10);
+  }
+  // Default width if not specified in the URL hash
+  return 160;
+}
+
+/**
  * Handle hover over the progress bar.
  * Looks up the nearest thumbnail for the hovered time and renders it.
  */
+/**
+ * Handle hover over the progress bar.
+ * Renders the thumbnail and ensures it stays within the player bounds,
+ * using the dynamic width from the VTT file.
+ */
 function onMouseMove(e: MouseEvent, player: Player, mgr: SeekThumbnailsManager) {
   if (!mgr['container_']) return;
-// @ts-ignore
+
+  const playerEl = player.el();
+  // @ts-ignore
+  const playerWidth = playerEl.offsetWidth;
+  // @ts-ignore
   const barRect = player.controlBar.progressControl.el().getBoundingClientRect();
-  const pct = (e.clientX - barRect.left) / barRect.width;
+  
+  const pct = Math.max(0, Math.min(1, (e.clientX - barRect.left) / barRect.width));
   const time = pct * player.duration();
+
   const url = nearestThumbnail(mgr['thumbnails_'], time);
   if (!url) return;
 
+  // --- START: NEW LOGIC ---
+
+  // 1. Get the DYNAMIC width for this specific thumbnail from its URL
+  const thumbnailWidth = getThumbnailWidthFromUrl(url);
+  const thumbnailHalfWidth = thumbnailWidth / 2;
+
+  // 2. Calculate the ideal horizontal position based on the progress bar hover
+  const hoverPosition = pct * barRect.width;
+
+  // 3. Clamp the position using the dynamic width
+  let newLeft = hoverPosition;
+
+  if (newLeft < thumbnailHalfWidth) {
+    newLeft = thumbnailHalfWidth;
+  } else if (newLeft > playerWidth - thumbnailHalfWidth) {
+    newLeft = playerWidth - thumbnailHalfWidth;
+  }
+
+  // 4. Update the thumbnail element
   const container = mgr['container_']!;
   container.innerHTML = '';
   const thumbEl = createThumbnailElement(document, url);
   thumbEl.className = 'thumbnail';
-  container.style.left = `${e.pageX - player.el().getBoundingClientRect().left}px`;
+
+  container.style.left = `${newLeft}px`;
   container.style.display = 'block';
   container.appendChild(thumbEl);
+
+  // --- END: NEW LOGIC ---
 }
 
 /** Find the cue whose startTime is closest to t */
@@ -169,8 +217,8 @@ function createThumbnailElement(doc: Document, url: URL): HTMLDivElement {
     backgroundSize: 'auto',
     transform: 'translateX(-50%) translateY(-100%)',
     backgroundPosition: 'center center',
-    width: '100px',
-    height: '100px',
+    width: '160px',
+    height: '90px',
     display: 'block',
   });
 

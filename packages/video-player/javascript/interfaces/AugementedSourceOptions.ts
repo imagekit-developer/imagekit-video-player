@@ -25,12 +25,14 @@ export interface AugmentedSourceOptions extends SourceOptions {
         /**
          * recommendation thumbnail URLs after processing.
         */
-        recommendationThumbnails?: [string]
+        recommendationThumbnails?: string[]
         /**
          * shoppable thumbnail URLs after processing.
          * 
          */
-        shoppableThumbnails?: [string];
+        shoppableThumbnails?: {
+            [key: number]: string[];
+        };
         /**
         * text tracks URLs after processing.
         */

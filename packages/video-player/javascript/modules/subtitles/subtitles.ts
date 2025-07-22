@@ -71,7 +71,7 @@ async function setupSubtitles(params: {
         );
     }
 
-    console.log('Subtitles source URLs:', srcUrls);
+    // console.log('Subtitles source URLs:', srcUrls);
 
     // artifical delay to simulate loading
     // await new Promise(resolve => setTimeout(resolve, 10000));
@@ -332,7 +332,7 @@ export function overrideAddRemoteTextTrack(
                     parser.flush();
 
                     // 4) clear out the “Loading…” label and replace with your real one
-                    console.log('trackEl:', trackEl);
+                    // console.log('trackEl:', trackEl);
                     trackEl.label = finalOpts[0].label;
                     trackEl.srclang = finalOpts[0].srclang;
                     // 5) enable the track
@@ -369,7 +369,7 @@ export function overrideAddRemoteTextTrack(
                     if (finalOpts.length > 1) {
                         finalOpts.slice(1).forEach(opt => {
                             // add each translated track
-                            console.log('Adding translated track:', opt);
+                            // console.log('Adding translated track:', opt);
                             const track: HTMLTrackElement | undefined = orig({
                                 kind: 'subtitles',
                                 src: opt.src,
@@ -380,7 +380,7 @@ export function overrideAddRemoteTextTrack(
 
                         
                         // Check if the current track matches our intended default track.
-                        console.log('track in translated:', track);
+                        // console.log('track in translated:', track);
                         if (opt.default) {
                             console.log(`Setting track ${opt.label} as default`);
                             // @ts-ignore

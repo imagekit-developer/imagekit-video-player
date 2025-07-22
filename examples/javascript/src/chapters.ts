@@ -15,14 +15,14 @@ const player = videoPlayer('player', {
 
 // Example 1: Using AI-based chapters by setting chapters: true
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
     chapters: true 
 });
 
 /*
 // Example 2: Providing a VTT file for chapters
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
     chapters: {
         url: 'https://ik.imagekit.io/demo/chapters_example.vtt'
     }
@@ -39,6 +39,6 @@ const player = videoPlayer('player', {
 
 // Using AI-based chapters for this live demo
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
     chapters: true 
 });

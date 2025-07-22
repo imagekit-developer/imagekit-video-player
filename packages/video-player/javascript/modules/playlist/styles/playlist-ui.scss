@@ -1,0 +1,234 @@
+// --- 1. THEME DEFINITION ---
+// Contains all color variables for both Light (default) and Dark themes.
+
+.ik-player-container {
+  // --- Light Theme (Default) ---
+  --container-bg: #f0f2f5;           // Background for the area around the player/playlist
+  --playlist-bg: #f7fafc;            // Playlist main background
+  --playlist-border: #e0e0e0;        // Border around the playlist
+  --item-hover-bg: #eee;             // Background of a playlist item on hover
+  --item-selected-bg: #e5e5e5;       // Background of the selected ("now playing") item
+  --text-primary: #0f0f0f;           // Primary text color (e.g., video titles)
+  --text-secondary: #606060;        // Secondary text color (e.g., video descriptions)
+  --icon-color: #656565;             // Color of the "now playing" icon
+  --spinner-track: rgba(0, 0, 0, 0.1); // The faint circle of the loading spinner
+  --spinner-head: #606060;           // The moving part of the loading spinner
+
+  // --- Dark Theme ---
+  // When this class is added, the variables below will override the light theme defaults.
+  &.theme-dark {
+    --container-bg: #1a1a1a;
+    --playlist-bg: #212121;
+    --playlist-border: #383838;
+    --item-hover-bg: #303030;
+    --item-selected-bg: #424242;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --icon-color: #ffffff;
+    --spinner-track: rgba(255, 255, 255, 0.2);
+    --spinner-head: #ffffff;
+  }
+}
+
+
+// --- 2. MAIN PLAYER LAYOUT ---
+// This section uses the theme variables.
+
+.ik-player-container {
+  display: grid;
+  margin: 0 auto 20px;
+  background: var(--container-bg);
+  grid-template-columns: 4fr 1fr;
+  grid-template-rows: 1fr;
+  grid-template-areas: "player playlist";
+}
+
+.video-js {
+  grid-area: player;
+  min-width: 0;
+  min-height: 0;
+}
+
+.vjs-playlist {
+  grid-area: playlist;
+  min-height: 0;
+  overflow: auto;
+}
+
+// Horizontal Playlist Layout Modifier
+.ik-player-container.vjs-playlist-horizontal-container {
+  grid-template-columns: 1fr;
+  grid-template-rows: 4fr 1fr;
+  grid-template-areas:
+    "player"
+    "playlist";
+}
+
+
+// --- 3. PLAYLIST CONTAINER & LIST STYLING ---
+
+.vjs-playlist {
+  padding: 0;
+  background-color: var(--playlist-bg);
+  border: 1px solid var(--playlist-border);
+  border-radius: 0 8px 8px 0;
+  list-style-type: none;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.vjs-playlist.vjs-playlist-horizontal {
+  border-radius: 0 0 8px 8px;
+}
+
+.vjs-playlist-item-list {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vjs-playlist-vertical .vjs-playlist-item-list {
+  display: block;
+  height: 100%;
+}
+
+.vjs-playlist-horizontal .vjs-playlist-item-list {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+
+  .vjs-playlist-item {
+    width: 20%;
+    height: 100%;
+    flex-shrink: 0;
+    margin-right: 5px;
+    box-sizing: border-box;
+    // different layout for horizontal
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .vjs-playlist-name {
+    -webkit-line-clamp: 1;
+  }
+}
+
+
+// --- 4. INDIVIDUAL PLAYLIST ITEM STYLING ---
+
+.vjs-playlist-menu {
+  padding: 8px;
+  background-color: var(--playlist-bg); // Use main playlist BG
+}
+
+.vjs-playlist-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  padding-left: 28px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  position: relative;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    background-color: var(--item-hover-bg);
+  }
+}
+
+.vjs-playlist-thumbnail {
+  flex-shrink: 0;
+  width: 120px;
+  margin-right: 12px;
+  border-radius: 4px;
+  overflow: hidden;
+
+  .vjs-playlist-thumbnail-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+}
+
+.vjs-playlist-details {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.vjs-playlist-name {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin: 0;
+  font-weight: 500;
+
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vjs-playlist-description {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+// --- 5. "NOW PLAYING" ITEM STATE ---
+
+.vjs-playlist-item.vjs-selected {
+  background-color: var(--item-selected-bg);
+
+  &::before {
+    content: '▶';
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--icon-color);
+    font-size: 12px;
+  }
+}
+
+
+// --- 6. UTILITY STYLES ---
+
+.vjs-playlist-thumbnail-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid var(--spinner-track);
+  border-top-color: var(--spinner-head);
+  border-radius: 50%;
+  animation: vjs-playlist-thumbnail-spin 1s linear infinite;
+}
+
+@keyframes vjs-playlist-thumbnail-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
