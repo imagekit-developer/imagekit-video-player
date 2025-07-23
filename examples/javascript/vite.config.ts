@@ -27,6 +27,7 @@ export default defineConfig({
         chapters: path.resolve(__dirname, 'pages/chapters.html'),
         subtitles: path.resolve(__dirname, 'pages/subtitles.html'),
         seekThumbnails: path.resolve(__dirname, 'pages/seek-thumbnails.html'),
+        abs: path.resolve(__dirname, 'pages/abs.html'),
         // Note: You didn't provide a context-menu example, so it's commented out.
         // contextMenu: path.resolve(__dirname, 'pages/context-menu.html'),
       },
