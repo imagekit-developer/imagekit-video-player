@@ -49,7 +49,7 @@
 
     .vjs-fullscreen-control .vjs-icon-placeholder::before {
         font-size: 2.2em; // Makes the icon larger
-        margin-top: -5px; // Adjusts the vertical position
+        margin-top: -4px; // Adjusts the vertical position
     }
 
 
@@ -367,7 +367,7 @@
         >.vjs-icon-placeholder:before {
             content: '\f10b' !important;
             font-size: 2em;
-            margin-top: -2px;
+            margin-top: -1.5px;
         }
     }
 
