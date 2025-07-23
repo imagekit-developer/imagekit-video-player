@@ -1,8 +1,8 @@
-import type { PlayerOptions, SourceOptions, PlaylistOptions } from '../javascript';
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '../javascript';
 
 /** Props accepted by the Angular IKVideoPlayerComponent */
 export interface IKVideoPlayerProps {
-    ikOptions: PlayerOptions;
+    ikOptions: IKPlayerOptions;
     videoJsOptions?: any;
     source?: SourceOptions;
     playlist?: {

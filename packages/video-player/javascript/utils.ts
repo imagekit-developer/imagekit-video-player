@@ -1,6 +1,6 @@
 // helpers.ts
 import { buildSrc as ikBuild } from '@imagekit/javascript';
-import type { PlayerOptions, Transformation } from './interfaces';
+import type { IKPlayerOptions, Transformation } from './interfaces';
 import type { SourceOptions } from './interfaces';
 import type { ABSOptions } from './interfaces';
 import { StreamingResolution } from '@imagekit/javascript/dist/interfaces';
@@ -12,7 +12,7 @@ import { StreamingResolution } from '@imagekit/javascript/dist/interfaces';
  */
 export async function prepareSource(
   input: string | SourceOptions,
-  opts: PlayerOptions
+  opts: IKPlayerOptions
 ): Promise<SourceOptions> {
 
     // wait for 10s
@@ -61,9 +61,9 @@ export function normalizeInput(
  * Poll a URL until it’s ready (HTTP 200) or give up.
  *
  * @param url            The fully-built (and signed) video URL
- * @param maxTries       From PlayerOptions.maxTries
- * @param timeoutMs      From PlayerOptions.videoTimeoutInMS
- * @param fixedDelayMs   From PlayerOptions.delayInMS, or undefined for exponential
+ * @param maxTries       From IKPlayerOptions.maxTries
+ * @param timeoutMs      From IKPlayerOptions.videoTimeoutInMS
+ * @param fixedDelayMs   From IKPlayerOptions.delayInMS, or undefined for exponential
  */
 export async function waitForVideoReady(
   url: string,
@@ -115,7 +115,7 @@ export async function waitForVideoReady(
  */
 export function addABSSuffixToSrcURL(
   input: string | SourceOptions,
-  opts: PlayerOptions
+  opts: IKPlayerOptions
 ): { src: string; transformation: Transformation[] } {
   // start from either the input.src or string
   const baseUrl = typeof input === 'string' ? input : input.src;
@@ -170,12 +170,12 @@ export function addABSSuffixToSrcURL(
  * - Applies your `signerFn` if present in player options.
  *
  * @param input  The source object (must have a `.src` URL and optionally `.transformation` or `.poster`).
- * @param opts   The plugin’s global PlayerOptions (for default `transformation` and `signerFn`).
+ * @param opts   The plugin’s global IKPlayerOptions (for default `transformation` and `signerFn`).
  * @returns      A fully built (and signed) poster image URL.
  */
 export async function preparePosterSrc(
   input: SourceOptions,
-  opts: PlayerOptions
+  opts: IKPlayerOptions
 ): Promise<string> {
 
   // console.log("preparePosterSrc called for" + JSON.stringify(input))
@@ -238,7 +238,7 @@ export async function preparePosterSrc(
 
 export async function prepareSeekThumbnailVttSrc(
   input: SourceOptions,
-  opts: PlayerOptions
+  opts: IKPlayerOptions
 ): Promise<string> {
   // 1️⃣ Grab the raw video URL
   let videoSrcUrl = input.src;
@@ -281,7 +281,7 @@ export async function prepareSeekThumbnailVttSrc(
 
 export async function prepareChaptersVttSrc(
   input: SourceOptions,
-  opts: PlayerOptions
+  opts: IKPlayerOptions
 ): Promise<string> {
   // 1️⃣ Grab the raw video URL
   let videoSrcUrl = input.src;
@@ -366,15 +366,15 @@ export function isTransformationAllowedWithABS(
 }
 
 /**
- * Runtime‐validates a PlayerOptions object, ensuring all required
+ * Runtime‐validates a IKPlayerOptions object, ensuring all required
  * properties are present and all fields conform to their expected
  * types/ranges. Throws an Error on the first violation.
  *
- * After this call, TS will treat opts as Required<PlayerOptions>.
+ * After this call, TS will treat opts as Required<IKPlayerOptions>.
  */
 export function validateIKPlayerOptions(
-  opts: PlayerOptions
-): asserts opts is Required<PlayerOptions> {
+  opts: IKPlayerOptions
+): asserts opts is Required<IKPlayerOptions> {
   // imagekitId: required, non‐empty string
   if (typeof opts.imagekitId !== 'string' || opts.imagekitId.trim() === '') {
     throw new Error('`imagekitId` is required and must be a non‐empty string.');

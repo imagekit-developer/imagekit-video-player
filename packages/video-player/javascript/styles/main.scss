@@ -48,10 +48,10 @@
     }
 
     .vjs-fullscreen-control .vjs-icon-placeholder::before {
-        font-size: 2.2em;   // Makes the icon larger
-        margin-top: -4px;   // Adjusts the vertical position
-      }
-    
+        font-size: 2.2em; // Makes the icon larger
+        margin-top: -5px; // Adjusts the vertical position
+    }
+
 
     &.cld-fluid {
         width: 100%;
@@ -366,6 +366,8 @@
 
         >.vjs-icon-placeholder:before {
             content: '\f10b' !important;
+            font-size: 2em;
+            margin-top: -2px;
         }
     }
 
@@ -397,11 +399,9 @@
 
                 &.vjs-selected {
                     &:before {
-                        font-family: VideoJS;
                         font-weight: 400;
                         font-style: normal;
-
-                        content: '\f12d';
+                        content: '✓';
                         display: block;
                         position: absolute;
                         width: 1em;
@@ -456,208 +456,146 @@
 
     /* Add this inside your main .video-js { ... } block */
 
-.vjs-seek-feedback {
-    // Positioning
-    position: absolute;
-    top: 50%;
-    // The vertical centering and initial scale
-    transform: translateY(-50%) scale(0.8);
-  
-    // Visuals (These are fine)
-    font-size: 3em;
-    color: #fff;
-    background-color: rgba(43, 51, 63, 0.7);
-    border-radius: 50%;
-    width: 3em;
-    height: 3em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  
-    // Animation and default state
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-    z-index: 2;
-  
-    // --- START: NEW POSITIONING LOGIC ---
-  
-    // Modifier for FORWARD seek (RIGHT side)
-    &.is-forward {
-      left: 75%; // Position on the right third of the screen
-    }
-  
-    // Modifier for BACKWARD seek (LEFT side)
-    &.is-backward {
-      left: 25%; // Position on the left third of the screen
-    }
-  
-    // The visible state now also scales the X position correctly
-    &.is-visible {
-      opacity: 1;
-      // We combine the Y and X transforms for a clean animation
-      &.is-forward, &.is-backward {
-         transform: translateY(-50%) translateX(-50%) scale(1);
-      }
-    }
-  }
-/* In your main .video-js { ... } block */
+    .vjs-seek-feedback {
+        // Positioning
+        position: absolute;
+        top: 50%;
+        // The vertical centering and initial scale
+        transform: translateY(-50%) scale(0.8);
 
-// .vjs-seek-feedback {
-//     // Positioning (This is correct)
-//     position: absolute;
-//     top: 50%;
-//     transform: translateY(-50%) scale(0.8);
-  
-//     // --- START: MODIFIED STYLES TO MATCH BIG PLAY BUTTON ---
-  
-//     // 1. Set font-size and width to match the play button's proportions.
-//     //    height is set to 'auto' to allow the pseudo-element to control it.
-//     font-size: 5em;
-//     width: 1.5em;
-//     height: auto;
-//     border-radius: 50%;
-//     margin: 0; // Reset margin
-  
-//     // Remove direct flex properties from the container
-//     // display: flex; (removed)
-//     // justify-content: center; (removed)
-//     // align-items: center; (removed)
-    
-//     // Apply the same background and border
-//     background-color: rgba(43, 51, 63, 0.7);
-//     border: 0.06666em solid #fff;
-//     color: #fff;
-  
-//     // 2. Add the pseudo-element to create the circular background
-//     //    This is the exact same trick used by your .vjs-big-play-button
-//     &:before {
-//       content: '';
-//       position: relative;
-//       display: block;
-//       width: 100%;
-//       padding-bottom: 100%;
-//     }
-  
-//     // 3. Position the icon on top of the pseudo-element background
-//     .vjs-icon-placeholder {
-//       position: absolute;
-//       top: 0;
-//       left: 0;
-//       width: 100%;
-//       height: 100%;
-  
-//       // Use flexbox here to center the icon character
-//       display: flex;
-//       justify-content: center;
-//       align-items: center;
-//       opacity: 0.8;
-//     }
-  
-//     // --- END: MODIFIED STYLES ---
-  
-//     // Animation and default state (These are correct)
-//     opacity: 0;
-//     visibility: hidden;
-//     pointer-events: none;
-//     transition: all 0.2s ease-out;
-//     z-index: 2;
-  
-//     // Positional modifiers (These are correct)
-//     &.is-forward {
-//       left: 75%;
-//     }
-//     &.is-backward {
-//       left: 25%;
-//     }
-  
-//     // The visible state (This is correct)
-//     &.is-visible {
-//       opacity: 1;
-//       visibility: visible;
-//       &.is-forward, &.is-backward {
-//          transform: translateY(-50%) translateX(-50%) scale(1);
-//       }
-//     }
-//   }
+        // Visuals (These are fine)
+        font-size: 3em;
+        color: #fff;
+        background-color: rgba(43, 51, 63, 0.7);
+        border-radius: 50%;
+        width: 3em;
+        height: 3em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        // Animation and default state
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+        z-index: 2;
+
+        // --- START: NEW POSITIONING LOGIC ---
+
+        // Modifier for FORWARD seek (RIGHT side)
+        &.is-forward {
+            left: 75%; // Position on the right third of the screen
+        }
+
+        // Modifier for BACKWARD seek (LEFT side)
+        &.is-backward {
+            left: 25%; // Position on the left third of the screen
+        }
+
+        // The visible state now also scales the X position correctly
+        &.is-visible {
+            opacity: 1;
+
+            // We combine the Y and X transforms for a clean animation
+            &.is-forward,
+            &.is-backward {
+                transform: translateY(-50%) translateX(-50%) scale(1);
+            }
+        }
+    }
 }
 
-// In your main SCSS file
-
-/* Place this in your main SCSS file.
-  It combines the logic for all tooltips for clarity.
-*/
 .video-js {
 
     // --- 1. Tooltips inside the Progress Bar ---
     .vjs-progress-control {
-      // This makes the progress bar the positioning context for tooltips inside it.
-      overflow: visible;
-  
-      .vjs-progress-holder {
-        // The direct parent for the time and chapter tooltips.
-        // Ensure it can contain positioned children.
-        position: relative;
-      }
-  
-    //   // Time tooltip (the one that follows the mouse)
-    //   .vjs-mouse-display .vjs-time-tooltip {
-    //     position: absolute;
-    //     bottom: 12px; /* Position it just above the progress bar. */
-    //     transform: translateX(-50%);
-    //     display: block; // Ensure it's visible on hover.
-    //   }
-      
-      // Chapter tooltip
-      .vjs-chapter-tooltip-container {
-        position: absolute;
-        // Position it above the time tooltip (12px base + ~25px for time tooltip height)
-        bottom: calc(100% + 1em); 
-        transform: translateX(-50%);
-        /* Add your other visual styles (background, padding, etc.) here */
-        background: rgba(0, 0, 0, 0.85);
-        color: #fff;
-        font-size: 12px;
-        line-height: 1.2;
-        padding: 4px 8px;
-        border-radius: 4px;
-        white-space: nowrap;
-        pointer-events: none;
-        z-index: 4;
-      }
+        // This makes the progress bar the positioning context for tooltips inside it.
+        overflow: visible;
+
+        .vjs-progress-holder {
+            // The direct parent for the time and chapter tooltips.
+            // Ensure it can contain positioned children.
+            position: relative;
+        }
+
+        //   // Time tooltip (the one that follows the mouse)
+        //   .vjs-mouse-display .vjs-time-tooltip {
+        //     position: absolute;
+        //     bottom: 12px; /* Position it just above the progress bar. */
+        //     transform: translateX(-50%);
+        //     display: block; // Ensure it's visible on hover.
+        //   }
+
+        // Chapter tooltip
+        .vjs-chapter-tooltip-container {
+            position: absolute;
+            // Position it above the time tooltip (12px base + ~25px for time tooltip height)
+            bottom: calc(100% + 1em);
+            transform: translateX(-50%);
+            /* Add your other visual styles (background, padding, etc.) here */
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            font-size: 12px;
+            line-height: 1.2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 4;
+        }
     }
-  
+
+    .vjs-http-source-selector>.vjs-button {
+        font-size: 1.6em;
+        margin-right: -12px;
+        margin-left: -12px;
+    }
+
+    .vjs-http-source-selector>.vjs-menu {
+        margin-bottom: 1.8em
+    }
+
+    .vjs-http-source-selector>.vjs-button.vjs-icon-cog::before {
+        // Set the default opacity to match other icons
+        opacity: 0.8;
+    }
+
+    .vjs-http-source-selector>.vjs-button.vjs-icon-cog:hover::before {
+        // Set opacity to 1 on hover, just like the others
+        opacity: 1;
+    }
+
     // --- 2. Thumbnail Preview (Positioned relative to the main player) ---
-  
+
     // Default state: Thumbnail is positioned above the control bar + time tooltip.
     // This is the "slid down" position when no chapters are present.
     .thumbnail-preview {
-      position: absolute;
-      // This value must clear the control bar (~45px) and the time tooltip (~28px).
-      bottom: 88px; 
-      z-index: 5;
-      transform: translateX(-50%); // Centering is handled by JS `left` style.
-      pointer-events: none;
-      
-      // Add the transition for the smooth "slide" effect.
-      transition: bottom 0.2s ease-out;
-  
-      .thumbnail {
-        border: 2px solid #fff;
-        border-radius: 5px;
-      }
+        position: absolute;
+        // This value must clear the control bar (~45px) and the time tooltip (~28px).
+        bottom: 88px;
+        z-index: 5;
+        transform: translateX(-50%); // Centering is handled by JS `left` style.
+        pointer-events: none;
+
+        // Add the transition for the smooth "slide" effect.
+        transition: bottom 0.2s ease-out;
+
+        .thumbnail {
+            border: 2px solid #fff;
+            border-radius: 5px;
+        }
     }
-  
+
     // --- 3. The Conditional Logic ---
-  
+
     // Use :has() on the .video-js player, which is the common ancestor.
     // This rule applies ONLY if a chapter tooltip exists anywhere inside the player.
     &:has(.vjs-chapter-tooltip-container) {
-      
-      // If chapters exist, move the thumbnail UP to make space.
-      .thumbnail-preview {
-        // New "slid up" position. Add ~30px for the chapter tooltip height.
-        bottom: 124px;
-      }
+
+        // If chapters exist, move the thumbnail UP to make space.
+        .thumbnail-preview {
+            // New "slid up" position. Add ~30px for the chapter tooltip height.
+            bottom: 124px;
+        }
     }
-  }
+}

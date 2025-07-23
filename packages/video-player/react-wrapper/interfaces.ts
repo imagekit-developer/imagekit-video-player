@@ -1,14 +1,14 @@
 
 import {
-    PlayerOptions,
+    IKPlayerOptions,
     SourceOptions,
     PlaylistOptions,
 } from '../javascript';
 
 /** Props accepted by IKVideoPlayer */
 export interface IKVideoPlayerProps {
-    /** Your ImageKit PlayerOptions */
-    ikOptions: PlayerOptions;
+    /** Your ImageKit IKPlayerOptions */
+    ikOptions: IKPlayerOptions;
     /** Any additional Video.js playerOptions (controls/autoplay/fluid/etc) */
     videoJsOptions?: any;
     /**

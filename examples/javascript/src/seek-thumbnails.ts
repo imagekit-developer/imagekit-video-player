@@ -28,6 +28,8 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
     seekThumbnails: true,
+}, {
+    muted: true
 });
 
 player.src({

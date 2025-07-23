@@ -2,21 +2,21 @@
 
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import type { PlayerOptions, SourceOptions } from '../../interfaces';
+import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
 export class PresentUpcoming extends Component {
   private item_?: SourceOptions;
-  private playerOptions_: PlayerOptions;
+  private playerOptions_: IKPlayerOptions;
   private thumbnailEl_: HTMLElement;
   // private textEl_: HTMLElement;
   private titleEl_: HTMLElement;
   private closeButtonEl_: HTMLElement;
 
 
-  constructor(player: Player, playerOptions: PlayerOptions) {
+  constructor(player: Player, playerOptions: IKPlayerOptions) {
     super(player);
     this.playerOptions_ = playerOptions;
 

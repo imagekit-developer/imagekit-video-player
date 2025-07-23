@@ -512,8 +512,10 @@ const codeToDisplay = `
 import { videoPlayer } from '@imagekit/video-player';
 import '@imagekit/video-player/dist/styles.css';
 
-const player = videoPlayer('player-container', {
-  imagekitId: 'your_id',
+const player = videoPlayer('player', {
+    imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+}, {
+    muted: true
 });
 
 player.playlist({
@@ -559,8 +561,10 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 
 // --- Actual Player Initialization ---
 // Create a video element for the player to mount on
-const player = videoPlayer("player", {
+const player = videoPlayer('player', {
   imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+}, {
+  muted: true
 });
 
 const playlistManager = player.playlist({

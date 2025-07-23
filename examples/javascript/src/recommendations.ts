@@ -8,7 +8,9 @@ import { videoPlayer } from '@imagekit/video-player';
 import '@imagekit/video-player/dist/styles.css';
 
 const player = videoPlayer('player', {
-    imagekitId: 'your_id',
+    imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+}, {
+    muted: true
 });
 
 player.src({
@@ -32,6 +34,8 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 // --- Actual Player Initialization ---
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+}, {
+    muted: true
 });
 
 player.src({

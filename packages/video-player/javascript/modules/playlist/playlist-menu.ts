@@ -3,7 +3,7 @@ import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import { PlaylistMenuItem } from './playlist-menu-item';
 import { Playlist } from './playlist';
-import { PlayerOptions } from '../../interfaces';
+import { IKPlayerOptions } from '../../interfaces';
 
 const Component = videojs.getComponent('Component');
 
@@ -23,13 +23,13 @@ const notUpNext = (el: any) => el.removeClass('vjs-up-next');
 export class PlaylistMenu extends Component {
   private items: PlaylistMenuItem[] = [];
   private playlist: Playlist;
-  private playerOptions: PlayerOptions;
+  private playerOptions: IKPlayerOptions;
 
   constructor(
     player: Player,
     playlist: Playlist,
     options: PlaylistMenuOptions,
-    playerOptions: PlayerOptions
+    playerOptions: IKPlayerOptions
   ) {
     // Pass `options` into super so Video.js creates `el_` for you:
     super(player, options);

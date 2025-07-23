@@ -8,9 +8,9 @@ import { videoPlayer } from '@imagekit/video-player';
 import '@imagekit/video-player/dist/styles.css';
 
 const player = videoPlayer('player', {
-    imagekitId: 'your_id',
-    width: 960,
-    height: 540,
+    imagekitId: 'imagekit_id', // Replace with your ImageKit ID
+}, {
+    muted: true
 });
 
 player.src({
@@ -47,6 +47,8 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 // --- Actual Player Initialization ---
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+}, {
+    muted: true
 });
 
 player.src({
@@ -55,7 +57,7 @@ player.src({
         {
             autoGenerateSubtitles: true,
             maxWords: 4,
-            wordHighlight: true,          
+            wordHighlight: true,
         },
         {
             autoGenerateSubtitles: true,

@@ -1,20 +1,20 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import { PlayerOptions, SourceOptions } from '../../interfaces';
+import { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
 interface RecommendationsOverlayOptions {
   recommendations: SourceOptions[];
-  playerOptions: PlayerOptions;
+  playerOptions: IKPlayerOptions;
   children?: any[];
   className?: string;
 }
 
 export class RecommendationsOverlay extends Component {
   private recommendations: SourceOptions[];
-  private playerOptions: PlayerOptions;
+  private playerOptions: IKPlayerOptions;
   private gridEl!: HTMLDivElement;
   private closeBtn!: HTMLButtonElement;
 

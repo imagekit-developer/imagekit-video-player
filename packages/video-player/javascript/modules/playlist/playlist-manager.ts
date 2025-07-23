@@ -5,7 +5,7 @@ import { isEqual, pick } from 'lodash'
 import { Playlist } from './playlist';
 import { AutoAdvance } from './auto-advance';
 import { PlaylistMenu } from './playlist-menu';
-import type { SourceOptions, PlaylistOptions, PlayerOptions } from '../../interfaces';
+import type { SourceOptions, PlaylistOptions, IKPlayerOptions } from '../../interfaces';
 import { isIndexInBounds, SOURCE_OPTION_KEYS } from './utils';
 import './present-upcoming';
 import { PresentUpcoming } from './present-upcoming';
@@ -27,7 +27,7 @@ export class PlaylistManager {
   private playlist_: Playlist;
   private autoAdvance_: AutoAdvance;
   private playlistMenu?: PlaylistMenu;
-  private playerOptions_: PlayerOptions;
+  private playerOptions_: IKPlayerOptions;
   private playerContainer_?: HTMLElement;
   private playlistOptions_: PlaylistOptions;
   private presentUpcomingComponent_?: PresentUpcoming;
@@ -35,7 +35,7 @@ export class PlaylistManager {
   private isUpcomingDismissed_ = false;
 
 
-  constructor(player: Player, playerOptions: PlayerOptions) {
+  constructor(player: Player, playerOptions: IKPlayerOptions) {
     this.player_ = player;
     this.playerOptions_ = playerOptions;
     this.playlistOptions_ = {};

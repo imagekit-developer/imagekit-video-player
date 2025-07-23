@@ -8,7 +8,7 @@ import type {
 } from '@imagekit/video-player/react';
 
 import {
-    PlayerOptions,
+    IKPlayerOptions,
     SourceOptions,
     PlaylistOptions
 } from '@imagekit/video-player'
@@ -18,8 +18,8 @@ import '@imagekit/video-player/dist/styles.css';
 export default function App() {
     const playerRef = useRef<IKVideoPlayerRef>(null);
 
-    // 1) Define your ImageKit PlayerOptions
-    const ikOptions: PlayerOptions = {
+    // 1) Define your ImageKit IKPlayerOptions
+    const ikOptions: IKPlayerOptions = {
         imagekitId: 'YOUR_IMAGEKIT_ID',
         seekThumbnails: true,
         logo: {

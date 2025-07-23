@@ -1,6 +1,6 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import type { PlayerOptions, SourceOptions, Transformation } from '../../interfaces';
+import type { IKPlayerOptions, SourceOptions, Transformation } from '../../interfaces';
 import { Playlist } from './playlist';
 import { preparePosterSrc } from '../../utils';
 import { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
@@ -13,7 +13,7 @@ interface PlaylistMenuItemOptions {
   playOnSelect?: boolean;
   children?: any[];
   className?: string;
-  playerOptions?: PlayerOptions;
+  playerOptions?: IKPlayerOptions;
 }
 
 const DEFAULT_TRANSFORMATION: Transformation = {
@@ -30,9 +30,9 @@ export class PlaylistMenuItem extends Component {
   private imgEl?: HTMLImageElement;
   private playOnSelect: boolean;
   private playlist: Playlist
-  private playerOptions: PlayerOptions;
+  private playerOptions: IKPlayerOptions;
 
-  constructor(player: Player, playlist: Playlist, options: PlaylistMenuItemOptions, playerOptions: PlayerOptions) {
+  constructor(player: Player, playlist: Playlist, options: PlaylistMenuItemOptions, playerOptions: IKPlayerOptions) {
     // @ts-ignore
     super(player, options);
     this.item = options.item;

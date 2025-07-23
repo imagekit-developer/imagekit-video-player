@@ -1,13 +1,13 @@
 // packages/video-player/vue/IKVideoPlayer.ts
 import { h, ref, watch, onUnmounted, computed, defineComponent, type PropType, onMounted } from 'vue';
 import { videoPlayer } from '../javascript';
-import type { PlayerOptions, SourceOptions, PlaylistOptions } from '../javascript';
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '../javascript';
 import type Player from 'video.js/dist/types/player';
 
 export const IKVideoPlayer = defineComponent({
   // 1. Props are defined in the component configuration
   props: {
-    ikOptions: { type: Object as PropType<PlayerOptions>, required: true },
+    ikOptions: { type: Object as PropType<IKPlayerOptions>, required: true },
     videoJsOptions: { type: Object, default: () => ({}) },
     source: { type: Object as PropType<SourceOptions> },
     playlist: { type: Object as PropType<{ sources: SourceOptions[]; options?: PlaylistOptions }> },

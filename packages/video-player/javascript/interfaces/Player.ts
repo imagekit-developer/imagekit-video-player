@@ -2,7 +2,7 @@ import Player from 'video.js/dist/types/player';
 import type { Transformation }from '@imagekit/javascript'
 
 
-export interface PlayerOptions {
+export interface IKPlayerOptions {
     /** Your ImageKit ID */
     imagekitId: string;
     /** 'left' | 'right' floating thumbnail when scrolled out */

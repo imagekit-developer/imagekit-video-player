@@ -21,14 +21,14 @@
 import { ref } from 'vue';
 // Import your component and types
 import { IKVideoPlayer } from '@imagekit/video-player/vue';
-import type { PlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
 
 // Create a ref to get access to the component's exposed methods
 import type { IKVideoPlayerRef } from '@imagekit/video-player/vue';
 
 const playerRef = ref<IKVideoPlayerRef | null>(null);
 
-const ikOptions: PlayerOptions = {
+const ikOptions: IKPlayerOptions = {
   imagekitId: 'YOUR_IMAGEKIT_ID', // Remember to replace this
   seekThumbnails: true,
 };

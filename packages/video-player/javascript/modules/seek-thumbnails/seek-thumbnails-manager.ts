@@ -1,6 +1,6 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
-import type { PlayerOptions, SourceOptions } from '../../interfaces';
+import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { prepareSeekThumbnailVttSrc } from '../../utils';
 
 const log = videojs.log.createLogger('videojs-seek-thumbnail');
@@ -28,7 +28,7 @@ export class SeekThumbnailsManager {
   static async initSeekThumbnails(
     player: Player,
     source: SourceOptions,
-    playerOptions: PlayerOptions
+    playerOptions: IKPlayerOptions
   ): Promise<SeekThumbnailsManager | null> {
     try {
       // 1) Build the VTT URL

@@ -13,7 +13,7 @@ import videojs from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
 import './modules/http-source-selector/plugin';
 import './modules/context-menu/plugin';
-import type { PlayerOptions, RemoteTextTrackOptions } from './interfaces';
+import type { IKPlayerOptions, RemoteTextTrackOptions } from './interfaces';
 import type Player from 'video.js/dist/types/player';
 import type { SourceOptions } from './interfaces';
 import type { AugmentedSourceOptions } from './interfaces/AugementedSourceOptions';
@@ -27,7 +27,7 @@ import { ShoppableManager } from './modules/shoppable/shoppable-manager';
 import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
 
-const defaults: PlayerOptions = {
+const defaults: IKPlayerOptions = {
   imagekitId: 'random_id',
   floatingWhenNotVisible: null,
   hideContextMenu: false,
@@ -40,7 +40,7 @@ const defaults: PlayerOptions = {
 
 const Plugin = videojs.getPlugin('plugin') as typeof PluginType;
 class ImageKitVideoPlayerPlugin extends Plugin {
-  private ikGlobalSettings_: PlayerOptions;
+  private ikGlobalSettings_: IKPlayerOptions;
   private currentSource_: SourceOptions | SourceOptions[] | null = null;
   private originalCurrentSource_: SourceOptions | SourceOptions[] | null = null;
   private playlistManger_?: PlaylistManager;
@@ -48,7 +48,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   private shoppableManager_?: ShoppableManager;
 
 
-  constructor(player: Player, options: PlayerOptions) {
+  constructor(player: Player, options: IKPlayerOptions) {
     super(player);
 
     this.ikGlobalSettings_ = videojs.mergeOptions(defaults, options);
@@ -438,7 +438,7 @@ this.player.ready(() => {
   }
 
   // Helper to get player options
-  public getPlayerOptions = (): PlayerOptions => {
+  public getPlayerOptions = (): IKPlayerOptions => {
     return this.ikGlobalSettings_;
   }
 
@@ -452,11 +452,11 @@ export default ImageKitVideoPlayerPlugin;
 
 export function videoPlayer(
   element: string | HTMLElement,
-  options: PlayerOptions,
-  playerOptions: any = {}
+  options: IKPlayerOptions,
+  videoJsOptions: any = {}
 ) {
   const player = videojs(element, {
-    ...playerOptions,
+    ...videoJsOptions,
     // playbackRates: [0.5, 1, 1.5, 2],
     // children: {
     //   controlBar: {
@@ -488,7 +488,7 @@ export function videoPlayer(
 
     html5: { nativeTextTracks: false },
     plugins: {
-      ...(playerOptions.plugins ?? {}),
+      ...(videoJsOptions.plugins ?? {}),
       httpSourceSelector: { default: 'auto' },
       imagekitVideoPlayer: options,
     },
