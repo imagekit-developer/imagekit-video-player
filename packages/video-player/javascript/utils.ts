@@ -88,7 +88,8 @@ export async function waitForVideoReady(
     }
     clearTimeout(timer);
 
-    if (res.status === 202) {
+    const parsedUrl = new URL(res.url);
+    if (res.redirected && parsedUrl.searchParams.has('tr') && parsedUrl.searchParams.get('tr') === 'orig') {
       // still processing → retry
       if (attempt === maxTries) break;
       // compute delay
