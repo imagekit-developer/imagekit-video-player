@@ -137,12 +137,26 @@
             <form id="player-form">
                 <div class="form-group">
                     <label for="imagekit-id">ImageKit ID</label>
-                    <input type="text" id="imagekit-id" name="imagekit-id" placeholder="Enter your ImageKit ID" value="zuqlyov9d" />
+                    <input type="text" id="imagekit-id" name="imagekit-id" placeholder="Enter your ImageKit ID" />
                 </div>
                 
                 <div class="form-group">
                     <label for="src-url">Source URL</label>
-                    <input type="url" id="src-url" name="src-url" placeholder="Enter video source URL" value="https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true" />
+                    <input type="url" id="src-url" name="src-url" placeholder="Enter video source URL" />
+                </div>
+                
+                <div class="form-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="enable-signer" name="enable-signer" />
+                        <label for="enable-signer">Enable Signer Function</label>
+                    </div>
+                    <div id="signer-options" class="sub-options" style="display: none;">
+                        <div class="form-group">
+                            <label for="signer-url">Signer Function URL</label>
+                            <input type="url" id="signer-url" name="signer-url" placeholder="https://your-api.com/sign?url=" />
+                            <div class="help-text">URL endpoint that accepts a URL parameter and returns a signed URL</div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -210,6 +224,13 @@
         
         document.getElementById('translation')?.addEventListener('change', function() {
             const subOptions = document.getElementById('translation-options');
+            if (subOptions) {
+                subOptions.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+        
+        document.getElementById('enable-signer')?.addEventListener('change', function() {
+            const subOptions = document.getElementById('signer-options');
             if (subOptions) {
                 subOptions.style.display = this.checked ? 'block' : 'none';
             }

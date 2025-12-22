@@ -1,0 +1,25 @@
+{
+  "name": "imagekit-signer-server",
+  "version": "1.0.0",
+  "description": "Node.js server for signing ImageKit URLs",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "imagekit",
+    "signer",
+    "url-signing"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "imagekit": "^4.1.1"
+  }
+}
+

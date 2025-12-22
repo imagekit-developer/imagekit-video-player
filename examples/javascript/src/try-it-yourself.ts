@@ -60,7 +60,8 @@ function buildPlayerConfig(
     features: string[],
     maxWords?: number,
     wordHighlight?: boolean,
-    translationLangs?: string[]
+    translationLangs?: string[],
+    signerUrl?: string
 ): { playerOptions: IKPlayerOptions; srcConfig: SourceOptions } {
     // Build player options
     const playerOptions: IKPlayerOptions = {
@@ -69,6 +70,31 @@ function buildPlayerConfig(
 
     if (features.includes('seek-thumbnails')) {
         playerOptions.seekThumbnails = true;
+    }
+
+    // Add signer function if URL is provided
+    if (signerUrl && signerUrl.trim()) {
+        playerOptions.signerFn = async (url: string): Promise<string> => {
+            try {
+                const signerEndpoint = signerUrl.trim();
+                // Send POST request with URL in request body
+                const response = await fetch(signerEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url }),
+                });
+                if (!response.ok) {
+                    throw new Error(`Signer function failed: ${response.status}`);
+                }
+                const signedUrl = await response.text();
+                return signedUrl.trim();
+            } catch (error) {
+                console.error('Signer function error:', error);
+                throw error;
+            }
+        };
     }
 
     // Build source config
@@ -147,7 +173,8 @@ function generateCode(
     features: string[],
     maxWords?: number,
     wordHighlight?: boolean,
-    translationLangs?: string[]
+    translationLangs?: string[],
+    signerUrl?: string
 ): string {
     const { playerOptions, srcConfig } = buildPlayerConfig(
         imagekitId,
@@ -155,10 +182,35 @@ function generateCode(
         features,
         maxWords,
         wordHighlight,
-        translationLangs
+        translationLangs,
+        signerUrl
     );
 
-    const playerOptionsCode = formatObjectAsCode(playerOptions);
+    // Format player options, but handle signerFn separately since it's a function
+    const optionsForFormatting = { ...playerOptions };
+    if (optionsForFormatting.signerFn) {
+        delete (optionsForFormatting as any).signerFn;
+    }
+    let playerOptionsCode = formatObjectAsCode(optionsForFormatting);
+    
+    // If signer function exists, add it to the code
+    if (playerOptions.signerFn && signerUrl) {
+        // Remove the closing brace and add signer function before it
+        playerOptionsCode = playerOptionsCode.replace(/\n\}$/, `,\n    signerFn: async (url: string) => {
+        const response = await fetch('${signerUrl}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url }),
+        });
+        if (!response.ok) {
+            throw new Error(\`Signer function failed: \${response.status}\`);
+        }
+        return (await response.text()).trim();
+    }\n}`);
+    }
+    
     const srcConfigCode = formatObjectAsCode(srcConfig);
 
     return `// HTML: <video id="player" class="video-js" ...></video>
@@ -214,6 +266,11 @@ function updatePlayer() {
     const translationLangsStr = translationLangsInput?.value.trim() || '';
     const translationLangs = translationLangsStr ? translationLangsStr.split(',').map(l => l.trim()).filter(l => l.length > 0) : undefined;
 
+    // Get signer function URL
+    const enableSigner = (document.getElementById('enable-signer') as HTMLInputElement)?.checked || false;
+    const signerUrlInput = document.getElementById('signer-url') as HTMLInputElement;
+    const signerUrl = enableSigner && signerUrlInput?.value.trim() ? signerUrlInput.value.trim() : undefined;
+
     // Build configuration using shared function
     const { playerOptions, srcConfig } = buildPlayerConfig(
         imagekitId,
@@ -221,11 +278,12 @@ function updatePlayer() {
         features,
         maxWords,
         wordHighlight,
-        translationLangs
+        translationLangs,
+        signerUrl
     );
 
     // Generate and display code
-    const code = generateCode(imagekitId, srcUrl, features, maxWords, wordHighlight, translationLangs);
+    const code = generateCode(imagekitId, srcUrl, features, maxWords, wordHighlight, translationLangs, signerUrl);
     document.getElementById('code-display')!.textContent = code;
 
     // Get the video element before disposing
@@ -265,25 +323,12 @@ function updatePlayer() {
 
 // Initial code display
 const initialCode = generateCode(
-    'zuqlyov9d',
-    'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true',
+    '',
+    '',
     []
 );
 document.getElementById('code-display')!.textContent = initialCode;
 
-// Initialize player with default values
-const initialVideoElement = document.getElementById('player') as HTMLVideoElement;
-if (initialVideoElement) {
-    currentPlayer = videoPlayer(initialVideoElement, {
-        imagekitId: 'zuqlyov9d',
-    }, {
-        muted: true
-    });
-
-    currentPlayer.src({
-        src: 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true',
-    });
-}
 
 // Handle form submission
 document.getElementById('player-form')!.addEventListener('submit', (e) => {
