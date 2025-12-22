@@ -291,16 +291,16 @@ export async function prepareChaptersVttSrc(
   // 2️⃣ Create a URL object, so we can manipulate path vs. query cleanly
   const url = new URL(videoSrcUrl);
 
-  // 3️⃣ Add ik-genchapters.vtt suffix
-  //    - If streaming suffix “ik-master.m3u8” → swap to “ik-genchapters.vtt”
+  // 3️⃣ Add ik-genchapter.vtt suffix
+  //    - If streaming suffix “ik-master.m3u8” → swap to “ik-genchapter.vtt”
   //    - If streaming suffix “ik-master.mpd” → likewise
   //    - Otherwise append “/ik-thumbnail.jpg” after the existing path
   if (url.pathname.endsWith('ik-master.m3u8')) {
-    url.pathname = url.pathname.replace(/ik-master\.m3u8$/, 'ik-genchapters.vtt');
+    url.pathname = url.pathname.replace(/ik-master\.m3u8$/, 'ik-genchapter.vtt');
   } else if (url.pathname.endsWith('ik-master.mpd')) {
-    url.pathname = url.pathname.replace(/ik-master\.mpd$/, 'ik-genchapters.vtt');
+    url.pathname = url.pathname.replace(/ik-master\.mpd$/, 'ik-genchapter.vtt');
   } else {
-    url.pathname = `${url.pathname.replace(/\/$/, '')}/ik-genchapters.vtt`;
+    url.pathname = `${url.pathname.replace(/\/$/, '')}/ik-genchapter.vtt`;
   }
 
   // 4️⃣ Always clear any existing query parameters before building

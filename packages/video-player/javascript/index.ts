@@ -4,10 +4,10 @@ import { initSubtitlesRedirect, defaultSubtitlesMap } from './modules/subtitles/
 // ————————————————
 // MOCK SETUP (for local/dev/demo only)
 // ————————————————
-initVttRedirect("https://ik.imagekit.io/a1yisxurxo/aman/seek-thumbnail/sample.vtt?updatedAt=1752731735247");
+// initVttRedirect("https://ik.imagekit.io/a1yisxurxo/aman/seek-thumbnail/sample.vtt?updatedAt=1752731735247");
 
 // Initialize subtitles redirect with default mapping
-initSubtitlesRedirect(defaultSubtitlesMap);
+// initSubtitlesRedirect(defaultSubtitlesMap);
 
 import videojs from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
@@ -296,10 +296,10 @@ this.player.ready(() => {
               : this.currentSource_;
             // if poster is already prepared, use it directly
             // @ts-ignore
-            if (currentSource_?.prepared.poster) {
+            if (currentSource_?.prepared?.poster) {
               console.log("Using prepared poster src")
               // @ts-ignore
-              this.player.poster(currentSource_?.prepared.poster);
+              this.player.poster(currentSource_?.prepared?.poster);
             }
             else {
               preparePosterSrc(currentSource_, this.ikGlobalSettings_).then(
@@ -364,9 +364,9 @@ this.player.ready(() => {
       // if chapters is true, we assume it is a default vtt file
       try {
         const chaptersVttSrc = await prepareChaptersVttSrc(src, this.ikGlobalSettings_);
-        // const res = await fetch(chaptersVttSrc);
+        const res = await fetch(chaptersVttSrc);
         // mocking the fetch for now
-        const res = await fetch('https://ik.imagekit.io/zuqlyov9d/chapters.vtt');
+        // const res = await fetch('https://ik.imagekit.io/zuqlyov9d/chapters.vtt');
         if (!res.ok) {
           this.player.log.warn(`Default VTT fetch failed with status: (${res.status}); skipping chapters.`);
           return;

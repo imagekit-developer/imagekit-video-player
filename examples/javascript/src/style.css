@@ -51,7 +51,18 @@ body {
     font-family: "Fira Code", "Courier New", monospace;
     font-size: 0.9rem;
     line-height: 1.6;
+    max-width: 100%;
   }
   .code-block pre {
     margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .code-block code {
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
   }

@@ -146,6 +146,7 @@ function onMouseMove(e: MouseEvent, player: Player, mgr: SeekThumbnailsManager) 
   if (!mgr['container_']) return;
 
   const playerEl = player.el();
+  const playerRect = playerEl.getBoundingClientRect(); // Get player container position
   // @ts-ignore
   const playerWidth = playerEl.offsetWidth;
   // @ts-ignore
@@ -163,11 +164,13 @@ function onMouseMove(e: MouseEvent, player: Player, mgr: SeekThumbnailsManager) 
   const thumbnailWidth = getThumbnailWidthFromUrl(url);
   const thumbnailHalfWidth = thumbnailWidth / 2;
 
-  // 2. Calculate the ideal horizontal position based on the progress bar hover
-  const hoverPosition = pct * barRect.width;
+  // 2. Calculate the hover position relative to the PLAYER container, not just progress bar
+  // Account for progress bar's offset from player's left edge
+  const progressBarLeftOffset = barRect.left - playerRect.left;
+  const hoverPositionInPlayer = progressBarLeftOffset + (pct * barRect.width);
 
   // 3. Clamp the position using the dynamic width
-  let newLeft = hoverPosition;
+  let newLeft = hoverPositionInPlayer;
 
   if (newLeft < thumbnailHalfWidth) {
     newLeft = thumbnailHalfWidth;
@@ -228,7 +231,7 @@ function createThumbnailElement(doc: Document, url: URL): HTMLDivElement {
     div.style.width = `${w}px`;
     div.style.height = `${h}px`;
     div.style.backgroundPosition = `-${x}px -${y}px`;
-    div.style.bottom = `${parseFloat(h) / 2}px`;
+    // Removed bottom style - translateY(-100%) already positions it correctly above container
   }
   return div;
 }
