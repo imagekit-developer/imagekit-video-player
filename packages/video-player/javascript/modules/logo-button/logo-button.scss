@@ -1,0 +1,47 @@
+.vjs-control-bar .vjs-logo-button {
+  background-size: 25px;
+  background-position: center;
+  background-repeat: no-repeat;
+  color: inherit;
+  width: 2.5em;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  opacity: 1;
+
+  &:hover {
+    cursor: pointer;
+    opacity: 1;
+  }
+
+  &:active,
+  &:focus {
+    outline: none;
+    opacity: 1;
+  }
+
+  &:last-child {
+    margin-right: 0.4em;
+    margin-left: 0.8em;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      left: -0.25em;
+      top: 0.3em;
+      bottom: 0.3em;
+      border-left: 1px solid color-mix(in srgb, var(--color-text, currentColor) 25%, transparent);
+      opacity: 1;
+      pointer-events: none;
+    }
+    
+    &:hover::before,
+    &:active::before,
+    &:focus::before {
+      border-left-color: color-mix(in srgb, var(--color-text, currentColor) 25%, transparent);
+      opacity: 1;
+    }
+  }
+}

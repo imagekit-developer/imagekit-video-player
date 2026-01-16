@@ -12,7 +12,7 @@ const player = videoPlayer('video', {
   imagekitId: 'YOUR_IMAGEKIT_ID',
   logo: {
     showLogo: true,
-    logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
+    logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
     logoOnclickUrl: 'https://imagekit.io/',
   },
   // signerFn: (src: string) => {

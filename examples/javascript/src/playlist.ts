@@ -514,6 +514,11 @@ import '@imagekit/video-player/dist/styles.css';
 
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 }, {
     muted: true
 });
@@ -563,6 +568,11 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 // Create a video element for the player to mount on
 const player = videoPlayer('player', {
   imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  logo: {
+    showLogo: true,
+    logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+    logoOnclickUrl: 'https://imagekit.io/'
+  }
 }, {
   muted: true
 });
@@ -570,11 +580,11 @@ const player = videoPlayer('player', {
 const playlistManager = player.playlist({
   sources: [
     {
-      src: 'https://ik.imagekit.io/demo/sample-video.mp4?tr=rt-90,so-2',
+      src: 'https://ik.imagekit.io/demo/sample-video.mp4?tr=rt-180,so-2&v=1234',
       info: { title: 'Sample Video', subtitle: 'A subtitle for the video' },
       transformation: [
         {
-          width: 700,
+          width: 1000,
           height: 500,
         }
       ]
@@ -612,6 +622,11 @@ playlistManager.loadFirstItem();
 
 const player2 = videoPlayer("player-2", {
   imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  logo: {
+    showLogo: true,
+    logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+    logoOnclickUrl: 'https://imagekit.io/'
+  }
 });
 
 

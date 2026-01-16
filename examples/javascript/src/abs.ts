@@ -39,6 +39,11 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 // Create a video element for the player to mount on
 const player = videoPlayer("player", {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 }, {
     muted: true
 });
@@ -53,6 +58,11 @@ player.src({
 
 const player2 = videoPlayer("player-2", {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 }, {
     muted: true
 });

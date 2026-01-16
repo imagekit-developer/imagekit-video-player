@@ -47,13 +47,18 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 // --- Actual Player Initialization ---
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 }, {
     muted: true
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-    textTracks: [
+    src: 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true',
+    textTracks: [  
         {
             autoGenerateSubtitles: true,
             maxWords: 4,
@@ -63,14 +68,14 @@ player.src({
             autoGenerateSubtitles: true,
             translate: [
                 {
-                    langCode: 'fr',
-                    label: 'French (AI)',
+                    langCode: 'hi',
+                    label: 'Hindi (AI)',
                     default: true,
                 },
-                {
-                    langCode: 'de',
-                    label: 'German (AI)',
-                }
+                // {
+                //     langCode: 'de',
+                //     label: 'German (AI)',
+                // }
             ]
         }
     ]

@@ -150,25 +150,46 @@ async function setupSubtitles(params: {
 
         player.on('play', () => {
             subtitleSyncInterval = setInterval(() => {
-                const time = player.currentTime();
-                const display = player.el().querySelector('.vjs-text-track-display');
-                if (!display) return;
+                // Check if player is still valid and tech exists before accessing currentTime
+                if (!player || !player.tech_ || player.isDisposed()) {
+                    clearInterval(subtitleSyncInterval);
+                    return;
+                }
+                
+                try {
+                    const time = player.currentTime();
+                    const display = player.el().querySelector('.vjs-text-track-display');
+                    if (!display) return;
 
-                display.querySelectorAll('span[class^="word-"], span[class*=" word-"]').forEach(el => {
-                    const cls = Array.from(el.classList)
-                        .find(c => c.startsWith('word-'))!;
-                    const idx = Number(cls.split('-')[1]);
-                    const w = allWords[idx];
-                    el.classList.toggle('vjs-word-highlight', (time ?? 0) >= w.start && (time ?? 0) <= w.end);
-                });
-            }, 50); // every 100ms
+                    display.querySelectorAll('span[class^="word-"], span[class*=" word-"]').forEach(el => {
+                        const cls = Array.from(el.classList)
+                            .find(c => c.startsWith('word-'))!;
+                        const idx = Number(cls.split('-')[1]);
+                        const w = allWords[idx];
+                        el.classList.toggle('vjs-word-highlight', (time ?? 0) >= w.start && (time ?? 0) <= w.end);
+                    });
+                } catch (error) {
+                    // Player might be disposed, clear interval and exit
+                    clearInterval(subtitleSyncInterval);
+                    return;
+                }
+            }, 50); // every 50ms
         });
 
         player.on('pause', () => {
-            clearInterval(subtitleSyncInterval);
+            if (subtitleSyncInterval) {
+                clearInterval(subtitleSyncInterval);
+            }
         });
         player.on('ended', () => {
-            clearInterval(subtitleSyncInterval);
+            if (subtitleSyncInterval) {
+                clearInterval(subtitleSyncInterval);
+            }
+        });
+        player.on('dispose', () => {
+            if (subtitleSyncInterval) {
+                clearInterval(subtitleSyncInterval);
+            }
         });
     }
 

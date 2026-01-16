@@ -1,14 +1,3 @@
-import { initVttRedirect } from './modules/seek-thumbnails/mockSeekThumbnailsVTT';
-import { initSubtitlesRedirect, defaultSubtitlesMap } from './modules/subtitles/mockSubtitlesUrlFetch';
-
-// ————————————————
-// MOCK SETUP (for local/dev/demo only)
-// ————————————————
-// initVttRedirect("https://ik.imagekit.io/a1yisxurxo/aman/seek-thumbnail/sample.vtt?updatedAt=1752731735247");
-
-// Initialize subtitles redirect with default mapping
-// initSubtitlesRedirect(defaultSubtitlesMap);
-
 import videojs from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
 import './modules/http-source-selector/plugin';
@@ -26,7 +15,7 @@ import { overrideAddRemoteTextTrack } from './modules/subtitles/subtitles';
 import { ShoppableManager } from './modules/shoppable/shoppable-manager';
 import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
-
+import './modules/logo-button';
 const defaults: IKPlayerOptions = {
   imagekitId: 'random_id',
   floatingWhenNotVisible: null,
@@ -105,16 +94,16 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         }
       });
 
-      this.player.ready(function() {
-        const playerEl = player.el(); // Get the main player element
+      this.player.ready(() => {
+        const playerEl = this.player.el(); // Get the main player element
       
         /**
          * When the mouse leaves the player's container.
          */
         playerEl.addEventListener('mouseleave', () => {
           // Only hide the controls if the player is actively playing.
-          if (!player.paused()) {
-            player.addClass('vjs-user-inactive');
+          if (!this.player.paused()) {
+            this.player.addClass('vjs-user-inactive');
           }
         });
       
@@ -123,8 +112,30 @@ class ImageKitVideoPlayerPlugin extends Plugin {
          */
         playerEl.addEventListener('mouseenter', () => {
           // Always show the controls when the mouse comes back.
-          player.removeClass('vjs-user-inactive');
+          this.player.removeClass('vjs-user-inactive');
         });
+
+        // Add or remove logo button based on configuration
+        const controlBar = this.player.getChild('ControlBar');
+        if (controlBar) {
+          const existingLogoButton = controlBar.getChild('LogoButton');
+          
+          if (this.ikGlobalSettings_.logo?.showLogo) {
+            // Logo should be shown
+            if (existingLogoButton) {
+              // Dispose and recreate to ensure config is up-to-date
+              existingLogoButton.dispose();
+            }
+            controlBar.addChild('LogoButton', {
+              playerOptions: this.ikGlobalSettings_
+            });
+          } else {
+            // Logo should be hidden - remove if exists
+            if (existingLogoButton) {
+              existingLogoButton.dispose();
+            }
+          }
+        }
       });
 
 //       Assumes 'player' is your initialized video.js player instance

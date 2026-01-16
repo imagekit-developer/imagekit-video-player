@@ -66,6 +66,11 @@ function buildPlayerConfig(
     // Build player options
     const playerOptions: IKPlayerOptions = {
         imagekitId: imagekitId,
+        logo: {
+            showLogo: true,
+            logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+            logoOnclickUrl: 'https://imagekit.io/'
+        }
     };
 
     if (features.includes('seek-thumbnails')) {
@@ -292,10 +297,14 @@ function updatePlayer() {
     // Destroy existing player if it exists
     if (currentPlayer) {
         try {
-            currentPlayer.dispose();
-            currentPlayer = null;
+            // Check if player is already disposed
+            if (!currentPlayer.isDisposed && !currentPlayer.isDisposed()) {
+                currentPlayer.dispose();
+            }
         } catch (e) {
-            // Player might already be disposed
+            // Player might already be disposed or in the process of being disposed
+            console.warn('Error disposing player:', e);
+        } finally {
             currentPlayer = null;
         }
     }
@@ -312,13 +321,16 @@ function updatePlayer() {
         }
     }
 
-    // Initialize new player using the element directly
-    currentPlayer = videoPlayer(videoElement, playerOptions, {
-        muted: true
-    });
+    // Small delay to ensure previous player is fully cleaned up
+    setTimeout(() => {
+        // Initialize new player using the element directly
+        currentPlayer = videoPlayer(videoElement, playerOptions, {
+            muted: true
+        });
 
-    // Set source with the configured options
-    currentPlayer.src(srcConfig);
+        // Set source with the configured options
+        currentPlayer.src(srcConfig);
+    }, 0);
 }
 
 // Initial code display

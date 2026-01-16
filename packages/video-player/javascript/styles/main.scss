@@ -33,8 +33,7 @@
     .vjs-icon-placeholder::before,
     .vjs-time-divider,
     .vjs-duration,
-    .vjs-playback-rate-value,
-    .vjs-cloudinary-button:focus {
+    .vjs-playback-rate-value {
         opacity: 0.8;
     }
 
@@ -50,22 +49,6 @@
     .vjs-fullscreen-control .vjs-icon-placeholder::before {
         font-size: 2.2em; // Makes the icon larger
         margin-top: -4px; // Adjusts the vertical position
-    }
-
-
-    &.cld-fluid {
-        width: 100%;
-        max-width: 100%;
-
-        .vjs-poster {
-            // Work-around for poster having slightly wrong proportions in fluid players.
-            background: #000;
-            background-size: cover;
-
-            img {
-                object-fit: cover;
-            }
-        }
     }
 
     .vjs-time-control {
@@ -154,11 +137,6 @@
                 margin-top: -200px;
             }
         }
-    }
-
-    // Fluid big-play-button
-    &.cld-fluid .vjs-big-play-button {
-        max-width: 15%;
     }
 
     // Init-only big-play-button

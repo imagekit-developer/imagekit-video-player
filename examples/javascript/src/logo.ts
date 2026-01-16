@@ -9,22 +9,31 @@ import '@imagekit/video-player/dist/styles.css';
 
 const player = videoPlayer('player', {
     imagekitId: 'your_id',
-    width: 960,
-    height: 540,
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 });
 
-// Example 1: Using AI-based chapters by setting chapters: true
+// Set video source
 player.src({
-    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
-    chapters: true 
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4'
 });
 
 /*
-// Example 2: Providing a VTT file for chapters
-player.src({
-    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
-    chapters: {
-        url: 'https://ik.imagekit.io/demo/chapters_example.vtt'
+// Logo Configuration Options:
+// - showLogo: boolean - Controls visibility of the logo button
+// - logoImageUrl: string - URL of the logo image to display
+// - logoOnclickUrl: string - URL to navigate to when logo is clicked
+
+// Example: Hide logo
+const player = videoPlayer('player', {
+    imagekitId: 'your_id',
+    logo: {
+        showLogo: false,
+        logoImageUrl: '',
+        logoOnclickUrl: ''
     }
 });
 */
@@ -42,8 +51,7 @@ const player = videoPlayer('player', {
     }
 });
 
-// Using AI-based chapters for this live demo
+// Set video source
 player.src({
-    src: 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true',
-    chapters: true 
+    src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4'
 });

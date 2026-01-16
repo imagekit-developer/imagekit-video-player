@@ -26,6 +26,11 @@ document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 const player = videoPlayer('player', {
     imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
     floatingWhenNotVisible: 'right',
+    logo: {
+        showLogo: true,
+        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+        logoOnclickUrl: 'https://imagekit.io/'
+    }
 });
 
 player.src({
