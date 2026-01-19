@@ -1,5 +1,4 @@
-/* highlight style – user can override via CSS variables */
-.vjs-text-track-display span.vjs-word-highlight {
+.vjs-text-track-display .vjs-word-highlight {
     background: white;
     color: black;
 }
