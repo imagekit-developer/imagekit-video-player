@@ -501,3 +501,147 @@ export function validateIKPlayerOptions(
     throw new Error('`signerFn` must be a function that returns a Promise<string>.');
   }
 }
+
+/**
+ * Adds an event listener to an element and returns a cleanup function to remove it.
+ * This pattern helps prevent memory leaks by making cleanup explicit.
+ * 
+ * @param element - The DOM element to attach the listener to
+ * @param eventName - The event name (e.g., 'click', 'mouseenter', 'keydown')
+ * @param handler - The event handler function
+ * @param options - Optional AddEventListenerOptions (capture, once, passive, etc.)
+ * @returns A cleanup function that removes the event listener when called
+ * 
+ * @example
+ * ```typescript
+ * const cleanup = addEventListener(button, 'click', handleClick);
+ * // Later, when done:
+ * cleanup(); // Removes the listener
+ * ```
+ */
+export function addEventListener(
+  element: EventTarget,
+  eventName: string,
+  handler: EventListenerOrEventListenerObject,
+  options?: boolean | AddEventListenerOptions
+): () => void {
+  element.addEventListener(eventName, handler, options ?? false);
+  
+  return () => {
+    element.removeEventListener(eventName, handler, options ?? false);
+  };
+}
+
+/**
+ * Resource cleanup registry for managing timeouts, intervals, DOM elements,
+ * event listeners, and other resources that need cleanup.
+ * 
+ * This class provides a centralized way to track and dispose of resources,
+ * preventing memory leaks by ensuring all resources are properly cleaned up.
+ * 
+ * @example
+ * ```typescript
+ * const cleanup = new CleanupRegistry();
+ * 
+ * // Register a timeout
+ * cleanup.registerTimeout(() => console.log('done'), 1000);
+ * 
+ * // Register a DOM element
+ * const el = cleanup.registerElement(document.createElement('div'));
+ * 
+ * // Register an event listener
+ * cleanup.registerEventListener(button, 'click', handler);
+ * 
+ * // Later, clean up everything at once
+ * cleanup.dispose();
+ * ```
+ */
+export class CleanupRegistry {
+  private cleanups: Array<() => void> = [];
+
+  /**
+   * Registers a timeout and returns its ID.
+   * The timeout will be automatically cleared when dispose() is called.
+   */
+  registerTimeout(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
+    const id = setTimeout(callback, delay);
+    this.cleanups.push(() => clearTimeout(id));
+    return id;
+  }
+
+  /**
+   * Registers an interval and returns its ID.
+   * The interval will be automatically cleared when dispose() is called.
+   */
+  registerInterval(callback: () => void, delay: number): ReturnType<typeof setInterval> {
+    const id = setInterval(callback, delay);
+    this.cleanups.push(() => clearInterval(id));
+    return id;
+  }
+
+  /**
+   * Registers a DOM element for cleanup.
+   * The element will be removed from the DOM when dispose() is called.
+   */
+  registerElement(element: HTMLElement): HTMLElement {
+    this.cleanups.push(() => element.remove());
+    return element;
+  }
+
+  /**
+   * Registers a native event listener using the addEventListener utility.
+   * The listener will be automatically removed when dispose() is called.
+   */
+  registerEventListener(
+    element: EventTarget,
+    eventName: string,
+    handler: EventListenerOrEventListenerObject,
+    options?: boolean | AddEventListenerOptions
+  ): void {
+    const cleanup = addEventListener(element, eventName, handler, options);
+    this.cleanups.push(cleanup);
+  }
+
+  /**
+   * Registers a Video.js event listener.
+   * The listener will be automatically removed when dispose() is called.
+   */
+  registerVideoJsListener(player: any, event: string, handler: Function): void {
+    player.on(event, handler);
+    this.cleanups.push(() => player.off(event, handler));
+  }
+
+  /**
+   * Registers an IntersectionObserver.
+   * The observer will be disconnected when dispose() is called.
+   */
+  registerObserver(observer: IntersectionObserver): IntersectionObserver {
+    this.cleanups.push(() => observer.disconnect());
+    return observer;
+  }
+
+  /**
+   * Registers a custom cleanup function.
+   * Useful for any other cleanup operations that don't fit the above patterns.
+   */
+  register(cleanup: () => void): void {
+    this.cleanups.push(cleanup);
+  }
+
+  /**
+   * Executes all registered cleanup functions and clears the registry.
+   * Should be called when the component/plugin is being disposed.
+   */
+  dispose(): void {
+    this.cleanups.forEach(cleanup => cleanup());
+    this.cleanups = [];
+  }
+
+  /**
+   * Returns the number of registered cleanup functions.
+   * Useful for debugging.
+   */
+  size(): number {
+    return this.cleanups.length;
+  }
+}

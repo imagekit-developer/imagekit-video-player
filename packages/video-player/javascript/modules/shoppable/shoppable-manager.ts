@@ -6,6 +6,7 @@ import type {
   InteractionProps,
 } from '../../interfaces';
 import { AugmentedSourceOptions } from 'javascript/interfaces/AugementedSourceOptions';
+import { CleanupRegistry } from '../../utils';
 import ShoppablePanelItem from './shoppable-item';
 export class ShoppableManager {
   private player_: Player;
@@ -22,6 +23,7 @@ export class ShoppableManager {
   private pauseTimeout_: any = null;
   private sourceItem_: AugmentedSourceOptions;
   private currentActiveProductId_: string | number | null = null;
+  private cleanup_ = new CleanupRegistry();
 
   constructor(player: Player, src: AugmentedSourceOptions) {
     this.player_ = player;
@@ -33,13 +35,13 @@ export class ShoppableManager {
     this.player_.ready(() => {
       // Attach the time-update listener for highlights and hotspots.
       this.tickHandler_ = this.onTimeUpdate.bind(this);
-      this.player_.on('timeupdate', this.tickHandler_);
+      this.cleanup_.registerVideoJsListener(this.player_, 'timeupdate', this.tickHandler_);
 
       // Set up the post-play overlay if configured.
       if (this.shoppable_.showPostPlayOverlay) {
         this.buildPostPlayOverlay();
         this.endedHandler_ = this.onEnded.bind(this);
-        this.player_.on('ended', this.endedHandler_);
+        this.cleanup_.registerVideoJsListener(this.player_, 'ended', this.endedHandler_);
       }
 
       const startState = this.shoppable_.startState || 'openOnPlay';
@@ -62,7 +64,7 @@ export class ShoppableManager {
       } else if (startState === 'closed') {
         // If the state is 'closed', hide the bar and set the animation timeout.
         this.closeBar(true);
-        this.initialAnimationTimeout_ = setTimeout(() => {
+        this.initialAnimationTimeout_ = this.cleanup_.registerTimeout(() => {
           // The 'play' listener above will handle unhiding the button.
           this.toggleButton_?.classList.add('animate');
         }, 3000);
@@ -120,7 +122,7 @@ export class ShoppableManager {
 
     toggle.appendChild(openIcon);
     toggle.appendChild(closeIcon);
-    toggle.addEventListener('click', () => this.toggleBar());
+    this.cleanup_.registerEventListener(toggle, 'click', () => this.toggleBar());
 
     this.toggleButton_ = toggle;
     this.toggleButton_?.classList.add('vjs-hidden');
@@ -166,9 +168,9 @@ export class ShoppableManager {
         tooltip.classList.add(`tooltip-position-${position}`);
         hsElement.appendChild(tooltip);
 
-        hsElement.addEventListener('mouseenter', () => tooltip.classList.remove('vjs-hidden'));
-        hsElement.addEventListener('mouseleave', () => tooltip.classList.add('vjs-hidden'));
-        hsElement.addEventListener('click', () => {
+        this.cleanup_.registerEventListener(hsElement, 'mouseenter', () => tooltip.classList.remove('vjs-hidden'));
+        this.cleanup_.registerEventListener(hsElement, 'mouseleave', () => tooltip.classList.add('vjs-hidden'));
+        this.cleanup_.registerEventListener(hsElement, 'click', () => {
           this.player_.trigger('productClick', { product });
           if (product.onClick) this.handleClickInteraction(product.onClick, product);
         });
@@ -251,7 +253,7 @@ export class ShoppableManager {
     let startX: number;
     let scrollLeft: number;
 
-    carousel.addEventListener('mousedown', (e) => {
+    this.cleanup_.registerEventListener(carousel, 'mousedown', (e: MouseEvent) => {
       isDown = true;
       carousel.classList.add('is-grabbing');
       // Get initial mouse position and scroll position
@@ -259,17 +261,17 @@ export class ShoppableManager {
       scrollLeft = carousel.scrollLeft;
     });
 
-    carousel.addEventListener('mouseleave', () => {
+    this.cleanup_.registerEventListener(carousel, 'mouseleave', () => {
       isDown = false;
       carousel.classList.remove('is-grabbing');
     });
 
-    carousel.addEventListener('mouseup', () => {
+    this.cleanup_.registerEventListener(carousel, 'mouseup', () => {
       isDown = false;
       carousel.classList.remove('is-grabbing');
     });
 
-    carousel.addEventListener('mousemove', (e) => {
+    this.cleanup_.registerEventListener(carousel, 'mousemove', (e: MouseEvent) => {
       if (!isDown) return; // Stop if mouse is not clicked down
       e.preventDefault(); // Prevent default dragging behavior (like text selection)
       const x = e.pageX - carousel.offsetLeft;
@@ -441,7 +443,7 @@ export class ShoppableManager {
     if (this.autoCloseTimeout_) clearTimeout(this.autoCloseTimeout_);
     const autoCloseTime = this.shoppable_.autoClose;
     if (typeof autoCloseTime === 'number' && autoCloseTime > 0) {
-      this.autoCloseTimeout_ = setTimeout(() => {
+      this.autoCloseTimeout_ = this.cleanup_.registerTimeout(() => {
         this.closeBar();
       }, autoCloseTime * 1000);
     }
@@ -475,7 +477,7 @@ export class ShoppableManager {
               }
 
               // Schedule the player to resume playback after the specified duration.
-              this.pauseTimeout_ = setTimeout(() => {
+              this.pauseTimeout_ = this.cleanup_.registerTimeout(() => {
                 this.player_.play();
               }, pause * 1000);
             }
@@ -500,7 +502,7 @@ export class ShoppableManager {
               }
 
               // Schedule the player to resume playback after the specified duration.
-              this.pauseTimeout_ = setTimeout(() => {
+              this.pauseTimeout_ = this.cleanup_.registerTimeout(() => {
                 this.player_.play();
               }, pause * 1000);
             }
@@ -519,16 +521,30 @@ export class ShoppableManager {
     if (this.closeBar) {
       this.closeBar(true);
     }
-    if (this.tickHandler_) {
-      this.player_.off('timeupdate', this.tickHandler_);
+    
+    // Register DOM elements for cleanup
+    if (this.barContainer_) {
+      this.cleanup_.registerElement(this.barContainer_);
     }
-    if (this.endedHandler_) {
-      this.player_.off('ended', this.endedHandler_);
+    this.hotspotElements_.forEach(hs => {
+      this.cleanup_.registerElement(hs.element);
+    });
+    if (this.postPlayOverlay_) {
+      this.cleanup_.registerElement(this.postPlayOverlay_);
     }
-    this.barContainer_?.remove();
-    this.hotspotElements_.forEach(hs => hs.element.remove());
-    this.postPlayOverlay_?.remove();
-    if (this.autoCloseTimeout_) clearTimeout(this.autoCloseTimeout_);
-    if (this.initialAnimationTimeout_) clearTimeout(this.initialAnimationTimeout_);
+    
+    // Register remaining timeouts for cleanup
+    if (this.autoCloseTimeout_) {
+      this.cleanup_.register(() => clearTimeout(this.autoCloseTimeout_!));
+    }
+    if (this.initialAnimationTimeout_) {
+      this.cleanup_.register(() => clearTimeout(this.initialAnimationTimeout_!));
+    }
+    if (this.pauseTimeout_) {
+      this.cleanup_.register(() => clearTimeout(this.pauseTimeout_!));
+    }
+    
+    // Clean up everything
+    this.cleanup_.dispose();
   }
 }

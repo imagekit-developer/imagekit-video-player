@@ -1,6 +1,7 @@
 // ./context-menu-item.ts
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import { CleanupRegistry } from '../../utils';
 import './types'; // Import for module augmentation side-effects
 
 const VjsMenuItem = videojs.getComponent('MenuItem');
@@ -10,6 +11,8 @@ interface ContextMenuItemOptions extends videojs.MenuItemOptions {
 }
 
 class ContextMenuItem extends VjsMenuItem {
+  private cleanup_ = new CleanupRegistry();
+
   constructor(player: Player, options: ContextMenuItemOptions) {
     // Ensure menu items are not selectable to avoid focus issues.
     // @ts-ignore
@@ -26,11 +29,16 @@ class ContextMenuItem extends VjsMenuItem {
     (this.options_ as ContextMenuItemOptions).listener.call(this.player());
 
     // Close the containing menu after the current call stack clears.
-    window.setTimeout(() => {
+    this.cleanup_.registerTimeout(() => {
       // Safely access the menu via optional chaining.
       // @ts-ignore
       this.player().contextmenuUI?.menu?.dispose();
     }, 1);
+  }
+
+  dispose(): void {
+    this.cleanup_.dispose();
+    super.dispose();
   }
 }
 // @ts-ignore

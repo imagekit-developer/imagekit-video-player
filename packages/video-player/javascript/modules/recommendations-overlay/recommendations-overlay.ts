@@ -1,7 +1,7 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import { IKPlayerOptions, SourceOptions } from '../../interfaces';
-import { preparePosterSrc } from '../../utils';
+import { preparePosterSrc, CleanupRegistry } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
@@ -17,6 +17,7 @@ export class RecommendationsOverlay extends Component {
   private playerOptions: IKPlayerOptions;
   private gridEl!: HTMLDivElement;
   private closeBtn!: HTMLButtonElement;
+  private cleanup_ = new CleanupRegistry();
 
   constructor(player: Player, options: RecommendationsOverlayOptions) {
     super(player, options);
@@ -35,8 +36,8 @@ export class RecommendationsOverlay extends Component {
     this.el().appendChild(this.gridEl);
 
     // Listeners
-    player.on('ended', this.onEnded);
-    this.closeBtn.addEventListener('click', () => this.hide());
+    this.cleanup_.registerVideoJsListener(player, 'ended', this.onEnded);
+    this.cleanup_.registerEventListener(this.closeBtn, 'click', () => this.hide());
   }
 
   createEl() {
@@ -104,6 +105,11 @@ export class RecommendationsOverlay extends Component {
   private onClickHandler(source: SourceOptions) {
     this.player().src(source);
     this.hide();
+  }
+
+  dispose(): void {
+    this.cleanup_.dispose();
+    super.dispose();
   }
 }
 

@@ -3,7 +3,7 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
-import { preparePosterSrc } from '../../utils';
+import { preparePosterSrc, CleanupRegistry } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
@@ -14,10 +14,13 @@ export class PresentUpcoming extends Component {
   // private textEl_: HTMLElement;
   private titleEl_: HTMLElement;
   private closeButtonEl_: HTMLElement;
+  private cleanup_: CleanupRegistry;
 
 
   constructor(player: Player, playerOptions: IKPlayerOptions) {
     super(player);
+    // Initialize cleanup_ after super() because createEl() may be called during super()
+    this.cleanup_ = new CleanupRegistry();
     this.playerOptions_ = playerOptions;
 
     this.thumbnailEl_ = videojs.dom.createEl('div', { className: 'vjs-up-next-thumbnail' }) as HTMLElement;
@@ -31,7 +34,7 @@ export class PresentUpcoming extends Component {
 
     this.closeButtonEl_.innerHTML = "&#10005;"
 
-    this.closeButtonEl_.addEventListener('click', (e) => {
+    this.cleanup_.registerEventListener(this.closeButtonEl_, 'click', (e: Event) => {
       e.stopPropagation(); // Stop the click from bubbling up to the parent div
       this.trigger('dismiss'); // Fire a custom event to notify the manager
     });
@@ -51,10 +54,16 @@ export class PresentUpcoming extends Component {
       className: 'vjs-present-upcoming'
     }) as HTMLElement;
 
+    // Initialize cleanup_ if not already initialized (createEl may be called before constructor completes)
+    if (!this.cleanup_) {
+      this.cleanup_ = new CleanupRegistry();
+    }
+
     // Make it clickable to advance to the next video immediately
-    el.addEventListener('click', (e) => {
+    this.cleanup_.registerEventListener(el, 'click', (e: Event) => {
       // Prevent the close button itself from triggering "playNext"
-      if (e.target !== this.closeButtonEl_) {
+      // Note: This handler only executes on click (after construction), so closeButtonEl_ will exist
+      if (!this.closeButtonEl_ || e.target !== this.closeButtonEl_) {
         (this.player_ as any).imagekitVideoPlayer().getPlaylistManager().playNext();
       }
     });
@@ -88,6 +97,11 @@ export class PresentUpcoming extends Component {
       this.thumbnailEl_.classList.add('vjs-playlist-thumbnail-placeholder');
       console.error('Failed to load "Up Next" poster:', e);
     }
+  }
+
+  dispose(): void {
+    this.cleanup_.dispose();
+    super.dispose();
   }
 }
 

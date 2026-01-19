@@ -1,12 +1,16 @@
+import { CleanupRegistry } from '../../utils';
+
 /**
  * Enables a robust floating-on-scroll functionality for the ImageKit Video Player.
  * @param {any} playerInstance The instance of the ImageKit Video Player.
+ * @returns A cleanup function that should be called when the player is disposed.
  */
-export const enableFloatingPlayer = (playerInstance: any, floatPosition: string) => {
+export const enableFloatingPlayer = (playerInstance: any, floatPosition: string): (() => void) => {
     if (!floatPosition || (floatPosition !== 'left' && floatPosition !== 'right')) {
         return;
     }
 
+    const cleanup = new CleanupRegistry();
     const playerElement = playerInstance.el();
     const parentContainer = playerElement.parentElement;
 
@@ -14,12 +18,13 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
     wrapper.className = 'ik-player-wrapper';
     parentContainer.insertBefore(wrapper, playerElement);
     wrapper.appendChild(playerElement);
+    cleanup.registerElement(wrapper);
 
     // --- STATE MANAGEMENT ---
     let hasStarted = false;
     let isFloatingDismissed = false;
 
-    playerInstance.on('play', () => {
+    cleanup.registerVideoJsListener(playerInstance, 'play', () => {
         hasStarted = true;
         isFloatingDismissed = false;
     });
@@ -45,12 +50,12 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
         closeButton.className = 'ik-floating-close-button';
         closeButton.setAttribute('aria-label', 'Close floating video');
         closeButton.innerHTML = "&#10005;";
-        closeButton.onclick = (e) => {
+        cleanup.registerEventListener(closeButton, 'click', (e: MouseEvent) => {
             // Stop click from bubbling up to the player and toggling play/pause
             e.stopPropagation();
             isFloatingDismissed = true;
             setFloating(false);
-        };
+        });
         playerElement.appendChild(closeButton);
     };
 
@@ -64,5 +69,9 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
         }
     }, { threshold: [0.5] });
 
+    cleanup.registerObserver(intersectionObserver);
     intersectionObserver.observe(wrapper);
+    
+    // Return cleanup function
+    return () => cleanup.dispose();
 }

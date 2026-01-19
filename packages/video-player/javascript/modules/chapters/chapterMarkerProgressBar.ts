@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import { CleanupRegistry } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
@@ -21,6 +22,7 @@ interface ChapterMarkersProgressBarControlOptions {
 class ChapterMarkersProgressBarControl extends Component {
   private chapterTooltipContainer: HTMLElement | null = null;
   private chapters: ChapterMarker[] = [];
+  private cleanup_ = new CleanupRegistry();
 
   constructor(player: Player, options: ChapterMarkersProgressBarControlOptions) {
     super(player, options);
@@ -74,7 +76,7 @@ class ChapterMarkersProgressBarControl extends Component {
     // @ts-ignore
     const progressControl = player.controlBar.progressControl;
     
-    progressControl.on('mousemove', (e: MouseEvent) => {
+    const mousemoveHandler = (e: MouseEvent) => {
       if (!this.chapterTooltipContainer) return;
 
       const barRect = progressControl.el().getBoundingClientRect();
@@ -93,14 +95,17 @@ class ChapterMarkersProgressBarControl extends Component {
         // Hide if not over a chapter
         this.chapterTooltipContainer.style.display = 'none';
       }
-    });
+    };
 
-    progressControl.on('mouseleave', () => {
+    const mouseleaveHandler = () => {
       // Hide the tooltip when leaving the progress bar
       if (this.chapterTooltipContainer) {
         this.chapterTooltipContainer.style.display = 'none';
       }
-    });
+    };
+
+    this.cleanup_.registerVideoJsListener(progressControl, 'mousemove', mousemoveHandler);
+    this.cleanup_.registerVideoJsListener(progressControl, 'mouseleave', mouseleaveHandler);
   }
 
   /**
@@ -110,9 +115,11 @@ class ChapterMarkersProgressBarControl extends Component {
     const playheadWell = this.player().el().querySelector('.vjs-progress-holder');
     if (playheadWell) {
       playheadWell.querySelectorAll('.vjs-chapter-boundary').forEach((el) => el.remove());
-      const tooltip = playheadWell.querySelector('.vjs-chapter-tooltip-container');
-      if (tooltip) tooltip.remove();
+      if (this.chapterTooltipContainer) {
+        this.cleanup_.registerElement(this.chapterTooltipContainer);
+      }
     }
+    this.cleanup_.dispose();
     super.dispose();
   }
 }

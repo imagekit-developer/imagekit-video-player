@@ -4,6 +4,7 @@ import type Player from 'video.js/dist/types/player';
 import { PlaylistMenuItem } from './playlist-menu-item';
 import { Playlist } from './playlist';
 import { IKPlayerOptions } from '../../interfaces';
+import { CleanupRegistry } from '../../utils';
 
 const Component = videojs.getComponent('Component');
 
@@ -24,6 +25,7 @@ export class PlaylistMenu extends Component {
   private items: PlaylistMenuItem[] = [];
   private playlist: Playlist;
   private playerOptions: IKPlayerOptions;
+  private cleanup_ = new CleanupRegistry();
 
   constructor(
     player: Player,
@@ -51,18 +53,24 @@ export class PlaylistMenu extends Component {
     }
 
     // 2) Listen for ad events
-    player.on('adstart', () => this.addClass('vjs-ad-playing'));
-    player.on('adend',   () => this.removeClass('vjs-ad-playing'));
+    this.cleanup_.registerVideoJsListener(player, 'adstart', () => this.addClass('vjs-ad-playing'));
+    this.cleanup_.registerVideoJsListener(player, 'adend', () => this.removeClass('vjs-ad-playing'));
 
     // 3) Listen for playlist events
-    player.on(['playlistchange', 'playlistsorted'], () => {
+    this.cleanup_.registerVideoJsListener(player, 'playlistchange', () => {
       console.log("PlaylistMenu: playlistchange event received, updating menu");
-      this.update()});
-    player.on('playlistadd',    () => this.update());
-    player.on('playlistremove', () => this.update());
-    player.on('loadstart',      () => {
+      this.update();
+    });
+    this.cleanup_.registerVideoJsListener(player, 'playlistsorted', () => {
+      console.log("PlaylistMenu: playlistchange event received, updating menu");
+      this.update();
+    });
+    this.cleanup_.registerVideoJsListener(player, 'playlistadd', () => this.update());
+    this.cleanup_.registerVideoJsListener(player, 'playlistremove', () => this.update());
+    this.cleanup_.registerVideoJsListener(player, 'loadstart', () => {
       console.log("PlaylistMenu: loadstart event received, updating menu");
-      this.update()});
+      this.update();
+    });
 
     this.on('dispose', () => this.empty_());
 
@@ -130,6 +138,11 @@ export class PlaylistMenu extends Component {
     this.items.forEach(i => i.dispose());
     this.items = [];
     this.el_.innerHTML = '';
+  }
+
+  dispose(): void {
+    this.cleanup_.dispose();
+    super.dispose();
   }
 }
 // @ts-ignore

@@ -1,9 +1,12 @@
 import videojs from 'video.js';
 import SourceMenuItem from './SourceMenuItem';
+import { CleanupRegistry } from '../../../utils';
 
 const MenuButton = videojs.getComponent('MenuButton');
 
 class SourceMenuButton extends MenuButton {
+  private cleanup_ = new CleanupRegistry();
+
   constructor(player, options) {
     super(player, options);
 
@@ -25,7 +28,11 @@ class SourceMenuButton extends MenuButton {
 
     // Bind update to qualityLevels changes
     // @ts-ignore
-    this.player().qualityLevels().on(['change', 'addqualitylevel'], videojs.bind(this, this.update));
+    const updateHandler = videojs.bind(this, this.update);
+    // @ts-ignore
+    this.cleanup_.registerVideoJsListener(qualityLevels, 'change', updateHandler);
+    // @ts-ignore
+    this.cleanup_.registerVideoJsListener(qualityLevels, 'addqualitylevel', updateHandler);
   }
 
   createEl() {
@@ -85,6 +92,11 @@ class SourceMenuButton extends MenuButton {
     menuItems.sort((a, b) => b.options_.sortVal - a.options_.sortVal);
 
     return menuItems;
+  }
+
+  dispose(): void {
+    this.cleanup_.dispose();
+    super.dispose();
   }
 }
 
