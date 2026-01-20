@@ -5,6 +5,7 @@ import type Player from 'video.js/dist/types/player';
 import ContextMenu from './context-menu';
 import { getPointerPosition } from './utils';
 import { PluginOptions } from './types';
+import { addEventListener } from '../../utils';
 import './types'; // Import for module augmentation side-effects
 
 function hasMenu(player: Player): boolean {
@@ -65,8 +66,28 @@ function onContextMenu(this: Player, e: MouseEvent): void {
         menu.dispose();
     };
 
+    // Store document listener cleanup function
+    // @ts-ignore
+    if (!this.contextmenuUICleanups_) {
+        // @ts-ignore
+        this.contextmenuUICleanups_ = [];
+    }
+    // @ts-ignore
+    const documentCleanup = addEventListener(documentEl, 'click', menu.dispose);
+    // @ts-ignore
+    const tapCleanup = addEventListener(documentEl, 'tap', menu.dispose);
+    // @ts-ignore
+    this.contextmenuUICleanups_.push(documentCleanup, tapCleanup);
+
     menu.on('dispose', () => {
-        videojs.off(documentEl, ['click', 'tap'], menu.dispose);
+        // Clean up document listeners
+        // @ts-ignore
+        if (this.contextmenuUICleanups_) {
+            // @ts-ignore
+            this.contextmenuUICleanups_.forEach(cleanup => cleanup());
+            // @ts-ignore
+            this.contextmenuUICleanups_ = [];
+        }
         this.removeChild(menu);
         // @ts-ignore
         if (this.contextmenuUI) {
@@ -89,8 +110,6 @@ function onContextMenu(this: Player, e: MouseEvent): void {
         // @ts-ignore
         menu.el().style.top = `${Math.floor(constrainedTop)}px`;
     }
-
-    videojs.on(documentEl, ['click', 'tap'], menu.dispose);
 }
 
 function contextmenuUI(this: Player, options: PluginOptions): void {
@@ -112,6 +131,14 @@ function contextmenuUI(this: Player, options: PluginOptions): void {
         this.contextmenuUI.menu?.dispose();
         // @ts-ignore
         this.off('contextmenu', this.contextmenuUI.onContextMenu);
+        // Clean up any remaining document listeners
+        // @ts-ignore
+        if (this.contextmenuUICleanups_) {
+            // @ts-ignore
+            this.contextmenuUICleanups_.forEach(cleanup => cleanup());
+            // @ts-ignore
+            delete this.contextmenuUICleanups_;
+        }
         // @ts-ignore
         delete this.contextmenuUI;
     }
@@ -134,6 +161,19 @@ function contextmenuUI(this: Player, options: PluginOptions): void {
     // @ts-ignore
     this.contextmenuUI.onContextMenu = onContextMenu.bind(this);
 
+    // Store contextmenu listener cleanup
+    // @ts-ignore
+    if (!this.contextmenuUICleanups_) {
+        // @ts-ignore
+        this.contextmenuUICleanups_ = [];
+    }
+    // @ts-ignore
+    const contextMenuCleanup = () => {
+        // @ts-ignore
+        this.off('contextmenu', this.contextmenuUI.onContextMenu);
+    };
+    // @ts-ignore
+    this.contextmenuUICleanups_.push(contextMenuCleanup);
     // @ts-ignore
     this.on('contextmenu', this.contextmenuUI.onContextMenu);
     this.ready(() => this.addClass('vjs-contextmenu-ui'));
