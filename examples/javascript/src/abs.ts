@@ -12,7 +12,7 @@ const player = videoPlayer("player", {
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4?updatedAt=1768289286866',
     abs: {
         protocol: 'dash',
         sr: [240, 360, 720, 1080]
@@ -24,7 +24,7 @@ const player2 = videoPlayer("player-2", {
 });
 
 player2.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4?updatedAt=1768289286866',
     abs: {
         protocol: 'hls',
         sr: [240, 360, 720, 1080]
@@ -49,7 +49,7 @@ const player = videoPlayer("player", {
 });
 
 player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4',
     abs: {
         protocol: 'dash',
         sr: [240, 360, 720, 1080]
@@ -68,7 +68,7 @@ const player2 = videoPlayer("player-2", {
 });
 
 player2.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+    src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4',
     abs: {
         protocol: 'hls',
         sr: [240, 360, 720, 1080]
