@@ -15,9 +15,7 @@ export interface ContextMenuItemOptions {
  * Interface for the options object passed to the main plugin function.
  */
 export interface PluginOptions {
-  content: ContextMenuItemOptions[];
-  keepInside?: boolean;
-  excludeElements?: (targetEl: Element) => boolean;
+  createContextMenuContent: (player: Player) => ContextMenuItemOptions[];
 }
 
 /**
@@ -26,21 +24,15 @@ export interface PluginOptions {
  */
 export interface ContextMenuUI {
   (options: PluginOptions): void;
-  content: ContextMenuItemOptions[];
-  keepInside: boolean;
-  options_: Required<PluginOptions>;
+  createContextMenuContent: (player: Player) => ContextMenuItemOptions[];
+  options_: PluginOptions;
   onContextMenu: (e: MouseEvent) => void;
   menu?: ContextMenu;
   closeMenu?: () => void; // Deprecated but kept for compatibility
 }
 
 /**
- * Use module augmentation to teach TypeScript about the `contextmenuUI` plugin
- * on the Video.js Player interface. This is the key to removing many errors.
- * The property is marked as optional (`?`) to allow it to be added and deleted dynamically.
+ * Module augmentation for contextmenuUI has been moved to
+ * packages/video-player/javascript/types/videojs-extensions.d.ts
+ * to consolidate all Video.js Player augmentations in one place.
  */
-declare module 'video.js' {
-  interface Player {
-    contextmenuUI?: ContextMenuUI;
-  }
-}

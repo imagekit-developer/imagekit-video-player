@@ -280,65 +280,7 @@ export class ShoppableManager {
     });
     // --- END: Make carousel grabbable ---
 
-
     this.shoppable_.products.forEach((prod, index) => {
-      // const card = document.createElement('div');
-      // card.className = 'vjs-shoppable-postplay-card';
-
-      // const img = document.createElement('img');
-      // img.src = prod.imageUrl;
-      // img.alt = prod.productName;
-      // card.appendChild(img);
-
-      // if (prod.onHover?.action === 'overlay' && prod.onHover.args) {
-      //   const hoverOverlay = document.createElement('div');
-      //   hoverOverlay.className = 'vjs-shoppable-postplay-card-overlay';
-      //   hoverOverlay.textContent = prod.onHover.args as string;
-      //   card.appendChild(hoverOverlay);
-      // }
-
-      // const cardTitle = document.createElement('span');
-      // cardTitle.className = 'vjs-shoppable-postplay-card-title';
-      // cardTitle.textContent = prod.productName
-      // card.appendChild(cardTitle);
-
-      // card.addEventListener('mouseenter', () => {
-      //   this.player_.trigger('productHoverPost', { product: prod });
-      //   if (prod.onHover?.action === 'switch' && prod.onHover.args?.url) {
-      //     if (!card.dataset.originalSrc) {
-      //       card.dataset.originalSrc = img.src;
-      //     }
-      //     img.src = prod.onHover.args.url;
-      //   }
-      // });
-
-      // card.addEventListener('mouseleave', () => {
-      //   if (card.dataset.originalSrc) {
-      //     img.src = card.dataset.originalSrc;
-      //   }
-      // });
-
-      // card.addEventListener('click', () => {
-      //   this.player_.trigger('productClickPost', { product: prod });
-      //   if (!prod.onClick) return;
-
-      //   // If the click action is 'seek', handle it as a special case
-      //   // to close the overlay and begin playback from the specified time.
-      //   if (prod.onClick.action === 'seek' && prod.onClick.args?.time) {
-      //     // 1. Hide the post-play overlay.
-      //     this.postPlayOverlay_?.classList.add('vjs-hidden');
-
-      //     // 2. Make the side-panel's toggle button visible again.
-      //     if (this.toggleButton_) {
-      //       this.toggleButton_.classList.remove('vjs-hidden');
-      //     }
-      //   }
-
-      //   this.handleClickInteraction(prod.onClick, prod);
-
-      // });
-
-      // carousel.appendChild(card);
       // Define the specific click handler for items in the post-play overlay.
       const postPlayClickHandler = () => {
         this.player_.trigger('productClickPost', { product: prod });

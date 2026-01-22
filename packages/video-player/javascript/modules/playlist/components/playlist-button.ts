@@ -1,5 +1,6 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type ClickableComponentType from 'video.js/dist/types/clickable-component';
 
 interface PlaylistButtonOptions {
   type: string; // 'previous' or 'next'
@@ -8,7 +9,7 @@ interface PlaylistButtonOptions {
 }
 
 // Get the ClickableComponent base class from Video.js
-const ClickableComponent = videojs.getComponent('ClickableComponent');
+const ClickableComponent = videojs.getComponent('ClickableComponent') as typeof ClickableComponentType;
 
 // Create a common class for playlist buttons
 class PlaylistButton extends ClickableComponent {

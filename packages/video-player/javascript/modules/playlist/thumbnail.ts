@@ -3,10 +3,11 @@ import type { Transformation } from '@imagekit/javascript'
 import { preparePosterSrc } from '../../utils';
 import { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
 import type Player from 'video.js/dist/types/player';
+import type ClickableComponentType from 'video.js/dist/types/clickable-component';
 
 
 // Get the ClickableComponent base class from Video.js
-const ClickableComponent = videojs.getComponent('ClickableComponent');
+const ClickableComponent = videojs.getComponent('ClickableComponent') as typeof ClickableComponentType;
 
 interface ThumbnailInitOptions {
   item?: AugmentedSourceOptions
@@ -33,13 +34,14 @@ const DEFAULT_OPTIONS: ThumbnailInitOptions = {
 };
 
 class Thumbnail extends ClickableComponent {
+  private getItem(): AugmentedSourceOptions | undefined {
+    return (this.options_ as ThumbnailInitOptions).item;
+  }
 
   constructor(player: Player, initOptions: ThumbnailInitOptions) {
     const options = videojs.obj.merge(DEFAULT_OPTIONS, initOptions);
     super(player, options);
   }
-
-
 
   getTitle() {
     return this.getItem()?.info?.title;
@@ -69,8 +71,8 @@ class Thumbnail extends ClickableComponent {
     e.preventDefault();
   }
 
-  createControlTextEl() {
-    return;
+  createControlTextEl(): Element | undefined {
+    return undefined;
   }
 
   createEl(tag = 'a') {
@@ -123,7 +125,6 @@ class Thumbnail extends ClickableComponent {
 
 }
 
-// @ts-ignore
-videojs.registerComponent('Thumbnail', Thumbnail);
+videojs.registerComponent('Thumbnail', Thumbnail as any);
 
 export default Thumbnail;

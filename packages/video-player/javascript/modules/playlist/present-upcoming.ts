@@ -2,10 +2,12 @@
 
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type ComponentType from 'video.js/dist/types/component';
 import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
+import type { Player as ImageKitPlayer } from '../../interfaces/Player';
 
-const Component = videojs.getComponent('Component');
+const Component = videojs.getComponent('Component') as typeof ComponentType;
 
 export class PresentUpcoming extends Component {
   private item_?: SourceOptions;
@@ -64,7 +66,11 @@ export class PresentUpcoming extends Component {
       // Prevent the close button itself from triggering "playNext"
       // Note: This handler only executes on click (after construction), so closeButtonEl_ will exist
       if (!this.closeButtonEl_ || e.target !== this.closeButtonEl_) {
-        (this.player_ as any).imagekitVideoPlayer().getPlaylistManager().playNext();
+        const player = this.player_ as unknown as ImageKitPlayer;
+        const playlistManager = player.imagekitVideoPlayer().getPlaylistManager();
+        if (playlistManager) {
+          playlistManager.playNext();
+        }
       }
     });
 
@@ -105,5 +111,4 @@ export class PresentUpcoming extends Component {
   }
 }
 
-// @ts-ignore
-videojs.registerComponent('PresentUpcoming', PresentUpcoming);
+videojs.registerComponent('PresentUpcoming', PresentUpcoming as any);

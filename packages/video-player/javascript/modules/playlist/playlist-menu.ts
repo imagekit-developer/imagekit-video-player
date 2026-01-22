@@ -1,12 +1,13 @@
 // playlist-menu.ts
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type ComponentType from 'video.js/dist/types/component';
 import { PlaylistMenuItem } from './playlist-menu-item';
 import { Playlist } from './playlist';
 import { IKPlayerOptions } from '../../interfaces';
 import { CleanupRegistry } from '../../utils';
 
-const Component = videojs.getComponent('Component');
+const Component = videojs.getComponent('Component') as typeof ComponentType;
 
 interface PlaylistMenuOptions {
   horizontal?: boolean;
@@ -81,8 +82,7 @@ export class PlaylistMenu extends Component {
   /** Video.js will call this once to build a `<div>` for us. */
   createEl(): HTMLElement {
     const cls = this.options_.className || 'vjs-playlist-menu';
-    // @ts-ignore
-    return videojs.dom.createEl('div', { className: cls });
+    return videojs.dom.createEl('div', { className: cls }) as HTMLElement;
   }
 
   /** Render or re-render the playlist UI */
@@ -145,6 +145,5 @@ export class PlaylistMenu extends Component {
     super.dispose();
   }
 }
-// @ts-ignore
-videojs.registerComponent('PlaylistMenu', PlaylistMenu);
+videojs.registerComponent('PlaylistMenu', PlaylistMenu as any);
 export default PlaylistMenu;

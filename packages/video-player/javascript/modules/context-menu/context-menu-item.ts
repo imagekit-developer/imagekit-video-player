@@ -1,39 +1,46 @@
 // ./context-menu-item.ts
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type MenuItem from 'video.js/dist/types/menu/menu-item';
 import { CleanupRegistry } from '../../utils';
-import './types'; // Import for module augmentation side-effects
+import './types';
 
-const VjsMenuItem = videojs.getComponent('MenuItem');
-// @ts-ignore
-interface ContextMenuItemOptions extends videojs.MenuItemOptions {
+const VjsMenuItem = videojs.getComponent('MenuItem') as typeof MenuItem;
+
+interface ContextMenuItemOptions {
+  label: string;
   listener: (this: Player) => void;
+  children?: unknown[];
+  className?: string;
 }
 
 class ContextMenuItem extends VjsMenuItem {
   private cleanup_ = new CleanupRegistry();
+  private listener_: (this: Player) => void;
 
   constructor(player: Player, options: ContextMenuItemOptions) {
-    // Ensure menu items are not selectable to avoid focus issues.
-    // @ts-ignore
-    super(player, { ...options, selectable: false });
-    // Bind the listener from options to the component instance
-    this.options_.listener = options.listener;
+    super(player, { 
+      label: options.label,
+      selectable: false,
+      children: options.children,
+      className: options.className
+    });
+    
+    this.listener_ = options.listener;
   }
-// @ts-ignore
-  handleClick(event: videojs.EventTarget.Event): void {
-    // @ts-ignore
-    super.handleClick(event);
 
-    // Execute the listener provided in the options.
-    (this.options_ as ContextMenuItemOptions).listener.call(this.player());
-
-    // Close the containing menu after the current call stack clears.
+  handleClick(event: Event): void {
+    // Parent handleClick just calls selected(true), which does nothing 
+    // when selectable: false, so we skip it entirely
+    
+    this.listener_.call(this.player());
+    
     this.cleanup_.registerTimeout(() => {
-      // Safely access the menu via optional chaining.
-      // @ts-ignore
-      this.player().contextmenuUI?.menu?.dispose();
-    }, 1);
+      const player = this.player() as Player & { 
+        contextmenuUI?: { menu?: { dispose(): void } } 
+      };
+      player.contextmenuUI?.menu?.dispose();
+    }, 0);
   }
 
   dispose(): void {
@@ -41,7 +48,7 @@ class ContextMenuItem extends VjsMenuItem {
     super.dispose();
   }
 }
-// @ts-ignore
+
 videojs.registerComponent('ContextMenuItem', ContextMenuItem);
 
 export default ContextMenuItem;

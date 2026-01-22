@@ -69,8 +69,16 @@ export class SeekThumbnailsManager {
       player.el().appendChild(mgr.container_);
 
       // 6) Wire up hover handlers (store references so we can remove them later)
-      // @ts-ignore
-      const progress = player.controlBar.progressControl;
+      const playerWithControlBar = player as unknown as {
+        controlBar: {
+          progressControl: {
+            on(event: string, handler: (e: MouseEvent) => void): void;
+            off(event: string, handler: (e: MouseEvent) => void): void;
+            el(): HTMLElement;
+          };
+        };
+      };
+      const progress = playerWithControlBar.controlBar.progressControl;
 
       // Make named functions and store on `mgr`
       mgr.mouseMoveHandler = (e: MouseEvent) => onMouseMove(e, player, mgr);
@@ -102,8 +110,14 @@ export class SeekThumbnailsManager {
     }
 
     // 2) Unbind the handlers we attached
-    // @ts-ignore
-    const progress = player.controlBar.progressControl;
+    const playerWithControlBar = player as unknown as {
+      controlBar: {
+        progressControl: {
+          off(event: string, handler: (e: MouseEvent) => void | (() => void)): void;
+        };
+      };
+    };
+    const progress = playerWithControlBar.controlBar.progressControl;
     if (this.mouseMoveHandler) {
       progress.off('mousemove', this.mouseMoveHandler);
       this.mouseMoveHandler = null;
@@ -147,10 +161,15 @@ function onMouseMove(e: MouseEvent, player: Player, mgr: SeekThumbnailsManager) 
 
   const playerEl = player.el();
   const playerRect = playerEl.getBoundingClientRect(); // Get player container position
-  // @ts-ignore
-  const playerWidth = playerEl.offsetWidth;
-  // @ts-ignore
-  const barRect = player.controlBar.progressControl.el().getBoundingClientRect();
+  const playerWidth = (playerEl as HTMLElement).offsetWidth;
+  const playerWithControlBar = player as unknown as {
+    controlBar: {
+      progressControl: {
+        el(): HTMLElement;
+      };
+    };
+  };
+  const barRect = playerWithControlBar.controlBar.progressControl.el().getBoundingClientRect();
   
   const pct = Math.max(0, Math.min(1, (e.clientX - barRect.left) / barRect.width));
   const time = pct * player.duration();

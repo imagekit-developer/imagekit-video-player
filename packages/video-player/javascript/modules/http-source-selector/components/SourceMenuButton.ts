@@ -1,17 +1,38 @@
 import videojs from 'video.js';
+import type Player from 'video.js/dist/types/player';
+import type MenuButtonType from 'video.js/dist/types/menu/menu-button';
 import SourceMenuItem from './SourceMenuItem';
 import { CleanupRegistry } from '../../../utils';
 
-const MenuButton = videojs.getComponent('MenuButton');
+const MenuButton = videojs.getComponent('MenuButton') as unknown as typeof MenuButtonType;
+
+interface QualityLevel {
+  enabled: boolean;
+  height?: string;
+  bitrate?: number;
+}
+
+interface QualityLevelList {
+  length: number;
+  selectedIndex: number;
+  forEach(callback: (level: QualityLevel, index: number) => void): void;
+  on(event: string, handler: () => void): void;
+  off(event: string, handler: () => void): void;
+  [index: number]: QualityLevel;
+}
+
+interface PlayerWithQualityLevels {
+  qualityLevels(): QualityLevelList;
+}
 
 class SourceMenuButton extends MenuButton {
   private cleanup_ = new CleanupRegistry();
 
-  constructor(player, options) {
+  constructor(player: Player, options: any) {
     super(player, options);
 
-    // @ts-ignore
-    const qualityLevels = this.player().qualityLevels();
+    const playerWithQualityLevels = this.player() as unknown as PlayerWithQualityLevels;
+    const qualityLevels = playerWithQualityLevels.qualityLevels();
 
     // Handle options: default bias
     if (options && options.default) {
@@ -27,34 +48,31 @@ class SourceMenuButton extends MenuButton {
     }
 
     // Bind update to qualityLevels changes
-    // @ts-ignore
-    const updateHandler = videojs.bind(this, this.update);
-    // @ts-ignore
+    // Use native bind instead of deprecated videojs.bind
+    const updateHandler = this.update.bind(this);
     this.cleanup_.registerVideoJsListener(qualityLevels, 'change', updateHandler);
-    // @ts-ignore
     this.cleanup_.registerVideoJsListener(qualityLevels, 'addqualitylevel', updateHandler);
   }
 
-  createEl() {
+  createEl(): HTMLElement {
     return videojs.dom.createEl('div', {
       className: 'vjs-http-source-selector vjs-menu-button vjs-menu-button-popup vjs-control vjs-button'
-    });
+    }) as HTMLElement;
   }
 
-  buildCSSClass() {
+  buildCSSClass(): string {
     return super.buildCSSClass() + ' vjs-icon-cog';
   }
 
-  update() {
-    // @ts-ignore
-    return super.update();
+  update(): void {
+    super.update();
   }
 
-  createItems() {
-    const menuItems = [];
-    // @ts-ignore
-    const levels = this.player().qualityLevels();
-    const labels = [];
+  createItems(): SourceMenuItem[] {
+    const menuItems: SourceMenuItem[] = [];
+    const playerWithQualityLevels = this.player() as unknown as PlayerWithQualityLevels;
+    const levels = playerWithQualityLevels.qualityLevels();
+    const labels: string[] = [];
 
     for (let i = 0; i < levels.length; i++) {
       const index = levels.length - (i + 1);
@@ -68,7 +86,7 @@ class SourceMenuButton extends MenuButton {
         sortVal = parseInt(levels[index].height, 10);
       } else if (levels[index].bitrate) {
         label = `${Math.floor(levels[index].bitrate / 1e3)} kbps`;
-        sortVal = parseInt(levels[index].bitrate, 10);
+        sortVal = parseInt(String(levels[index].bitrate), 10);
       }
 
       if (labels.includes(label)) {
@@ -101,6 +119,6 @@ class SourceMenuButton extends MenuButton {
 }
 
 // Register component with Video.js
-videojs.registerComponent('SourceMenuButton', SourceMenuButton);
+videojs.registerComponent('SourceMenuButton', SourceMenuButton as any);
 
 export default SourceMenuButton;

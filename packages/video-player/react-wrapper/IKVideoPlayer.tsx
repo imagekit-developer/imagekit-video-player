@@ -55,7 +55,6 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
         Array.isArray(playlist.sources) &&
         playlist.sources.length > 0
       ) {
-        // @ts-ignore
         const playlistMgr = playerInstance.playlist({
           sources: playlist.sources,
           options: playlist.options || {},

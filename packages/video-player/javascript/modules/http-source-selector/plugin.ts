@@ -1,4 +1,5 @@
 import videojs from 'video.js';
+import type Player from 'video.js/dist/types/player';
 
 import SourceMenuButton from './components/SourceMenuButton';
 import SourceMenuItem from './components/SourceMenuItem';
@@ -73,16 +74,14 @@ const onPlayerReady = (player: any, options: any) =>
   * @param    {Object} [options={}]
   *           An object of options left to the plugin author to define.
   */
-  const httpSourceSelector = function(options: any) {
-    // @ts-ignore
+  const httpSourceSelector = function(this: Player, options: any) {
     this.ready(() => {
-      // @ts-ignore
       onPlayerReady(this, videojs.mergeOptions(defaults, options));
       //this.getChild('controlBar').addChild('SourceMenuButton', {});
     });
 
-    videojs.registerComponent('SourceMenuButton', SourceMenuButton);
-    videojs.registerComponent('SourceMenuItem', SourceMenuItem);
+    videojs.registerComponent('SourceMenuButton', SourceMenuButton as any);
+    videojs.registerComponent('SourceMenuItem', SourceMenuItem as any);
   };
 
   // Register the plugin with video.js.

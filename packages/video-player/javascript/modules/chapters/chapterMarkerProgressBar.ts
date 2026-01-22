@@ -73,8 +73,15 @@ class ChapterMarkersProgressBarControl extends Component {
    * Attaches mouse move and leave handlers to the main progress control.
    */
   attachHoverHandlers(player: Player) {
-    // @ts-ignore
-    const progressControl = player.controlBar.progressControl;
+    // Access controlBar.progressControl via type assertion (Video.js internal API)
+    const playerWithControlBar = player as unknown as {
+      controlBar: {
+        progressControl: {
+          el(): HTMLElement;
+        };
+      };
+    };
+    const progressControl = playerWithControlBar.controlBar.progressControl;
     
     const mousemoveHandler = (e: MouseEvent) => {
       if (!this.chapterTooltipContainer) return;

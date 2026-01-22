@@ -1,25 +1,42 @@
 import videojs from 'video.js';
-const MenuItem = videojs.getComponent('MenuItem');
-const Component = videojs.getComponent('Component');
+import type Player from 'video.js/dist/types/player';
+import type MenuItemType from 'video.js/dist/types/menu/menu-item';
 
-class SourceMenuItem extends MenuItem
-{
-  constructor(player, options) {
+const MenuItem = videojs.getComponent('MenuItem') as typeof MenuItemType;
+
+interface QualityLevel {
+  enabled: boolean;
+  height?: string;
+  bitrate?: number;
+}
+
+interface QualityLevelList {
+  length: number;
+  selectedIndex: number;
+  forEach(callback: (level: QualityLevel, index: number) => void): void;
+  [index: number]: QualityLevel;
+}
+
+interface PlayerWithQualityLevels {
+  qualityLevels(): QualityLevelList;
+}
+
+class SourceMenuItem extends MenuItem {
+  constructor(player: Player, options: any) {
     options.selectable = true;
     options.multiSelectable = false;
 
     super(player, options);
   }
 
-  handleClick() {
-    var selected = this.options_;
-    // console.log("Changing quality to:", selected.label);
-    // @ts-ignore
-    super.handleClick();
+  handleClick(event: Event) {
+    const selected = this.options_;
+    // Call parent handleClick
+    super.handleClick(event);
 
-    // @ts-ignore
-    var levels = this.player().qualityLevels();
-    for(var i = 0; i < levels.length; i++) {
+    const player = this.player() as unknown as PlayerWithQualityLevels;
+    const levels = player.qualityLevels();
+    for (let i = 0; i < levels.length; i++) {
       if (selected.index == levels.length) {
         // If this is the Auto option, enable all renditions for adaptive selection
         levels[i].enabled = true;
@@ -32,13 +49,12 @@ class SourceMenuItem extends MenuItem
   }
 
   update() {
-    // @ts-ignore
-    var selectedIndex = this.player().qualityLevels().selectedIndex;
-    // @ts-ignore
+    const player = this.player() as unknown as PlayerWithQualityLevels;
+    const qualityLevels = player.qualityLevels();
+    const selectedIndex = qualityLevels.selectedIndex;
     this.selected(this.options_.index == selectedIndex);
   }
 }
 
-// @ts-ignore
-Component.registerComponent('SourceMenuItem', SourceMenuItem);
+videojs.registerComponent('SourceMenuItem', SourceMenuItem as any);
 export default SourceMenuItem;

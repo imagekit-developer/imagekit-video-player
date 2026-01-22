@@ -1,6 +1,6 @@
 import PlaylistButton from './playlist-button';
 import videojs from 'video.js';
-import type Player from 'video.js/dist/types/player';
+import type { Player } from '../../../interfaces/Player';
 
 
 class PlaylistNextButton extends PlaylistButton {
@@ -11,10 +11,12 @@ class PlaylistNextButton extends PlaylistButton {
   
   handleClick(event: Event) {
     event.stopPropagation();
-    // @ts-ignore
     super.handleClick(event);
-     // @ts-ignore
-     this.player().imagekitVideoPlayer().getPlaylistManager().playNext();
+    const player = this.player() as Player;
+    const playlistManager = player.imagekitVideoPlayer().getPlaylistManager();
+    if (playlistManager) {
+      playlistManager.playNext();
+    }
   }
 }
 

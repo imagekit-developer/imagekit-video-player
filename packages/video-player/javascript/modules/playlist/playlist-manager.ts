@@ -1,11 +1,13 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type ComponentType from 'video.js/dist/types/component';
 import { isEqual, pick } from 'lodash'
 
 import { Playlist } from './playlist';
 import { AutoAdvance } from './auto-advance';
 import { PlaylistMenu } from './playlist-menu';
 import type { SourceOptions, PlaylistOptions, IKPlayerOptions } from '../../interfaces';
+import type { Player as ImageKitPlayer } from '../../interfaces/Player';
 import { isIndexInBounds, SOURCE_OPTION_KEYS } from './utils';
 import './present-upcoming';
 import { PresentUpcoming } from './present-upcoming';
@@ -115,8 +117,12 @@ export class PlaylistManager {
     }
 
     // A) First, check if the player is in fluid mode.
-    // @ts-ignore
-    const isFluid = this.player_.options_.fluid;
+    const playerWithOptions = this.player_ as unknown as {
+      options_: {
+        fluid?: boolean;
+      };
+    };
+    const isFluid = playerWithOptions.options_.fluid;
 
     if (isFluid) {
       // For fluid players, we MUST let CSS control the layout.
@@ -231,14 +237,18 @@ export class PlaylistManager {
   }
 
   private addUiComponents() {
-    // @ts-ignore
-    const controlBar = this.player_.getChild('ControlBar');
-       // @ts-ignore
-    const children = controlBar.children();
-       // @ts-ignore
-    controlBar.addChild('PlaylistPreviousButton', {}, children.findIndex(c => c.name_ === 'PlayToggle'));
-       // @ts-ignore
-    controlBar.addChild('PlaylistNextButton', {}, children.findIndex(c => c.name_ === 'PlayToggle') + 1);
+    const controlBar = this.player_.getChild('ControlBar') as ComponentType | null;
+    if (!controlBar) return;
+    
+    const controlBarWithMethods = controlBar as unknown as {
+      children(): Array<{ name_?: string }>;
+      addChild(name: string, options?: any, index?: number): ComponentType;
+    };
+    const children = controlBarWithMethods.children();
+    const playToggleIndex = children.findIndex(c => c.name_ === 'PlayToggle');
+    
+    controlBarWithMethods.addChild('PlaylistPreviousButton', {}, playToggleIndex);
+    controlBarWithMethods.addChild('PlaylistNextButton', {}, playToggleIndex + 1);
   }
 
   /** Load a new playlist array */
@@ -490,16 +500,17 @@ A value of 0 causes the next video to play immediately after the previous one fi
    */
   private clearExistingItemTextTracks_() {
     // @todo: this should be available in videojs
-    // @ts-ignore
-    const textTracks = this.player_.remoteTextTracks();
-    // @ts-ignore
+    const playerWithTextTracks = this.player_ as unknown as {
+      remoteTextTracks(): TextTrackList;
+      removeRemoteTextTrack(track: TextTrack): void;
+    };
+    const textTracks = playerWithTextTracks.remoteTextTracks();
     let i = textTracks && textTracks.length || 0;
 
     // This uses a `while` loop rather than `forEach` because the
     // `TextTrackList` object is a live DOM list (not an array).
     while (i--) {
-      // @ts-ignore
-      this.player_.removeRemoteTextTrack(textTracks[i]);
+      playerWithTextTracks.removeRemoteTextTrack(textTracks[i]);
     }
   }
 
@@ -521,9 +532,26 @@ A value of 0 causes the next video to play immediately after the previous one fi
    * @private
    */
   private handleSourceChange_ = () => {
-    //@ts-ignore
-    const currentSrc = this.player_.imagekitVideoPlayer().getOriginalCurrentSource();
+    const player = this.player_ as unknown as ImageKitPlayer;
+    const pluginInstance = player.imagekitVideoPlayer();
+    const currentSrc = pluginInstance.getOriginalCurrentSource();
 
+    // Handle null or array cases
+    if (!currentSrc) {
+      this.handleNonPlaylistSource_();
+      return;
+    }
+
+    // If it's an array, check if any source is in the playlist
+    if (Array.isArray(currentSrc)) {
+      const isInPlaylist = currentSrc.some(src => this.isSourceInPlaylist_(src));
+      if (!isInPlaylist) {
+        this.handleNonPlaylistSource_();
+      }
+      return;
+    }
+
+    // Single source case
     if (!this.isSourceInPlaylist_(currentSrc)) {
       this.handleNonPlaylistSource_();
     }

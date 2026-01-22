@@ -14,6 +14,10 @@
       "ES2022",
       "dom"
     ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "javascript/types"
+    ],
     "baseUrl": ".",
     "rootDir": "."
   },

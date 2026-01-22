@@ -1,11 +1,12 @@
 import videojs from 'video.js';
-import type Player from 'video.js/dist/types/player';
-import type { IKPlayerOptions, SourceOptions, Transformation } from '../../interfaces';
+import type { Player } from '../../interfaces/Player';
+import type ComponentType from 'video.js/dist/types/component';
+import type { IKPlayerOptions, Transformation } from '../../interfaces';
 import { Playlist } from './playlist';
 import { preparePosterSrc } from '../../utils';
 import { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
 
-const Component = videojs.getComponent('Component');
+const Component = videojs.getComponent('Component') as typeof ComponentType;
 
 interface PlaylistMenuItemOptions {
   item: AugmentedSourceOptions;
@@ -33,8 +34,7 @@ export class PlaylistMenuItem extends Component {
   private playerOptions: IKPlayerOptions;
 
   constructor(player: Player, playlist: Playlist, options: PlaylistMenuItemOptions, playerOptions: IKPlayerOptions) {
-    // @ts-ignore
-    super(player, options);
+    super(player, options as any);
     this.item = options.item;
     this.playOnSelect = !!options.playOnSelect;
     this.playlist = playlist
@@ -55,7 +55,11 @@ export class PlaylistMenuItem extends Component {
     const list = this.playlist.getItems();
     const idx = list.findIndex(src => src === this.item);
     if (idx > -1) {
-      (this.player_ as any).imagekitVideoPlayer().getPlaylistManager().loadPlaylistItem(idx);
+      const player = this.player_ as Player;
+      const playlistManager = player.imagekitVideoPlayer().getPlaylistManager();
+      if (playlistManager) {
+        playlistManager.loadPlaylistItem(idx);
+      }
       if (this.playOnSelect) {
         this.player_.play();
       }
@@ -81,7 +85,8 @@ export class PlaylistMenuItem extends Component {
       item.poster.transformation = [DEFAULT_TRANSFORMATION]
 
     }
-    const preparedUrl = await preparePosterSrc(item, (this.player_ as any).imagekitVideoPlayer().getPlayerOptions())
+    const player = this.player_ as Player;
+    const preparedUrl = await preparePosterSrc(item, player.imagekitVideoPlayer().getPlayerOptions())
     if(!this.item.prepared) {
       this.item.prepared = {};
     }
@@ -263,5 +268,4 @@ export class PlaylistMenuItem extends Component {
 // ...
 }
 
-// @ts-ignore
-videojs.registerComponent('PlaylistMenuItem', PlaylistMenuItem);
+videojs.registerComponent('PlaylistMenuItem', PlaylistMenuItem as any);

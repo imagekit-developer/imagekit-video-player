@@ -1,16 +1,40 @@
 // ./plugin.ts
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import type Component from 'video.js/dist/types/component';
 
 import ContextMenu from './context-menu';
 import { getPointerPosition } from './utils';
-import { PluginOptions } from './types';
+import { PluginOptions, ContextMenuUI } from './types';
 import { addEventListener } from '../../utils';
 import './types'; // Import for module augmentation side-effects
 
-function hasMenu(player: Player): boolean {
-    // @ts-ignore
-    return !!(player.contextmenuUI && player.contextmenuUI.menu && player.contextmenuUI.menu.el());
+// Extended Player type with contextmenuUI plugin properties
+type PlayerWithContextMenu = Player & {
+    contextmenuUI?: ContextMenuUI;
+    contextmenuUICleanups_?: Array<() => void>;
+};
+
+// Type guard to check if contextmenuUI property exists (may not be initialized)
+function hasContextMenuUI(player: Player): player is PlayerWithContextMenu & { contextmenuUI: ContextMenuUI } {
+    const playerWithContextMenu = player as PlayerWithContextMenu;
+    return playerWithContextMenu.contextmenuUI !== undefined;
+}
+
+// Check if the plugin is properly initialized (has required properties)
+function isContextMenuUIInitialized(player: PlayerWithContextMenu): boolean {
+    if (!hasContextMenuUI(player)) {
+        return false;
+    }
+    const plugin = player.contextmenuUI;
+    return typeof plugin.onContextMenu === 'function' &&
+        typeof plugin.createContextMenuContent === 'function';
+}
+
+function hasMenu(player: PlayerWithContextMenu): boolean {
+    return hasContextMenuUI(player) &&
+        player.contextmenuUI.menu !== undefined &&
+        player.contextmenuUI.menu.el() !== null;
 }
 
 function excludeElements(targetEl: Element): boolean {
@@ -26,157 +50,168 @@ function findMenuPosition(pointerPosition: { x: number; y: number }, playerSize:
     };
 }
 
-function onContextMenu(this: Player, e: MouseEvent): void {
+function onContextMenu(this: PlayerWithContextMenu, e: MouseEvent): void {
+    // Always prevent default to block native menu - must be first!
     e.preventDefault();
-    // @ts-ignore
-    if (!this.contextmenuUI) {
+    e.stopPropagation();
+
+    if (!hasContextMenuUI(this)) {
         return;
     }
 
-    // @ts-ignore
+    // If menu already exists, close it and return
+    // preventDefault already called above, so native menu won't show
     if (hasMenu(this)) {
-        // @ts-ignore
         this.contextmenuUI.menu!.dispose();
         return;
     }
-    // @ts-ignore
-    if (!(e.target instanceof Element) || this.contextmenuUI.options_.excludeElements(e.target)) {
+
+    if (!(e.target instanceof HTMLElement) || excludeElements(e.target)) {
         return;
     }
 
+    const playerEl = this.el();
+    if (!playerEl || !(playerEl instanceof HTMLElement)) {
+        return;
+    }
 
-    // @ts-ignore
-    const pointerPosition = getPointerPosition(this.el(), e);
-    const playerRect = this.el().getBoundingClientRect();
-    // @ts-ignore
+    const pointerPosition = getPointerPosition(playerEl, e);
+    const playerRect = playerEl.getBoundingClientRect();
     const menuPosition = findMenuPosition(pointerPosition, playerRect);
     const documentEl = videojs.browser.IS_FIREFOX ? document.documentElement : document;
 
+    // Get fresh content by calling the function
+    const content = this.contextmenuUI.createContextMenuContent(this);
+
     const menu = new ContextMenu(this, {
-        // @ts-ignore
-        content: this.contextmenuUI.content,
+        content: content,
         position: menuPosition
     });
-    // @ts-ignore
     this.contextmenuUI.menu = menu;
 
-    // @ts-ignore
     this.contextmenuUI.closeMenu = () => {
         videojs.log.warn('player.contextmenuUI.closeMenu() is deprecated, please use player.contextmenuUI.menu.dispose() instead!');
         menu.dispose();
     };
 
     // Store document listener cleanup function
-    // @ts-ignore
     if (!this.contextmenuUICleanups_) {
-        // @ts-ignore
         this.contextmenuUICleanups_ = [];
     }
-    // @ts-ignore
-    const documentCleanup = addEventListener(documentEl, 'click', menu.dispose);
-    // @ts-ignore
-    const tapCleanup = addEventListener(documentEl, 'tap', menu.dispose);
-    // @ts-ignore
+    const handleMenuClose = (evt: Event) => {
+        menu.dispose();
+    };
+
+    const documentCleanup = addEventListener(documentEl, 'click', handleMenuClose);
+    const tapCleanup = addEventListener(documentEl, 'tap', handleMenuClose);
     this.contextmenuUICleanups_.push(documentCleanup, tapCleanup);
 
     menu.on('dispose', () => {
         // Clean up document listeners
-        // @ts-ignore
         if (this.contextmenuUICleanups_) {
-            // @ts-ignore
             this.contextmenuUICleanups_.forEach(cleanup => cleanup());
-            // @ts-ignore
             this.contextmenuUICleanups_ = [];
         }
-        this.removeChild(menu);
-        // @ts-ignore
-        if (this.contextmenuUI) {
-            // @ts-ignore
+        // Type assertion for Video.js component methods
+        (this as unknown as Component).removeChild(menu);
+
+        if (hasContextMenuUI(this)) {
             delete this.contextmenuUI.menu;
         }
     });
 
-    this.addChild(menu);
+    // Type assertion for Video.js component methods
+    (this as unknown as Component).addChild(menu);
 
-    const menuRect = menu.el().getBoundingClientRect();
-    const bodyRect = document.body.getBoundingClientRect();
-    // @ts-ignore
-    if (this.contextmenuUI.keepInside || menuRect.right > bodyRect.width || menuRect.bottom > bodyRect.height) {
-        // FIX: The original code had `this.player_`, which is incorrect. `this` is the player.
-        const constrainedLeft = Math.min(menuPosition.left, this.currentWidth() - menu.currentWidth());
-        const constrainedTop = Math.min(menuPosition.top, this.currentHeight() - menu.currentHeight());
-        // @ts-ignore
-        menu.el().style.left = `${Math.floor(constrainedLeft)}px`;
-        // @ts-ignore
-        menu.el().style.top = `${Math.floor(constrainedTop)}px`;
+    const menuEl = menu.el();
+    if (!menuEl || !(menuEl instanceof HTMLElement)) {
+        return;
     }
+
+
+    // Type assertions for Video.js component methods
+    const playerComponent = this as unknown as Component;
+    const currentWidth = typeof playerComponent.currentWidth === 'function'
+        ? playerComponent.currentWidth()
+        : playerEl.offsetWidth;
+    const currentHeight = typeof playerComponent.currentHeight === 'function'
+        ? playerComponent.currentHeight()
+        : playerEl.offsetHeight;
+    const menuWidth = typeof menu.currentWidth === 'function'
+        ? menu.currentWidth()
+        : menuEl.offsetWidth;
+    const menuHeight = typeof menu.currentHeight === 'function'
+        ? menu.currentHeight()
+        : menuEl.offsetHeight;
+
+    // Always constrain menu to stay within player bounds
+
+    const constrainedLeft = Math.min(menuPosition.left, currentWidth - menuWidth);
+    const constrainedTop = Math.min(menuPosition.top, currentHeight - menuHeight);
+    menuEl.style.left = `${Math.floor(constrainedLeft)}px`;
+    menuEl.style.top = `${Math.floor(constrainedTop)}px`;
+
 }
 
-function contextmenuUI(this: Player, options: PluginOptions): void {
-    const defaults: Partial<PluginOptions> = {
-        keepInside: true,
-        excludeElements
-    };
-
-    const mergedOptions = videojs.mergeOptions(defaults, options) as Required<PluginOptions>;
-
-    if (!Array.isArray(mergedOptions.content)) {
-        throw new Error('"content" option is required and must be an array');
+function contextmenuUI(this: PlayerWithContextMenu, options: PluginOptions): void {
+    if (typeof options.createContextMenuContent !== 'function') {
+        throw new Error('"createContextMenuContent" option is required and must be a function');
     }
 
-    // Teardown previous instance if it exists, preserving original logic
-    // @ts-ignore
-    if (this.contextmenuUI) {
-        // @ts-ignore
-        this.contextmenuUI.menu?.dispose();
-        // @ts-ignore
-        this.off('contextmenu', this.contextmenuUI.onContextMenu);
-        // Clean up any remaining document listeners
-        // @ts-ignore
+    // Check if plugin is properly initialized (not just if property exists)
+    if (isContextMenuUIInitialized(this)) {
+        // Plugin is properly initialized, just update the content function
+        const pluginState = this.contextmenuUI!;
+        pluginState.createContextMenuContent = options.createContextMenuContent;
+        pluginState.options_ = options;
+        return;
+    } else if (hasContextMenuUI(this)) {
+        // Plugin property exists but is not properly initialized - re-initialize
+        // Clean up the incomplete plugin state
         if (this.contextmenuUICleanups_) {
-            // @ts-ignore
             this.contextmenuUICleanups_.forEach(cleanup => cleanup());
-            // @ts-ignore
-            delete this.contextmenuUICleanups_;
+            this.contextmenuUICleanups_ = undefined;
         }
-        // @ts-ignore
-        delete this.contextmenuUI;
+        // Use type assertion to allow deletion of optional property
+        const playerWithOptional = this as PlayerWithContextMenu;
+        playerWithOptional.contextmenuUI = undefined;
+        // Fall through to initialization below
+    }
+
+    // Teardown any orphaned state if it exists
+    if (this.contextmenuUICleanups_) {
+        this.contextmenuUICleanups_.forEach(cleanup => cleanup());
+        delete this.contextmenuUICleanups_;
     }
 
     // Create a callable function that also serves as the plugin's state namespace.
     const cmui = ((opts: PluginOptions) => {
         contextmenuUI.call(this, opts);
-        // @ts-ignore
-    }) as typeof this.contextmenuUI;
-    // @ts-ignore
+    }) as ContextMenuUI;
+
+    // Assign the function to the player
     this.contextmenuUI = cmui;
 
     // Assign properties to the new plugin instance
-    // @ts-ignore
-    this.contextmenuUI.options_ = mergedOptions;
-    // @ts-ignore
-    this.contextmenuUI.content = mergedOptions.content;
-    // @ts-ignore
-    this.contextmenuUI.keepInside = mergedOptions.keepInside;
-    // @ts-ignore
-    this.contextmenuUI.onContextMenu = onContextMenu.bind(this);
+    cmui.options_ = options;
+    cmui.createContextMenuContent = options.createContextMenuContent;
+    cmui.onContextMenu = onContextMenu.bind(this);
 
     // Store contextmenu listener cleanup
-    // @ts-ignore
     if (!this.contextmenuUICleanups_) {
-        // @ts-ignore
         this.contextmenuUICleanups_ = [];
     }
-    // @ts-ignore
-    const contextMenuCleanup = () => {
-        // @ts-ignore
-        this.off('contextmenu', this.contextmenuUI.onContextMenu);
-    };
-    // @ts-ignore
-    this.contextmenuUICleanups_.push(contextMenuCleanup);
-    // @ts-ignore
-    this.on('contextmenu', this.contextmenuUI.onContextMenu);
-    this.ready(() => this.addClass('vjs-contextmenu-ui'));
+
+    if (hasContextMenuUI(this)) {
+        this.on('contextmenu', this.contextmenuUI.onContextMenu);
+    }
+
+    this.ready(() => {
+        const playerComponent = this as unknown as Component;
+        if (typeof playerComponent.addClass === 'function') {
+            playerComponent.addClass('vjs-contextmenu-ui');
+        }
+    });
 }
 
 videojs.registerPlugin('contextmenuUI', contextmenuUI);

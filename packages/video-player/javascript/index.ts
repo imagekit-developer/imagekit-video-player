@@ -1,9 +1,8 @@
-import videojs from 'video.js';
+import videojs, { type Player as VideoJsPlayer } from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
 import './modules/http-source-selector/plugin';
 import './modules/context-menu/plugin';
-import type { IKPlayerOptions, RemoteTextTrackOptions } from './interfaces';
-import type Player from 'video.js/dist/types/player';
+import type { IKPlayerOptions, RemoteTextTrackOptions, Player } from './interfaces';
 import type { SourceOptions } from './interfaces';
 import type { AugmentedSourceOptions } from './interfaces/AugementedSourceOptions';
 
@@ -16,6 +15,7 @@ import { ShoppableManager } from './modules/shoppable/shoppable-manager';
 import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc, CleanupRegistry } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
 import './modules/logo-button';
+
 const defaults: IKPlayerOptions = {
   imagekitId: 'random_id',
   floatingWhenNotVisible: null,
@@ -248,6 +248,10 @@ this.player.ready(() => {
 
   private overrideSrc() {
     const nativeSrc = this.player.src.bind(this.player);
+    const ensurePrepared = (src: AugmentedSourceOptions): NonNullable<AugmentedSourceOptions['prepared']> => {
+      if (!src.prepared) src.prepared = {};
+      return src.prepared;
+    };
 
     this.player.src = (raw: string | SourceOptions | Array<string | SourceOptions> | undefined) => {
       // increment the version on each call
@@ -286,18 +290,8 @@ this.player.ready(() => {
             const { maxTries, videoTimeoutInMS, delayInMS } = this.ikGlobalSettings_;
             // set prepared.src
             inputs.forEach((src) => {
-              // @ts-ignore
-              if (!this.hasPreparedSrc(src)) {
-                // if src is not prepared, set the src directly
-
-                // @ts-ignore
-                if (!src.prepared)
-                {
-                  // @ts-ignore
-                  src.prepared = {}
-                }
-                // @ts-ignore
-                src.prepared.src = prepared[0].src;
+              if (typeof src === 'object' && src !== null && !this.hasPreparedSrc(src)) {
+                ensurePrepared(src as AugmentedSourceOptions).src = prepared[0].src;
               }
             });
 
@@ -323,29 +317,20 @@ this.player.ready(() => {
               ? this.currentSource_[0]
               : this.currentSource_;
             // if poster is already prepared, use it directly
-            // @ts-ignore
-            if (currentSource_?.prepared?.poster) {
-              console.log("Using prepared poster src")
-              // @ts-ignore
-              this.player.poster(currentSource_?.prepared?.poster);
+            const preparedPoster = (currentSource_ as AugmentedSourceOptions | null | undefined)?.prepared?.poster;
+            if (preparedPoster) {
+              this.player.poster(preparedPoster);
             }
             else {
               preparePosterSrc(currentSource_, this.ikGlobalSettings_).then(
                 poster => {
-                  // if preparedPosterSrc is not empty, set it
-                  // @ts-ignore
-                  // currentSource_.preparedPosterSrc = poster;
                   // set the poster on the player
                   if (poster) {
                     this.player.poster(poster);
                   }
-                  // @ts-ignore
-                  if (!currentSource_.prepared) {
-                    // @ts-ignore
-                    currentSource_.prepared = {};
+                  if (currentSource_) {
+                    ensurePrepared(currentSource_ as AugmentedSourceOptions).poster = poster ?? undefined;
                   }
-                  // @ts-ignore
-                  currentSource_.prepared.poster = poster;
                 }
               ).catch(err => {
                 this.player.error(err.message);
@@ -399,14 +384,6 @@ this.player.ready(() => {
           this.player.log.warn(`Default VTT fetch failed with status: (${res.status}); skipping chapters.`);
           return;
         }
-        // add chapters track
-        // @todo commented this. You are overriding remoteTextTrack. Verify the correctness of this.
-        // const chaptersTrack = this.player.addRemoteTextTrack({
-        //   kind: 'chapters',
-        //   label: 'Chapters',
-        //   src: 'https://ik.imagekit.io/zuqlyov9d/chapters.vtt',
-        //   default: false,
-        // }, false);
         const data = await res.text();
         chapterList = parseChaptersFromVTT(data);
       } catch (e) {
@@ -432,7 +409,6 @@ this.player.ready(() => {
     if (!src.recommendations) return;
 
     const overlay = this.player.getChild('RecommendationsOverlay');
-    console.log('RecommendationsOverlay:', overlay);
     if (overlay) overlay.dispose();
     this.player.addChild('RecommendationsOverlay', { recommendations: src.recommendations, playerOptions: this.ikGlobalSettings_ });
   }
@@ -493,38 +469,40 @@ export function videoPlayer(
   element: string | HTMLElement,
   options: IKPlayerOptions,
   videoJsOptions: any = {}
-) {
-  const player = videojs(element, {
-    ...videoJsOptions,
-    // playbackRates: [0.5, 1, 1.5, 2],
-    // children: {
-    //   controlBar: {
-    //     fullscreenToggle: false,
-    //     pictureInPictureToggle: false,
-    //     volumePanel: false,
-    //     playbackRateMenuButton: false,
-    //   }
-    // },
-    // controls: false,
-    // autoplay: true,
-    // aspectRatio: '9:16',
+): Player {
+  // Keep this for reference
+  // videoJsOptions = {
+  //  playbackRates: [0.5, 1, 1.5, 2],
+  //   children: {
+  //     controlBar: {
+  //       fullscreenToggle: false,
+  //       pictureInPictureToggle: false,
+  //       volumePanel: false,
+  //       playbackRateMenuButton: false,
+  //     }
+  //   },
+  //   controls: false,
+  //   autoplay: true,
+  //   aspectRatio: '9:16',
     
-    // responsive: true,
-    // breakpoints: {
-    //   // tiny: 300,
-    //   // xsmall: 400,
-    //   // small: 500,
-    //   // medium: 600,
-    //   // large: 700,
-    //   // xlarge: 800,
-    //   huge: 900
-    // },
-    // controlBar: {
-    //   skipButtons: {
-    //     forward: 10
-    //   }
-    // },
-
+  //   responsive: true,
+  //   breakpoints: {
+  //     // tiny: 300,
+  //     // xsmall: 400,
+  //     // small: 500,
+  //     // medium: 600,
+  //     // large: 700,
+  //     // xlarge: 800,
+  //     huge: 900
+  //   },
+  //   controlBar: {
+  //     skipButtons: {
+  //       forward: 10
+  //     }
+  //   },
+  // }
+  const player: VideoJsPlayer = videojs(element, {
+    ...videoJsOptions,
     html5: { nativeTextTracks: false },
     plugins: {
       ...(videoJsOptions.plugins ?? {}),
@@ -532,10 +510,8 @@ export function videoPlayer(
       imagekitVideoPlayer: options,
     },
   });
-  // @ts-ignore
-  player.httpSourceSelector();
-  // @ts-ignore
-  // Explicitly handle both cases for the context menu
+
+  // Handle context menu visibility
   if (options.hideContextMenu === true) {
     // If hiding is requested, add a listener that ONLY prevents the default menu.
     // This will disable all right-click menus on the player.
@@ -543,13 +519,12 @@ export function videoPlayer(
       e.preventDefault();
     });
   } else {
-    // Otherwise, set up our custom, dynamic context menu.
-
+    // Initialize context menu plugin only when not hidden
     /**
      * Helper function to generate the context menu content
      * based on the player's current state.
      */
-    const createContextMenuContent = () => {
+    const createContextMenuContent = (player: Player) => {
       return [{
         label: player.paused() ? "Play" : "Pause",
         listener: function () {
@@ -584,23 +559,33 @@ export function videoPlayer(
       }];
     };
 
-    // Initialize the context menu with the initial content.
-    // The contextmenuUI plugin internally handles preventDefault for this case.
-    // @ts-ignore
-    player.contextmenuUI({
-      content: createContextMenuContent()
-    });
+    // Check if plugin is available
+    const hasContextMenuUIMethod = typeof (player as any).contextmenuUI === 'function';
 
-    // Add an event listener to update the menu content on every right-click
-    player.on('contextmenu', () => {
-      // @ts-ignore
-      player.contextmenuUI({
-        content: createContextMenuContent()
-      });
-    });
+    if (!hasContextMenuUIMethod) {
+      console.error('[ImageKit Video Player] ERROR: contextmenuUI method not found on player!');
+      console.error('[ImageKit Video Player] Available plugins:', Object.keys(videojs.getPlugins()));
+    } else {
+      try {
+        (player as any).contextmenuUI({
+          createContextMenuContent: createContextMenuContent
+        });
+      } catch (error) {
+        console.error('[ImageKit Video Player] ERROR initializing context menu plugin:', error);
+      }
+    }
   }
 
-  return player;
+  // Verify that plugin augmentation completed successfully
+  // The imagekitVideoPlayer plugin adds methods (playlist, src override, etc.) at runtime
+  if (!('playlist' in player) || typeof (player as any).playlist !== 'function') {
+    throw new Error('ImageKit video player plugin failed to initialize: playlist method not found');
+  }
+
+  // Type assertion: player has augmented methods added by the plugin at runtime
+  // Using double assertion (as unknown as Player) because VideoJsPlayer and Player
+  // don't have sufficient type overlap (playlist method is added at runtime)
+  return player as unknown as Player;
 }
 
 export * from './interfaces';
