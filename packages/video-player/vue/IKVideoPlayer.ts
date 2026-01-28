@@ -32,11 +32,6 @@ export const IKVideoPlayer = defineComponent({
       console.log('[IKVideoPlayer] Creating new video player instance');
       player = videoPlayer(videoElement.value, props.ikOptions, props.videoJsOptions);
 
-      // Expose the player instance to the parent component
-      expose({
-        getPlayer: (): Player | null => player,
-      });
-
       // Handle playlist or single source
       if (props.source && props.playlist) {
         console.warn('[IKVideoPlayer] Both `source` and `playlist` were provided. Using `playlist`.');

@@ -125,6 +125,50 @@
             overflow-wrap: break-word;
             display: block;
         }
+        .translation-lang-item {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: flex-start;
+        }
+        .translation-lang-item input[type="text"] {
+            flex: 1;
+        }
+        .translation-lang-item .lang-code-input {
+            width: 100px;
+        }
+        .translation-lang-item .remove-button {
+            background-color: #e53e3e;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+        .translation-lang-item .remove-button:hover {
+            background-color: #c53030;
+        }
+        .add-button {
+            background-color: #48bb78;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .add-button:hover {
+            background-color: #38a169;
+        }
+        .help-text a {
+            color: #3182ce;
+            text-decoration: none;
+        }
+        .help-text a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -183,9 +227,12 @@
                         </div>
                         <div id="translation-options" class="sub-options" style="display: none;">
                             <div class="form-group">
-                                <label for="translation-langs">Language Codes (comma-separated)</label>
-                                <input type="text" id="translation-langs" name="translation-langs" placeholder="e.g., fr,de,hi,es" />
-                                <div class="help-text">Enter ISO 639-1 language codes separated by commas (e.g., fr for French, de for German)</div>
+                                <label>Translation Languages</label>
+                                <div class="help-text" style="margin-bottom: 0.5rem;">
+                                    <a href="https://cloud.google.com/translate/docs/languages" target="_blank" rel="noopener noreferrer">View Google language codes →</a>
+                                </div>
+                                <div id="translation-langs-list"></div>
+                                <button type="button" id="add-translation-lang" class="add-button" style="margin-top: 0.5rem;">+ Add Language</button>
                             </div>
                         </div>
                         <div class="checkbox-item">
@@ -233,6 +280,39 @@
             const subOptions = document.getElementById('signer-options');
             if (subOptions) {
                 subOptions.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+        
+        // Handle addable translation languages list
+        const translationLangsList = document.getElementById('translation-langs-list');
+        const addTranslationLangBtn = document.getElementById('add-translation-lang');
+        
+        function addTranslationLangItem(label = '', langCode = '') {
+            const item = document.createElement('div');
+            item.className = 'translation-lang-item';
+            item.innerHTML = `
+                <input type="text" class="lang-code-input" placeholder="Code (required, e.g., fr)" value="${langCode}" />
+                <input type="text" class="translation-label-input" placeholder="Label (optional, e.g., French)" value="${label}" />
+                <button type="button" class="remove-button">Remove</button>
+            `;
+            
+            const removeBtn = item.querySelector('.remove-button');
+            removeBtn?.addEventListener('click', () => {
+                item.remove();
+            });
+            
+            translationLangsList?.appendChild(item);
+        }
+        
+        addTranslationLangBtn?.addEventListener('click', () => {
+            addTranslationLangItem();
+        });
+        
+        // Initialize with one empty item when translation options are shown
+        document.getElementById('translation')?.addEventListener('change', function() {
+            const subOptions = document.getElementById('translation-options');
+            if (subOptions && this.checked && translationLangsList && translationLangsList.children.length === 0) {
+                addTranslationLangItem();
             }
         });
     </script>

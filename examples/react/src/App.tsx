@@ -1,17 +1,11 @@
 import React, { useRef } from 'react';
-import {
-    IKVideoPlayer,
-} from '@imagekit/video-player/react';
-
+import { IKVideoPlayer } from '@imagekit/video-player/react';
 import type {
-    IKVideoPlayerRef
-} from '@imagekit/video-player/react';
-
-import {
+    IKVideoPlayerRef,
     IKPlayerOptions,
     SourceOptions,
     PlaylistOptions
-} from '@imagekit/video-player'
+} from '@imagekit/video-player/react';
 
 import '@imagekit/video-player/dist/styles.css';
 
@@ -62,9 +56,9 @@ export default function App() {
                 info: { title: 'Human', subtitle: 'Human lying in grass', description: 'This is a video showing human lying on the grass. He is smiling.' },
                 textTracks: [
                     {
-                        autoGenerateSubtitles: true,
-                        maxWords: 4,
-                        wordHighlight: true,
+                        autoGenerate: true,
+                        maxWordsPerLine: 4,
+                        highlightWords: true,
                         default: true // Indicates whether this track is active by default
                     }]
             },

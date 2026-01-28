@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
 } from 'react';
 import { videoPlayer } from '../javascript';
+import type { Player } from '../javascript';
 
 import type { IKVideoPlayerProps, IKVideoPlayerRef } from './interfaces';
 import React from 'react';
@@ -17,7 +18,7 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
     // A ref to the actual <video> element
     const videoRef = useRef<HTMLVideoElement | null>(null);
     // A ref to hold the Video.js player instance once initialized
-    const playerRef = useRef<any | null>(null);
+    const playerRef = useRef<Player | null>(null);
 
     // Expose getPlayer() to parent components
     useImperativeHandle(ref, () => ({

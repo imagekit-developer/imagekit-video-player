@@ -1,38 +1,30 @@
 import { videoPlayer } from '@imagekit/video-player';
 import '@imagekit/video-player/dist/styles.css';
+import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
-const codeToDisplay = `
-// HTML: <video id="player" class="video-js" ...></video>
+// --- Actual Player Initialization (single source of truth) ---
+const playerOptions = {
+  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  floatingWhenNotVisible: 'right',
+  logo: {
+    showLogo: true,
+    logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
+    logoOnclickUrl: 'https://imagekit.io/',
+  },
+};
 
-import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+const srcConfig = {
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+};
 
-const player = videoPlayer('player', {
-    imagekitId: 'your_id',
-    width: 960,
-    height: 540,
-    // Enable floating player in the bottom right corner
-    floatingWhenNotVisible: 'right', 
+const codeToDisplay = buildPlayerInitCode({
+  htmlHint: '<video id="player" class="video-js" ...></video>',
+  playerTarget: 'player',
+  playerOptions,
+  afterInitLines: [``, `player.src(${formatObjectAsCode(srcConfig)});`],
 });
-
-player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-});
-`;
 
 document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 
-// --- Actual Player Initialization ---
-const player = videoPlayer('player', {
-    imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
-    floatingWhenNotVisible: 'right',
-    logo: {
-        showLogo: true,
-        logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
-        logoOnclickUrl: 'https://imagekit.io/'
-    }
-});
-
-player.src({
-    src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-});
+const player = videoPlayer('player', playerOptions);
+player.src(srcConfig);

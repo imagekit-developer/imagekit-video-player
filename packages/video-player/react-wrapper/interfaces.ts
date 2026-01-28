@@ -3,6 +3,7 @@ import {
     IKPlayerOptions,
     SourceOptions,
     PlaylistOptions,
+    Player,
 } from '../javascript';
 
 /** Props accepted by IKVideoPlayer */
@@ -26,5 +27,5 @@ export interface IKVideoPlayerProps {
 /** Methods exposed via ref */
 export interface IKVideoPlayerRef {
     /** Returns the underlying Video.js player instance (or null if not yet mounted) */
-    getPlayer: () => any | null;
+    getPlayer: () => Player | null;
 }

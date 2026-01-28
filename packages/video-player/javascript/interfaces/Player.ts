@@ -65,14 +65,6 @@ interface ImageKitPlayerMethods {
    */
   src(raw?: string | SourceOptions | Array<string | SourceOptions>): void;
   /**
-   * Overridden addRemoteTextTrack method that accepts ImageKit RemoteTextTrackOptions.
-   * This allows passing enhanced options like auto-generated subtitles, translations, etc.
-   * The method signature is overridden to accept RemoteTextTrackOptions instead of the base Video.js text track format.
-   * 
-   * @overload ImageKit-specific signature
-   */
-  addRemoteTextTrack(options: RemoteTextTrackOptions, manualCleanup?: boolean): HTMLTrackElement | void;
-  /**
    * Initialize the ImageKit Video Player plugin with options.
    * @param options - ImageKit player configuration options
    */
@@ -92,8 +84,6 @@ interface ImageKitPlayerMethods {
  * Augmented Player type that includes ImageKit-specific methods.
  * This type extends the base Video.js Player with additional functionality.
  * 
- * Note: Method overrides (src, addRemoteTextTrack) create overloads with both
- * the base Video.js signatures and ImageKit-specific signatures. TypeScript will
- * use the most specific matching signature when calling these methods.
+ * Note: The src method is overridden to accept ImageKit SourceOptions.
  */
 export type Player = BasePlayer & ImageKitPlayerMethods;

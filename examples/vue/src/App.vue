@@ -18,13 +18,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-// Import your component and types
+import { ref, onMounted } from 'vue';
 import { IKVideoPlayer } from '@imagekit/video-player/vue';
-import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
-
-// Create a ref to get access to the component's exposed methods
-import type { IKVideoPlayerRef } from '@imagekit/video-player/vue';
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions, IKVideoPlayerRef } from '@imagekit/video-player/vue';
 
 const playerRef = ref<IKVideoPlayerRef | null>(null);
 
@@ -43,6 +39,37 @@ const playlist: {
   ],
   options: { autoAdvance: 5 }, // Set autoAdvance to a valid number (e.g., 5 seconds)
 };
+
+// Example: Access the player instance and use it
+onMounted(() => {
+  // Wait a bit for the player to initialize
+  setTimeout(() => {
+    const player = playerRef.value?.getPlayer();
+    if (player) {
+      // Example: Listen to player events
+      player.on('play', () => {
+        console.log('Video started playing');
+      });
+
+      player.on('pause', () => {
+        console.log('Video paused');
+      });
+
+      // Example: Access playlist manager (if playlist is already set via props)
+      // Note: playlist() method requires options, so we access it via the plugin
+      const plugin = player.imagekitVideoPlayer();
+      if (plugin) {
+        const playlistManager = plugin.getPlaylistManager();
+        if (playlistManager) {
+          console.log('Playlist manager available:', playlistManager);
+        }
+        
+        const currentSource = plugin.getOriginalCurrentSource();
+        console.log('Current source:', currentSource);
+      }
+    }
+  }, 1000);
+});
 </script>
 
 <style>

@@ -10,7 +10,7 @@ import { PlaylistManager } from './modules/playlist/playlist-manager';
 import { SeekThumbnailsManager } from './modules/seek-thumbnails/seek-thumbnails-manager';
 import { ChapterMarker, parseChaptersFromVTT } from './modules/chapters/chapterMarkerProgressBar';
 import './modules/recommendations-overlay/recommendations-overlay';
-import { overrideAddRemoteTextTrack } from './modules/subtitles/subtitles';
+import { setTextTracks } from './modules/subtitles/subtitles';
 import { ShoppableManager } from './modules/shoppable/shoppable-manager';
 import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc, CleanupRegistry } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
@@ -45,7 +45,6 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     try {
       validateIKPlayerOptions(this.ikGlobalSettings_);
 
-      overrideAddRemoteTextTrack(this.player, this.getOriginalFirstSource, this.ikGlobalSettings_.signerFn);
       this.overrideSrc();
 
       this.playlistManger_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
@@ -100,7 +99,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
       this.player.ready(() => {
         const playerEl = this.player.el(); // Get the main player element
-      
+
         /**
          * When the mouse leaves the player's container.
          */
@@ -114,7 +113,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
             }
           }
         );
-      
+
         /**
          * When the mouse re-enters the player's container.
          */
@@ -131,7 +130,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         const controlBar = this.player.getChild('ControlBar');
         if (controlBar) {
           const existingLogoButton = controlBar.getChild('LogoButton');
-          
+
           if (this.ikGlobalSettings_.logo?.showLogo) {
             // Logo should be shown
             if (existingLogoButton) {
@@ -150,94 +149,104 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         }
       });
 
-//       Assumes 'player' is your initialized video.js player instance
-// e.g., const player = videojs('my-video-id');
+      //       Assumes 'player' is your initialized video.js player instance
+      // e.g., const player = videojs('my-video-id');
 
-this.player.ready(() => {
-  const skipTime = 5; // Amount to skip in seconds
+      this.player.ready(() => {
+        const skipTime = 5; // Amount to skip in seconds
 
-  // --- START: NEW FEEDBACK LOGIC ---
+        // --- START: NEW FEEDBACK LOGIC ---
 
-  // 1. Create the feedback element once and store a reference to it
-  const seekFeedbackEl = this.cleanup_.registerElement(
-    document.createElement('div')
-  );
-  seekFeedbackEl.className = 'vjs-seek-feedback';
-  this.player.el().appendChild(seekFeedbackEl);
+        // 1. Create the feedback element once and store a reference to it
+        const seekFeedbackEl = this.cleanup_.registerElement(
+          document.createElement('div')
+        );
+        seekFeedbackEl.className = 'vjs-seek-feedback';
+        this.player.el().appendChild(seekFeedbackEl);
 
-  // Track the current timeout ID to clear it before setting a new one
-  let currentSeekTimeout: ReturnType<typeof setTimeout> | undefined;
+        // Track the current timeout ID to clear it before setting a new one
+        let currentSeekTimeout: ReturnType<typeof setTimeout> | undefined;
 
-  /**
-   * Shows the feedback icon, sets the correct direction, and hides it after a delay.
-   * @param {'forward' | 'backward'} direction - The direction of the seek.
-   */
-  const showSeekFeedback = (direction: 'forward' | 'backward') => {
-    // Clear any previous timeout to handle rapid key presses
-    if (currentSeekTimeout) {
-      clearTimeout(currentSeekTimeout);
-    }
+        /**
+         * Shows the feedback icon, sets the correct direction, and hides it after a delay.
+         * @param {'forward' | 'backward'} direction - The direction of the seek.
+         */
+        const showSeekFeedback = (direction: 'forward' | 'backward') => {
+          // Clear any previous timeout to handle rapid key presses
+          if (currentSeekTimeout) {
+            clearTimeout(currentSeekTimeout);
+          }
 
-    // Set icon and positional classes
-    const iconClass = direction === 'forward' ? 'vjs-icon-forward-5' : 'vjs-icon-replay-5';
-    
-    // Set the icon content
-    seekFeedbackEl.innerHTML = `<span class="vjs-icon-placeholder ${iconClass}"></span>`;
-    
-    // --- START: NEW POSITIONING LOGIC ---
+          // Set icon and positional classes
+          const iconClass = direction === 'forward' ? 'vjs-icon-forward-5' : 'vjs-icon-replay-5';
 
-    // 1. Remove previous direction classes
-    seekFeedbackEl.classList.remove('is-forward', 'is-backward');
-    
-    // 2. Add the correct new direction class
-    if (direction === 'forward') {
-      seekFeedbackEl.classList.add('is-forward');
-    } else {
-      seekFeedbackEl.classList.add('is-backward');
-    }
+          // Set the icon content
+          seekFeedbackEl.innerHTML = `<span class="vjs-icon-placeholder ${iconClass}"></span>`;
 
-    // --- END: NEW POSITIONING LOGIC ---
+          // --- START: NEW POSITIONING LOGIC ---
 
-    // 3. Make the element visible
-    seekFeedbackEl.classList.add('is-visible');
+          // 1. Remove previous direction classes
+          seekFeedbackEl.classList.remove('is-forward', 'is-backward');
 
-    // Set a timeout to hide the icon after a short period
-    currentSeekTimeout = this.cleanup_.registerTimeout(() => {
-      seekFeedbackEl.classList.remove('is-visible');
-      currentSeekTimeout = undefined;
-    }, 600); // 600 milliseconds
-  };
+          // 2. Add the correct new direction class
+          if (direction === 'forward') {
+            seekFeedbackEl.classList.add('is-forward');
+          } else {
+            seekFeedbackEl.classList.add('is-backward');
+          }
 
-  // --- END: NEW FEEDBACK LOGIC ---
+          // --- END: NEW POSITIONING LOGIC ---
 
-  // Listen for keydown events on the this.player
-  const keydownHandler = (event: KeyboardEvent) => {
-    switch (event.key) {
-      case ' ':
-        event.preventDefault();
-        if (this.player.paused()) {
-          this.player.play();
-        } else {
-          this.player.pause();
-        }
-        break;
+          // 3. Make the element visible
+          seekFeedbackEl.classList.add('is-visible');
 
-      case 'ArrowRight':
-        event.preventDefault();
-        this.player.currentTime((this.player.currentTime() ?? 0) + skipTime);
-        showSeekFeedback('forward'); // <-- Trigger feedback
-        break;
+          // Set a timeout to hide the icon after a short period
+          currentSeekTimeout = this.cleanup_.registerTimeout(() => {
+            seekFeedbackEl.classList.remove('is-visible');
+            currentSeekTimeout = undefined;
+          }, 600); // 600 milliseconds
+        };
 
-      case 'ArrowLeft':
-        event.preventDefault();
-        this.player.currentTime((this.player.currentTime() ?? 0) - skipTime);
-        showSeekFeedback('backward'); // <-- Trigger feedback
-        break;
-    }
-  };
+        // --- END: NEW FEEDBACK LOGIC ---
 
-  this.cleanup_.registerVideoJsListener(this.player, 'keydown', keydownHandler);
-});
+        // Listen for keydown events on the this.player
+        const keydownHandler = (event: KeyboardEvent) => {
+          switch (event.key) {
+            case ' ':
+              event.preventDefault();
+              if (this.player.paused()) {
+                this.player.play();
+              } else {
+                this.player.pause();
+              }
+              break;
+
+            case 'ArrowRight':
+              event.preventDefault();
+              this.player.currentTime((this.player.currentTime() ?? 0) + skipTime);
+              showSeekFeedback('forward'); // <-- Trigger feedback
+              break;
+
+            case 'ArrowLeft':
+              event.preventDefault();
+              this.player.currentTime((this.player.currentTime() ?? 0) - skipTime);
+              showSeekFeedback('backward'); // <-- Trigger feedback
+              break;
+
+            case 'f':
+            case 'F':
+              event.preventDefault();
+              if (this.player.isFullscreen()) {
+                this.player.exitFullscreen();
+              } else {
+                this.player.requestFullscreen();
+              }
+              break;
+          }
+        };
+
+        this.cleanup_.registerVideoJsListener(this.player, 'keydown', keydownHandler);
+      });
     }
     catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -310,7 +319,10 @@ this.player.ready(() => {
               ? this.currentSource_[0].textTracks || []
               : this.currentSource_.textTracks || [];
             if (textTracks.length) {
-              textTracks.forEach(track => this.player.addRemoteTextTrack(track as RemoteTextTrackOptions, false));
+              const currentSource = Array.isArray(this.currentSource_)
+                ? this.currentSource_[0]
+                : this.currentSource_;
+              setTextTracks(this.player, textTracks as RemoteTextTrackOptions[], currentSource, this.ikGlobalSettings_.signerFn);
             }
             // setup poster
             const currentSource_ = Array.isArray(this.currentSource_)
@@ -456,7 +468,7 @@ this.player.ready(() => {
   dispose(): void {
     // Clean up all registered resources (timeouts, intervals, DOM elements, event listeners)
     this.cleanup_.dispose();
-    
+
     // Call parent dispose
     super.dispose();
   }
@@ -484,7 +496,7 @@ export function videoPlayer(
   //   controls: false,
   //   autoplay: true,
   //   aspectRatio: '9:16',
-    
+
   //   responsive: true,
   //   breakpoints: {
   //     // tiny: 300,
