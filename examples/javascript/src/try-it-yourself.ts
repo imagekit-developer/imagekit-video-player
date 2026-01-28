@@ -1,5 +1,5 @@
 import { videoPlayer, languageCodes } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 import type { 
     IKPlayerOptions, 
     SourceOptions, 
@@ -224,7 +224,7 @@ function generateCode(
     return `// HTML: <video id="player" class="video-js" ...></video>
 
 import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 
 const player = videoPlayer('player', ${playerOptionsCode}, ${videoJsOptionsCode});
 

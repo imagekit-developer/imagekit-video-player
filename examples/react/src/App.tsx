@@ -7,7 +7,7 @@ import type {
     PlaylistOptions
 } from '@imagekit/video-player/react';
 
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 
 export default function App() {
     const playerRef = useRef<IKVideoPlayerRef>(null);

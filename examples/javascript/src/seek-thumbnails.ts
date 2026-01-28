@@ -1,5 +1,5 @@
 import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---

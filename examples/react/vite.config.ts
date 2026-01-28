@@ -15,7 +15,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@imagekit/video-player/react': path.resolve(__dirname, '../../packages/video-player/dist/react'),
-      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player'),
+      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player/dist'),
     }
   },
 });

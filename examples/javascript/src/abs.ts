@@ -1,5 +1,5 @@
 import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 import { formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
@@ -35,7 +35,7 @@ const srcConfigHls = {
 const codeToDisplay = `// HTML: <div id="player-container"></div>
 
 import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 
 const player = videoPlayer('player', ${formatObjectAsCode(playerOptions)}, ${formatObjectAsCode(videoJsOptions)});
 player.src(${formatObjectAsCode(srcConfigDash)});

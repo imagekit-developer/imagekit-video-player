@@ -56,7 +56,7 @@ export function buildPlayerInitCode(params: {
   return `// HTML: ${htmlHint}
 
 import { videoPlayer } from '@imagekit/video-player';
-import '@imagekit/video-player/dist/styles.css';
+import '@imagekit/video-player/styles.css';
 
 const player = videoPlayer('${playerTarget}', ${playerOptionsCode}${videoJsOptionsCode});
 ${afterInitLines.join('\n')}`.trim();

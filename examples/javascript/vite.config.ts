@@ -12,11 +12,13 @@ export default defineConfig({
 
   server: {
     port: 3000,
+    sourcemapIgnoreList: false, // Show original source files in DevTools
   },
   build: {
     // --- CHANGE 2: Define the output directory ---
     outDir: './dist',
     emptyOutDir: true,
+    sourcemap: true, // Enable source maps for debugging
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
@@ -39,7 +41,7 @@ export default defineConfig({
     // This alias is likely not needed if your workspaces are set up correctly,
     // but we can leave it as it doesn't cause harm.
     alias: {
-      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player'),
+      '@imagekit/video-player': path.resolve(__dirname, '../../packages/video-player/dist'),
     },
   },
 });
