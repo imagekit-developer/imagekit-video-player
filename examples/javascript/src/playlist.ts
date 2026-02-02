@@ -21,7 +21,10 @@ const playlistConfig = {
   sources: [
     {
       src: 'https://ik.imagekit.io/demo/sample-video.mp4?tr=rt-180,so-2&v=1234',
-      info: { title: 'Sample Video', subtitle: 'A subtitle for the video' },
+      info: { 
+        title: 'Sample Video', 
+        description: 'This is a sample video demonstrating the playlist functionality with a description.'
+      },
       transformation: [
         {
           width: 1000,
@@ -31,23 +34,29 @@ const playlistConfig = {
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
-      info: { title: 'Another Video', subtitle: 'This one is different' },
+      info: { title: 'Another Video' },
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
-      info: { title: 'Third Time Is The Charm', subtitle: 'The final video' },
+      info: { 
+        title: 'Third Time Is The Charm', 
+        description: 'This video shows how descriptions appear in playlist items when provided.'
+      },
     },
     {
       src: 'https://ik.imagekit.io/demo/sample-video.mp4',
-      info: { title: 'A very long name. It will not fit in the single line.', subtitle: 'Video 4' },
+      info: { title: 'A very long name. It will not fit in the single line.' },
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
-      info: { title: 'Video 5', subtitle: 'Video 5' },
+      info: { 
+        title: 'Video 5', 
+        description: 'Some playlist items have descriptions while others do not, demonstrating the optional nature of this field.'
+      },
     },
     {
       src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
-      info: { title: 'Video 6', subtitle: 'Video 6' },
+      info: { title: 'Video 6' },
     },
   ],
   options: {

@@ -8,11 +8,11 @@ import type { AugmentedSourceOptions } from './interfaces/AugementedSourceOption
 
 import { PlaylistManager } from './modules/playlist/playlist-manager';
 import { SeekThumbnailsManager } from './modules/seek-thumbnails/seek-thumbnails-manager';
-import { ChapterMarker, parseChaptersFromVTT } from './modules/chapters/chapterMarkerProgressBar';
+import { initChapterMarkers } from './modules/chapters/chapters';
 import './modules/recommendations-overlay/recommendations-overlay';
 import { setTextTracks } from './modules/subtitles/subtitles';
 import { ShoppableManager } from './modules/shoppable/shoppable-manager';
-import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, prepareChaptersVttSrc, CleanupRegistry } from './utils';
+import { prepareSource, normalizeInput, waitForVideoReady, preparePosterSrc, validateIKPlayerOptions, CleanupRegistry } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
 import './modules/logo-button';
 
@@ -32,7 +32,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   private ikGlobalSettings_: IKPlayerOptions;
   private currentSource_: SourceOptions | SourceOptions[] | null = null;
   private originalCurrentSource_: SourceOptions | SourceOptions[] | null = null;
-  private playlistManger_?: PlaylistManager;
+  private playlistManager_?: PlaylistManager;
   private seekThumbnailsManager_?: SeekThumbnailsManager;
   private shoppableManager_?: ShoppableManager;
   private cleanup_ = new CleanupRegistry();
@@ -47,7 +47,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
       this.overrideSrc();
 
-      this.playlistManger_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
+      this.playlistManager_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
 
       if (this.ikGlobalSettings_.floatingWhenNotVisible) {
         const floatingCleanup = enableFloatingPlayer(this.player, this.ikGlobalSettings_.floatingWhenNotVisible);
@@ -89,7 +89,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         }
 
         // CHAPTER MARKERS & RECOMMENDATIONS
-        await this.initChapterMarkers();
+        await initChapterMarkers(this.player, this.currentSource_, this.ikGlobalSettings_, this.ikGlobalSettings_.signerFn);
         await this.initRecommendationsOverlay();
 
         if (src && src.shoppable) {
@@ -365,55 +365,6 @@ class ImageKitVideoPlayerPlugin extends Plugin {
     };
   }
 
-  private async initChapterMarkers() {
-    if (!this.currentSource_) return;
-    let src = Array.isArray(this.currentSource_) ? this.currentSource_[0] : this.currentSource_;
-    if (!src.chapters) return;
-
-    let chapterList: ChapterMarker[] = []
-    if (typeof src.chapters === 'object' && 'url' in src.chapters) {
-      try {
-        const res = await fetch(src.chapters.url);
-        if (!res.ok) {
-          this.player.log.warn(`VTT fetch failed with status: (${res.status}); skipping chapters.`);
-        }
-        const data = await res.text();
-        chapterList = parseChaptersFromVTT(data);
-      } catch (e) {
-        this.player.log.warn(`Failed to fetch chapters VTT: ${e}`);
-        return;
-      }
-    } else if (typeof src.chapters === 'object') {
-      // chapterList = Object.entries(src.chapters).map(([time, label]) => ({ time: Number(time), label }));
-    } else if (src.chapters === true) {
-      // if chapters is true, we assume it is a default vtt file
-      try {
-        const chaptersVttSrc = await prepareChaptersVttSrc(src, this.ikGlobalSettings_);
-        const res = await fetch(chaptersVttSrc);
-        // mocking the fetch for now
-        // const res = await fetch('https://ik.imagekit.io/zuqlyov9d/chapters.vtt');
-        if (!res.ok) {
-          this.player.log.warn(`Default VTT fetch failed with status: (${res.status}); skipping chapters.`);
-          return;
-        }
-        const data = await res.text();
-        chapterList = parseChaptersFromVTT(data);
-      } catch (e) {
-        this.player.log.warn(`Failed to fetch default chapters VTT: ${e}`);
-        return;
-      }
-    }
-
-    if (chapterList.length) {
-
-
-      const existing = this.player.getChild('ChapterMarkersProgressBarControl');
-      if (existing) {
-        existing.dispose();
-      }
-      this.player.addChild('ChapterMarkersProgressBarControl', { chapters: chapterList });
-    }
-  }
 
   private async initRecommendationsOverlay() {
     if (!this.currentSource_) return;
@@ -434,7 +385,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   }
 
   public getPlaylistManager() {
-    return this.playlistManger_;
+    return this.playlistManager_;
   }
 
   // Helper to get the first source object consistently

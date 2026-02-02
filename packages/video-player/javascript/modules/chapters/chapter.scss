@@ -1,30 +1,16 @@
-/* The .vjs-chapter-segment and its hover rules are no longer needed. */
-
 .video-js {
     .vjs-control-bar {
-
-        /* chapters.css - Updated for new single-tooltip logic */
-
-        /* 1) The vertical boundary line between chapters */
-        /* This style remains as these elements are still being created. */
         .vjs-chapter-boundary {
             position: absolute;
             top: 0;
             height: 100%;
             width: 2px;
-            /* A thin separator */
             background-color: black;
-            /* A semi-transparent white works well on dark bars */
             pointer-events: none;
             z-index: 3;
         }
 
-        ;
-
-        /* 2) The single, shared tooltip container */
-        /* This replaces the old .vjs-chapter-segment and tooltip styles. */
         .vjs-chapter-tooltip-container {
-            /* Visual Appearance */
             background: rgba(0, 0, 0, 0.85);
             color: #fff;
             font-size: 12px;
@@ -32,39 +18,40 @@
             padding: 4px 8px;
             border-radius: 4px;
             white-space: nowrap;
-
-            /* Positioning */
             position: absolute;
             bottom: calc(100% + 1em);
-            /* Position it above the progress bar with a small gap */
-            transform: translateX(-50%);
-            /* Center the tooltip on the 'left' value set by JS */
-
-            /* Default State */
+            transform: translateX(-50%) scaleY(0.5);
             display: none;
-            /* IMPORTANT: Visibility is now controlled entirely by JavaScript */
             pointer-events: none;
             z-index: 4;
-            /* Ensure it's on top of other elements */
             transition: transform 0.1s ease-in-out;
-
         }
 
         .vjs-progress-control:hover {
-
             .vjs-progress-holder .vjs-chapter-tooltip-container {
-                /*
-  ADD THIS LINE:
-  This scales the tooltip down by half, canceling out the parent's scaleY(2).
-  */
-                transform: translateX(-50%) scaleY(0.5);
-
-                /*
-  MODIFIED:
-  Keep the font-size consistent so the text doesn't shrink.
-  Change 0.8em back to 1em or its original value.
-  */
                 font-size: 1em;
+            }
+        }
+
+        .vjs-control-bar-chapter-wrapper {
+            display: flex;
+            align-items: center;
+            container-type: inline-size;
+        }
+
+        .vjs-control-bar-chapter-display {
+            line-height: 1.5;
+            font-size: 90%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 0.5em;
+            &:not(:empty)::before {
+                content: '•';
+                padding-right: 0.5em;
+            }
+            @container (max-width: 150px) {
+                display: none;
             }
         }
     }

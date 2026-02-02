@@ -29,7 +29,6 @@ export const IKVideoPlayer = defineComponent({
         player.dispose();
       }
 
-      console.log('[IKVideoPlayer] Creating new video player instance');
       player = videoPlayer(videoElement.value, props.ikOptions, props.videoJsOptions);
 
       // Handle playlist or single source

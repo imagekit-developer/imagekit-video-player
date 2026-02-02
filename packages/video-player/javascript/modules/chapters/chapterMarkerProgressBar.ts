@@ -21,6 +21,7 @@ interface ChapterMarkersProgressBarControlOptions {
   */
 class ChapterMarkersProgressBarControl extends Component {
   private chapterTooltipContainer: HTMLElement | null = null;
+  private chapterBoundaries: HTMLElement[] = [];
   private chapters: ChapterMarker[] = [];
   private cleanup_ = new CleanupRegistry();
 
@@ -65,6 +66,7 @@ class ChapterMarkersProgressBarControl extends Component {
         boundary.className = 'vjs-chapter-boundary';
         boundary.style.left = leftPct + '%';
         playheadWell.appendChild(boundary);
+        this.chapterBoundaries.push(boundary);
       }
     });
   }
@@ -86,18 +88,49 @@ class ChapterMarkersProgressBarControl extends Component {
     const mousemoveHandler = (e: MouseEvent) => {
       if (!this.chapterTooltipContainer) return;
 
+      const playerEl = player.el();
+      const playerRect = playerEl.getBoundingClientRect();
+      const playerWidth = (playerEl as HTMLElement).offsetWidth;
+
       const barRect = progressControl.el().getBoundingClientRect();
-      const pct = (e.clientX - barRect.left) / barRect.width;
+      const progressHolder = progressControl.el().querySelector('.vjs-progress-holder') as HTMLElement;
+
+      if (!progressHolder) return;
+
+      const pct = Math.max(0, Math.min(1, (e.clientX - barRect.left) / barRect.width));
       const time = pct * player.duration();
 
       // Find the chapter for the current hover time
       const chapter = this.chapters.find(c => time >= c.startTime && time < c.endTime);
 
       if (chapter) {
-        // Update and show the tooltip
+        // Update tooltip text first
         this.chapterTooltipContainer.innerText = chapter.label;
-        this.chapterTooltipContainer.style.left = `${pct * 100}%`;
         this.chapterTooltipContainer.style.display = 'block';
+
+        // Measure tooltip width (now that it's visible with text)
+        const tooltipWidth = this.chapterTooltipContainer.offsetWidth;
+        const tooltipHalfWidth = tooltipWidth / 2;
+
+        // Calculate position in player coordinates
+        const progressBarLeftOffset = barRect.left - playerRect.left;
+        const hoverPositionInPlayer = progressBarLeftOffset + (pct * barRect.width);
+
+        // Clamp position
+        let clampedLeft = hoverPositionInPlayer;
+        if (clampedLeft < tooltipHalfWidth) {
+          clampedLeft = tooltipHalfWidth;
+        } else if (clampedLeft > playerWidth - tooltipHalfWidth) {
+          clampedLeft = playerWidth - tooltipHalfWidth;
+        }
+
+        // Convert to progress-holder relative position
+        const progressHolderRect = progressHolder.getBoundingClientRect();
+        const leftRelativeToHolder = clampedLeft - (progressHolderRect.left - playerRect.left);
+        const leftPct = (leftRelativeToHolder / progressHolderRect.width) * 100;
+
+        // Set position
+        this.chapterTooltipContainer.style.left = `${leftPct}%`;
       } else {
         // Hide if not over a chapter
         this.chapterTooltipContainer.style.display = 'none';
@@ -119,13 +152,18 @@ class ChapterMarkersProgressBarControl extends Component {
    * On dispose, remove all created elements.
    */
   dispose() {
-    const playheadWell = this.player().el().querySelector('.vjs-progress-holder');
-    if (playheadWell) {
-      playheadWell.querySelectorAll('.vjs-chapter-boundary').forEach((el) => el.remove());
-      if (this.chapterTooltipContainer) {
-        this.cleanup_.registerElement(this.chapterTooltipContainer);
+    this.chapterBoundaries.forEach((boundary) => {
+      if (boundary && boundary.parentNode) {
+        boundary.remove();
       }
+    });
+    this.chapterBoundaries = [];
+
+    if (this.chapterTooltipContainer && this.chapterTooltipContainer.parentNode) {
+      this.chapterTooltipContainer.remove();
+      this.chapterTooltipContainer = null;
     }
+    
     this.cleanup_.dispose();
     super.dispose();
   }

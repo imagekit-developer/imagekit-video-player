@@ -59,17 +59,14 @@ export class PlaylistMenu extends Component {
 
     // 3) Listen for playlist events
     this.cleanup_.registerVideoJsListener(player, 'playlistchange', () => {
-      console.log("PlaylistMenu: playlistchange event received, updating menu");
       this.update();
     });
     this.cleanup_.registerVideoJsListener(player, 'playlistsorted', () => {
-      console.log("PlaylistMenu: playlistchange event received, updating menu");
       this.update();
     });
     this.cleanup_.registerVideoJsListener(player, 'playlistadd', () => this.update());
     this.cleanup_.registerVideoJsListener(player, 'playlistremove', () => this.update());
     this.cleanup_.registerVideoJsListener(player, 'loadstart', () => {
-      console.log("PlaylistMenu: loadstart event received, updating menu");
       this.update();
     });
 

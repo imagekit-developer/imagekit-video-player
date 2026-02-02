@@ -6,7 +6,6 @@ import type { ShoppableProps } from './Shoppable';
 
 export interface VideoInfo {
     title?: string;
-    subtitle?: string;
     description?: string;
 }
 
@@ -28,7 +27,7 @@ export interface SourceOptions {
     chapters?: boolean | { url: string } | Record<number, string>;
 
     /**
-     * Display metadata like title/subtitle in playlists or recommendations.
+     * Display metadata like title/description in playlists or recommendations.
      */
     info?: VideoInfo;
 
