@@ -30,7 +30,7 @@ export default function App() {
             { width: 400, height: 400 },
         ],
         chapters: true,
-        info: { title: 'Dog', subtitle: 'Dog wearing cap', description: 'This is a video containing dog wearing cap.' }
+        info: { title: 'Dog', description: 'This is a video containing dog wearing cap.' }
     };
 
     // 3) (alternative) for a playlist of videos
@@ -45,7 +45,7 @@ export default function App() {
                     { width: 400, height: 400 },
                 ],
                 chapters: true,
-                info: { title: 'Dog', subtitle: 'Dog wearing cap', description: 'This is a video containing dog wearing cap.' }
+                info: { title: 'Dog', description: 'This is a video containing dog wearing cap.' }
             },
             {
                 src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
@@ -53,7 +53,7 @@ export default function App() {
                     { width: 400, height: 400 },
                 ],
                 chapters: true,
-                info: { title: 'Human', subtitle: 'Human lying in grass', description: 'This is a video showing human lying on the grass. He is smiling.' },
+                info: { title: 'Human', description: 'This is a video showing human lying on the grass. He is smiling.' },
                 textTracks: [
                     {
                         autoGenerate: true,
@@ -65,7 +65,7 @@ export default function App() {
             {
                 src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4',
                 chapters: true,
-                info: { title: 'Bird', subtitle: 'Bird on a branch', description: 'This video depicts bird chirping. It is sitting on a tree branch.' },
+                info: { title: 'Bird', description: 'This video depicts bird chirping. It is sitting on a tree branch.' },
             },
         ], options: {
             autoAdvance: 1,

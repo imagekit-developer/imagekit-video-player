@@ -356,7 +356,8 @@ $spacing-progress-interactive-hover: -1.4rem;
 
     .vjs-menu {
         .vjs-menu-content {
-            width: 10em;
+            max-width: 13em;
+            width: auto;
             padding: 0.2em 0;
             overflow: hidden;
         }
@@ -414,7 +415,8 @@ $spacing-progress-interactive-hover: -1.4rem;
     }
 
     .vjs-modal-dialog {
-        background: none;
+        background: black;
+        opacity: 0.8;
     }
 
     .vjs-playlist-button {
