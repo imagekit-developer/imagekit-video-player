@@ -174,6 +174,7 @@ $spacing-progress-interactive-hover: -1.4rem;
 
     &.vjs-error .vjs-error-display {
         background: var(--color-error-bg);
+        opacity: 1;
 
         &:before {
             display: none;
@@ -192,7 +193,7 @@ $spacing-progress-interactive-hover: -1.4rem;
                 width: 34px;
                 height: 34px;
                 margin-right: 10px;
-                background: url('../icons/info-circle.svg');
+                background: url('assets/icons/info-circle.svg');
                 transform: translateY(-1px);
                 flex-shrink: 0;
             }

@@ -28,10 +28,11 @@
     "dist"
   ],
   "scripts": {
-    "build": "yarn run build:tsup && yarn run build:css",
+    "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
     "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
     "build:angular": "node package.js",
     "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
+    "build:assets": "cp -r javascript/assets dist/",
     "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css)",
     "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
     "dev:angular": "ng-packagr -p ng-package.json --watch",
