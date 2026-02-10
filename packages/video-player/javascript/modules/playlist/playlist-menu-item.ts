@@ -115,16 +115,20 @@ export class PlaylistMenuItem extends Component {
       this.imgEl = document.createElement('img');
       this.imgEl.className = 'vjs-playlist-thumbnail-img';
       this.imgEl.loading = 'lazy';
-      this.imgEl.src = url;
       this.imgEl.alt = this.options_.item.info?.title || '';
+      this.imgEl.onerror = () => {
+        if (!this.el_) return;
+        if (this.imgEl) {
+          this.imgEl.remove();
+        }
+        this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
+      };
+      this.imgEl.src = url;
       this.thumbnail.appendChild(this.imgEl);
       })
       .catch((err) => {
       if (!this.el_) return;
-      this.player_.error({
-        message: `Failed to load poster for playlist item: ${err.message}`,
-        cause: err,
-      });
+      this.player_.log.error(`Failed to load poster for playlist item: ${err.message}`);
       if (this.spinnerEl) this.spinnerEl.remove();
       this.thumbnail.classList.add('vjs-playlist-thumbnail-placeholder');
       });

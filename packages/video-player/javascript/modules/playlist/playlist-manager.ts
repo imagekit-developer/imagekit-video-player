@@ -14,13 +14,6 @@ import { PresentUpcoming } from './present-upcoming';
 import './components/playlist-next-button';
 import './components/playlist-previous-button';
 
-// detect pointer-events support
-const supportsCssPointerEvents = (() => {
-  const el = document.createElement('x');
-  el.style.cssText = 'pointer-events:auto';
-  return el.style.pointerEvents === 'auto';
-})();
-
 // Exported for testing purposes
 export const log = videojs.log.createLogger('videojs-playlist');
 
@@ -49,13 +42,11 @@ export class PlaylistManager {
 
 
     /**
-     * @method playlist
-     * @param {Array} sources - Array of sources to load
-     * @param {Object} opts - Options for the playlist
-     * @returns {PlaylistManager} - The playlist manager instance
-     * @description Loads a playlist and sets up related functionality.
+     * Loads a playlist and sets up related functionality.
+     * @param sources - Array of sources to load
+     * @param opts - Options for the playlist
+     * @returns The playlist manager instance
      */
-    // Add playlist method to player
     (player as any).playlist = ({
       sources,
       options: opts
@@ -63,11 +54,8 @@ export class PlaylistManager {
       sources?: SourceOptions[],
       options?: PlaylistOptions
     }): PlaylistManager => {
-
-      // Wrap the player's outer element in a container
       const playerEl = this.player_.el();
 
-      // Check if the container already exists to avoid re-wrapping
       let wrapper = playerEl.parentElement;
       if (!wrapper || !wrapper.classList.contains('ik-player-container')) {
         wrapper = document.createElement('div');
@@ -76,9 +64,8 @@ export class PlaylistManager {
         wrapper.appendChild(playerEl);
       }
 
-      this.playerContainer_ = wrapper as HTMLElement; // Store reference to the container
+      this.playerContainer_ = wrapper as HTMLElement;
 
-      // Load the playlist if provided
       if (sources && Array.isArray(sources)) {
         this.loadPlaylist(Playlist.from(sources, {
           onError: msg => player.error(msg),
@@ -91,32 +78,24 @@ export class PlaylistManager {
       this.initMenu_(opts || {});
       this.addUiComponents();
 
-
-      // Add a listener for player resize events
       this.player_.one('loadedmetadata', () => this.updateLayout_());
 
       return this;
     };
-
-
-
-    // 2) Create the (empty) menu on startup
-    // this.initMenu_({});
 
     this.player_.on('playerresize', () => this.updateLayout_());
 
   }
 
   /**
-  * @private Applies dynamic styles to the player and playlist container.
-  */
-  // inside PlaylistManager class
+   * Applies dynamic styles to the player and playlist container.
+   * @private
+   */
   private updateLayout_() {
     if (!this.playerContainer_) {
       return;
     }
 
-    // A) First, check if the player is in fluid mode.
     const playerWithOptions = this.player_ as unknown as {
       options_: {
         fluid?: boolean;
@@ -125,42 +104,33 @@ export class PlaylistManager {
     const isFluid = playerWithOptions.options_.fluid;
 
     if (isFluid) {
-      // For fluid players, we MUST let CSS control the layout.
-      // We remove any inline styles to give control back to the stylesheet.
       this.playerContainer_.style.width = '';
       this.playerContainer_.style.height = '';
       if (this.playlistMenu) {
         (this.playlistMenu.el() as HTMLElement).style.width = '';
         (this.playlistMenu.el() as HTMLElement).style.height = '';
       }
-      // Let the CSS (Flexbox or Grid) handle the rest.
       return;
     }
 
-    // B) If we are here, it's a FIXED-SIZE player. Proceed with JS calculations.
-
-    // IMPORTANT: Check if the player has a size yet. If not, exit.
-    // The 'playerresize' event will call this function again later.
     const playerWidth = this.player_.width();
     const playerHeight = this.player_.height();
 
     if (!playerWidth || !playerHeight) {
-      // Exit if dimensions are 0, preventing the 0x0 bug.
       return;
     }
 
     const opts = this.playlistOptions_ || {};
     const isHorizontal = opts.widgetProps?.direction === 'horizontal';
 
-    // C) Now, perform the same calculations as before, but with valid dimensions.
     if (isHorizontal) {
-      const playlistHeight = playerHeight * 0.25;
+      const playlistHeight = Math.min(playerHeight * 0.25, 200);
       this.playerContainer_.style.width = `${playerWidth}px`;
       this.playerContainer_.style.height = `${playerHeight + playlistHeight}px`;
       if (this.playlistMenu) {
         (this.playlistMenu.el() as HTMLElement).style.height = `${playlistHeight}px`;
       }
-    } else { // Vertical
+    } else {
       const playlistWidth = playerWidth * 0.45;
       this.playerContainer_.style.width = `${playerWidth + playlistWidth}px`;
       this.playerContainer_.style.height = `${playerHeight}px`;
@@ -171,69 +141,58 @@ export class PlaylistManager {
   }
 
   private initMenu_(opts: PlaylistOptions) {
-    // tear down old
     this.playlistMenu?.dispose();
 
-    // UI defaults
     const defaults = {
       className: 'vjs-playlist',
-      playOnSelect: true,
-      supportsCssPointerEvents: supportsCssPointerEvents
+      playOnSelect: true
     };
 
-    // merge in widgetProps
     const uiOpts = videojs.mergeOptions(defaults, opts.widgetProps || {});
 
-    // Create a new, clean options object with only the properties we need.
     const menuOptions = {
       className: uiOpts.className,
       horizontal: uiOpts.direction === 'horizontal',
-      // playOnSelect: uiOpts.playOnSelect,
-      showDescription: uiOpts.showDescription,
-      supportsCssPointerEvents: uiOpts.supportsCssPointerEvents
+      showDescription: uiOpts.showDescription
     };
 
-    // 1. Instantiate the PlaylistMenu with the clean menuOptions.
     const menu = new PlaylistMenu(this.player_, this.playlist_, menuOptions, this.playerOptions_);
 
-    // 2. Append the menu's element directly to our main wrapper.
     if (this.playerContainer_) {
       this.playerContainer_.appendChild(menu.el());
       this.playerContainer_.classList.toggle('vjs-playlist-horizontal-container', menuOptions.horizontal);
     }
 
-    // 3. Store the reference to the new menu.
     this.playlistMenu = menu;
     (this.player_ as any).playlistMenu = menu;
   }
 
-  /** Configure looping & auto-advance */
+  /**
+   * Configures looping, auto-advance, and present upcoming settings.
+   */
   public configure(opts: PlaylistOptions = {}) {
-    // repeat
     if (opts.repeat) {
       this.playlist_.enableRepeat();
     } else {
       this.playlist_.disableRepeat();
     }
-    // autoAdvance
+
     if (opts.autoAdvance === false) {
       this.autoAdvance_.setDelay(false);
     } else if (typeof opts.autoAdvance === 'number') {
       this.autoAdvance_.setDelay(opts.autoAdvance);
     }
 
-    // presentUpcoming
     if (opts.presentUpcoming === false) {
       this.presentUpcomingThreshold_ = null;
     } else if (typeof opts.presentUpcoming === 'number' && opts.presentUpcoming > 0) {
       this.presentUpcomingThreshold_ = opts.presentUpcoming;
     } else if (opts.presentUpcoming === true) {
-      this.presentUpcomingThreshold_ = 10; // Default to 10 seconds
+      this.presentUpcomingThreshold_ = 10;
     } else {
       this.presentUpcomingThreshold_ = null;
     }
     this.setupPresentUpcoming_();
-
   }
 
   private addUiComponents() {
@@ -251,58 +210,65 @@ export class PlaylistManager {
     controlBarWithMethods.addChild('PlaylistNextButton', {}, playToggleIndex + 1);
   }
 
-  /** Load a new playlist array */
+  /**
+   * Loads a new playlist array.
+   * @param sources - Array of sources to load
+   */
   public setPlaylistItems(sources: SourceOptions[]) {
     this.playlist_.setItems(sources);
     this.loadFirstItem();
   }
 
-  /** Get the current playlist array */
+  /**
+   * Gets the current playlist array.
+   * @returns Array of playlist items
+   */
   public getItems(): SourceOptions[] {
     return this.playlist_.getItems();
   }
 
-  /** Advance to next item */
+  /**
+   * Advances to the next item in the playlist.
+   */
   public playNext(): void {
     const next = this.playlist_.getNextIndex();
     if (next < 0) { return; }
     this.playAtIndex(next);
   }
 
+  /**
+   * Advances to the previous item in the playlist.
+   */
   public playPrevious(): void {
     const previous = this.playlist_.getPreviousIndex();
     if (previous < 0) { return; }
     this.playAtIndex(previous);
   }
 
-  /** Play a specific index */
+  /**
+   * Plays a specific item in the playlist by index.
+   * @param index - The index of the item to play
+   */
   public playAtIndex(index: number): void {
     this.playlist_.setCurrentIndex(index);
-
-    // 1) Kick off your async overrideSrc(...) logic:
     this.player_.src(this.playlist_.getCurrentItem());
 
-    // 2) Wait for Video.js to actually begin loading that new source:
     this.player_.one('loadedmetadata', () => {
       this.player_.play();
     });
   }
 
   /**
- * Loads a playlist and sets up related functionality.
- *
- * @param {Playlist} playlist - The playlist to load.
- */
+   * Loads a playlist and sets up related functionality.
+   * @param playlist - The playlist to load
+   */
   public loadPlaylist(playlist: Playlist) {
-    // Clean up any existing playlist
     this.unloadPlaylist();
 
     this.playlist_ = playlist;
     this.autoAdvance_ = new AutoAdvance(this.player_, this.playNext_);
 
     this.setupEventForwarding_();
-
-    // Begin handling non-playlist source changes.
     this.player_.on('loadstart', this.handleSourceChange_);
   }
 
@@ -321,30 +287,25 @@ export class PlaylistManager {
 
     this.presentUpcomingComponent_?.dispose();
     this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
-
-    // Stop handling non-playlist source changes
     this.player_.off('loadstart', this.handleSourceChange_);
   }
 
   /**
-* Retrieves the currently loaded playlist object
-*
-* @return {Playlist|null} The current Playlist instance, or null if one is not loaded.
-*/
+   * Retrieves the currently loaded playlist object.
+   * @returns The current Playlist instance, or null if one is not loaded
+   */
   public getPlaylist(): Playlist | null {
     return this.playlist_;
   }
 
-  /*
-  * Gets or sets the autoAdvance configuration for the playlist
-  Gets or sets the autoAdvance configuration for the playlist.
-
-A positive integer delay value sets the delay in seconds that the player will wait before playing the next video.
-
-A value of false cancels auto advance. (To move to the next video use playNext).
-
-A value of 0 causes the next video to play immediately after the previous one finishes.
-  */
+  /**
+   * Gets or sets the auto-advance configuration for the playlist.
+   * A positive integer sets the delay in seconds before playing the next video.
+   * A value of false cancels auto-advance.
+   * A value of 0 causes the next video to play immediately after the previous one finishes.
+   * @param delayInSeconds - The delay in seconds, false to disable, or undefined to get current value
+   * @returns The current delay value when getting, or void when setting
+   */
   autoAdvanceDelay(delayInSeconds?: number | false): number | null | void {
     if (delayInSeconds === undefined) {
       return this.autoAdvance_.getDelay();
@@ -355,11 +316,10 @@ A value of 0 causes the next video to play immediately after the previous one fi
   }
 
   /**
-  * Loads a specific playlist item by index.
-  *
-  * @param {number} index - The index of the item to load.
-  * @return {boolean} True if the item was loaded successfully, false otherwise.
-  */
+   * Loads a specific playlist item by index.
+   * @param index - The index of the item to load
+   * @returns True if the item was loaded successfully, false otherwise
+   */
   loadPlaylistItem(index: number): boolean {
     const items = this.playlist_.getItems();
 
@@ -376,8 +336,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Loads the first item in the playlist.
-   *
-   * @return {boolean} True if the first item was loaded successfully, false otherwise.
+   * @returns True if the first item was loaded successfully, false otherwise
    */
   loadFirstItem(): boolean {
     return this.loadPlaylistItem(0);
@@ -385,8 +344,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Loads the last item in the playlist.
-   *
-   * @return {boolean} True if the last item was loaded successfully, false otherwise.
+   * @returns True if the last item was loaded successfully, false otherwise
    */
   loadLastItem(): boolean {
     const lastIndex = this.playlist_.getLastIndex();
@@ -396,7 +354,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Loads the next item in the playlist.
-   * @return {boolean} True if the next item was loaded successfully, false otherwise.
+   * @returns True if the next item was loaded successfully, false otherwise
    */
   loadNextItem(): boolean {
     const nextIndex = this.playlist_.getNextIndex();
@@ -410,8 +368,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Loads the previous item in the playlist.
-   *
-   * @return {boolean} True if the previous item was loaded successfully, false otherwise.
+   * @returns True if the previous item was loaded successfully, false otherwise
    */
   loadPreviousItem() {
     const previousIndex = this.playlist_.getPreviousIndex();
@@ -425,28 +382,21 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Loads a specific playlist item.
-   * @param {SourceOptions} item - The playlist item to load.
+   * @param item - The playlist item to load
    * @private
    */
   private loadItem_(item: SourceOptions) {
     this.player_.trigger('beforeplaylistitem', item);
-
-    // Remove any textTracks from a previous item
     this.clearExistingItemTextTracks_();
-
-    // Set the source for the player
     this.player_.src(item);
 
     this.player_.ready(() => {
-      // @todo commenting it since, we already add text tracks in the player.src call
-      // this.addItemTextTracks_(item);
       this.player_.trigger('playlistitem', item);
     });
   }
 
   /**
    * Sets up event forwarding from the playlist to the player.
-   *
    * @private
    */
   private setupEventForwarding_() {
@@ -457,7 +407,6 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Cleans up event forwarding from the playlist to the player.
-   *
    * @private
    */
   private cleanupEventForwarding_() {
@@ -468,8 +417,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Handles playlist events and forwards them to the player.
-   *
-   * @param {Event} event - The playlist event to handle.
+   * @param event - The playlist event to handle
    * @private
    */
   private handlePlaylistEvent_ = (event: Event) => {
@@ -477,29 +425,24 @@ A value of 0 causes the next video to play immediately after the previous one fi
   };
 
   /**
-   * Plays the next item in the playlist
-   *
+   * Plays the next item in the playlist.
    * @private
    */
   playNext_ = () => {
     const loadedNext = this.loadNextItem();
 
     if (loadedNext) {
-      // 2) Wait for loadstart or loadedmetadata, then play:
       this.player_.one('loadstart', () => {
         this.player_.play();
       });
-
     }
   };
 
   /**
    * Clears text tracks of the currently loaded item.
-   *
    * @private
    */
   private clearExistingItemTextTracks_() {
-    // @todo: this should be available in videojs
     const playerWithTextTracks = this.player_ as unknown as {
       remoteTextTracks(): TextTrackList;
       removeRemoteTextTrack(track: TextTrack): void;
@@ -507,8 +450,6 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const textTracks = playerWithTextTracks.remoteTextTracks();
     let i = textTracks && textTracks.length || 0;
 
-    // This uses a `while` loop rather than `forEach` because the
-    // `TextTrackList` object is a live DOM list (not an array).
     while (i--) {
       playerWithTextTracks.removeRemoteTextTrack(textTracks[i]);
     }
@@ -516,8 +457,7 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Adds text tracks for a playlist item.
-   *
-   * @param {Object} item - The playlist item.
+   * @param item - The playlist item
    * @private
    */
   private addItemTextTracks_(item: SourceOptions) {
@@ -528,7 +468,6 @@ A value of 0 causes the next video to play immediately after the previous one fi
 
   /**
    * Handles changes to the player's source.
-   *
    * @private
    */
   private handleSourceChange_ = () => {
@@ -536,45 +475,26 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const pluginInstance = player.imagekitVideoPlayer();
     const currentSrc = pluginInstance.getOriginalCurrentSource();
 
-    // Handle null or array cases
-    if (!currentSrc) {
-      this.handleNonPlaylistSource_();
-      return;
-    }
-
-    // If it's an array, check if any source is in the playlist
-    if (Array.isArray(currentSrc)) {
-      const isInPlaylist = currentSrc.some(src => this.isSourceInPlaylist_(src));
-      if (!isInPlaylist) {
-        this.handleNonPlaylistSource_();
-      }
-      return;
-    }
-
-    // Single source case
-    if (!this.isSourceInPlaylist_(currentSrc)) {
+    if (!currentSrc || !this.isSourceInPlaylist_(currentSrc)) {
       this.handleNonPlaylistSource_();
     }
   };
 
   /**
    * Checks if the current source is in the playlist.
-   *
-   * @param {SourceOptions} src - The source URL to check.
-   * @return {boolean} True if the source is in the playlist, false otherwise.
+   * @param src - The source to check
+   * @returns True if the source is in the playlist, false otherwise
    * @private
    */
   private isSourceInPlaylist_(src: SourceOptions): boolean {
     const itemList = this.playlist_.getItems();
     return itemList.some((item) => {
-      // do a deep comparison of the source object
       return isEqual(pick(item, SOURCE_OPTION_KEYS), pick(src, SOURCE_OPTION_KEYS))}
     );
   }
 
   /**
    * Handles playback when the current source is not in the playlist.
-   *
    * @private
    */
   private handleNonPlaylistSource_() {
@@ -582,47 +502,25 @@ A value of 0 causes the next video to play immediately after the previous one fi
     this.playlist_.setCurrentIndex(null);
   }
 
-
-  // if presentUpcoming is set, this will be called to initialise the component
-  private initPresentUpcoming_(opts: PlaylistOptions, player: Player) {
-    // create present upcoming container
-    // show the thumbnail of the next item in the playlist
-    // show the title of the video
-    // container should be at the bottom of the video just above the progress control
-    // when progress control is not visible, when user is not interacting with the video, video is paused or playing, it should slide down (proper transition) to the bottom of the video 
-
-  }
-
   private handleUpcomingDismiss_ = () => {
-    // When dismissed, set the flag and hide the component immediately.
     this.isUpcomingDismissed_ = true;
     this.presentUpcomingComponent_?.hide();
   };
 
   private setupPresentUpcoming_() {
-    // Always remove the old component first
     this.presentUpcomingComponent_?.dispose();
     this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
   
     if (this.presentUpcomingThreshold_ === null) {
-      // If the feature is disabled, we're done.
       return;
     }
   
-    // Create and add the new component to the player
     this.presentUpcomingComponent_ = this.player_.addChild('PresentUpcoming', this.playerOptions_) as PresentUpcoming;
-
     this.presentUpcomingComponent_.on('dismiss', this.handleUpcomingDismiss_);
-
-  
-    // Listen for time updates to know when to show it
     this.player_.on('timeupdate', this.handleTimeUpdateForUpcoming_);
   
-    // Also hide it immediately when a new source starts loading
     this.player_.on('loadstart', () => {
       this.presentUpcomingComponent_?.hide();
-      // --- CHANGE: MOVED TO HERE ---
-      // This is the correct place to reset the dismissed state for the upcoming video.
       this.isUpcomingDismissed_ = false;
     });
   }
@@ -636,7 +534,6 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const currentTime = this.player_.currentTime();
     const duration = this.player_.duration();
   
-    // Ensure we have valid numbers to work with
     if (!currentTime || !duration || !isFinite(duration) || !isFinite(currentTime)) {
       return;
     }
@@ -645,21 +542,16 @@ A value of 0 causes the next video to play immediately after the previous one fi
     const isTimeToShow = remainingTime <= this.presentUpcomingThreshold_ && remainingTime > 0 && !this.isUpcomingDismissed_;
   
     if (isTimeToShow) {
-      // Check if the component is already visible to avoid unnecessary updates
       if (this.presentUpcomingComponent_.hasClass('vjs-hidden')) {
         const nextIndex = this.playlist_.getNextIndex();
   
-        // Only show if there is a next video
         if (nextIndex !== -1) {
           const nextItem = this.playlist_.getItems()[nextIndex];
           this.presentUpcomingComponent_.update(nextItem);
-          // --- CHANGE: REMOVED FROM HERE ---
-          // this.isUpcomingDismissed_ = false; // This was incorrect.
           this.presentUpcomingComponent_.show();
         }
       }
     } else {
-      // If we are outside the time window, ensure it's hidden
       if (!this.presentUpcomingComponent_.hasClass('vjs-hidden')) {
         this.presentUpcomingComponent_.hide();
       }

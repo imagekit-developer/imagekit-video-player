@@ -13,14 +13,11 @@ interface PlaylistMenuOptions {
   horizontal?: boolean;
   showDescription?: boolean;
   playOnSelect?: boolean;
-  supportsCssPointerEvents?: boolean;
   className?: string;
 }
 
 const addSelectedClass = (el: any) => el.addClass('vjs-selected');
 const removeSelectedClass = (el: any) => el.removeClass('vjs-selected');
-const upNext = (el: any) => el.addClass('vjs-up-next');
-const notUpNext = (el: any) => el.removeClass('vjs-up-next');
 
 export class PlaylistMenu extends Component {
   private items: PlaylistMenuItem[] = [];
@@ -40,14 +37,11 @@ export class PlaylistMenu extends Component {
     this.playlist = playlist;
     this.playerOptions = playerOptions;
 
-    // 1) Add orientation/pointer‐events classes to the element Video.js already created:
+    // 1) Add orientation classes to the element Video.js already created:
     if (options.horizontal) {
       this.addClass('vjs-playlist-horizontal');
     } else {
       this.addClass('vjs-playlist-vertical');
-    }
-    if (options.supportsCssPointerEvents) {
-      this.addClass('vjs-csspointerevents');
     }
     if (!videojs.browser.TOUCH_ENABLED) {
       this.addClass('vjs-mouse');

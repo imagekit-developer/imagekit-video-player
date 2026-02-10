@@ -3,7 +3,6 @@ import type { Transformation } from '@imagekit/javascript';
 import type { SourceOptions } from './SourceOptions';
 import type { PlaylistOptions } from './Playlist';
 import type { PlaylistManager } from '../modules/playlist/playlist-manager';
-import type { RemoteTextTrackOptions } from './TextTrack';
 
 /**
  * Interface for the ImageKit Video Player plugin instance.
@@ -11,7 +10,7 @@ import type { RemoteTextTrackOptions } from './TextTrack';
  */
 export interface ImageKitVideoPlayerPluginInstance {
   getPlaylistManager(): PlaylistManager | undefined;
-  getOriginalCurrentSource(): SourceOptions | SourceOptions[] | null;
+  getOriginalCurrentSource(): SourceOptions | null;
   getPlayerOptions(): IKPlayerOptions;
 }
 
@@ -41,10 +40,6 @@ export interface IKPlayerOptions {
     maxTries?: number;
     /** Timeout per try in ms */
     videoTimeoutInMS?: number;
-    /** Percent-based events */
-    playedEventPercents?: number[];
-    /** Time-based events (seconds) */
-    playedEventTimes?: number[];
     /** Delay per try in ms */
     delayInMS?: number;
     /** Signer function for generating signed url */
@@ -59,11 +54,10 @@ interface ImageKitPlayerMethods {
   /**
    * Overridden src method that accepts ImageKit SourceOptions.
    * This allows passing enhanced options like chapters, transformations, etc.
-   * The method signature is overridden to accept SourceOptions instead of the base Video.js src format.
    * 
-   * @overload ImageKit-specific signature
+   * @param source - ImageKit source options object
    */
-  src(raw?: string | SourceOptions | Array<string | SourceOptions>): void;
+  src(source?: SourceOptions): void | string;
   /**
    * Initialize the ImageKit Video Player plugin with options.
    * @param options - ImageKit player configuration options

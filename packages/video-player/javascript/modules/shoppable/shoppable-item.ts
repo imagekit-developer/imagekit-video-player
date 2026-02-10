@@ -159,10 +159,7 @@ class ShoppablePanelItem extends ClickableComponent {
                 if (!this.el_) {
                     return;
                 }
-                this.player_.error({
-                    message: `Failed to load poster for shoppable item: ${err.message}`,
-                    cause: err,
-                });
+                this.player_.log.error(`Failed to load poster for shoppable item: ${err.message}`);
                 if (this.spinnerEl) {
                     this.spinnerEl.remove();
                 }

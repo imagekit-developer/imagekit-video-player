@@ -101,7 +101,7 @@ export async function initChapterMarkers(
         try {
           vttUrl = await signerFn(vttUrl);
         } catch (err) {
-          player.log.warn(`Failed to sign chapter VTT URL: ${err instanceof Error ? err.message : String(err)}`);
+          player.log.error(`Failed to sign chapter VTT URL: ${err instanceof Error ? err.message : String(err)}`);
           return;
         }
       }
@@ -114,7 +114,7 @@ export async function initChapterMarkers(
       const data = await res.text();
       chapterList = parseChaptersFromVTT(data);
     } catch (e) {
-      player.log.warn(`Failed to fetch chapters VTT: ${e}`);
+      player.log.error(`Failed to fetch chapters VTT: ${e}`);
       return;
     }
   } else if (typeof src.chapters === 'object') {
@@ -146,7 +146,7 @@ export async function initChapterMarkers(
       const data = await res.text();
       chapterList = parseChaptersFromVTT(data);
     } catch (e) {
-      player.log.warn(`Failed to fetch default chapters VTT: ${e}`);
+      player.log.error(`Failed to fetch default chapters VTT: ${e}`);
       return;
     }
   }

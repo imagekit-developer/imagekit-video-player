@@ -99,9 +99,8 @@ export class PresentUpcoming extends Component {
       img.alt = `Next up: ${title}`;
       this.thumbnailEl_.appendChild(img);
     } catch (e) {
-      // If poster fails, show a placeholder
       this.thumbnailEl_.classList.add('vjs-playlist-thumbnail-placeholder');
-      console.error('Failed to load "Up Next" poster:', e);
+      this.player_.log.error('Failed to load "Up Next" poster:', e);
     }
   }
 

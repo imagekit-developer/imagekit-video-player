@@ -252,6 +252,39 @@ $spacing-progress-interactive-hover: -1.4rem;
         text-rendering: optimizeLegibility;
     }
 
+    // Custom SVG icons for Video.js skip buttons
+    .vjs-skip-forward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-forward-10::before,
+    .vjs-icon-skip-forward-10::before {
+        content: '';
+        background-image: url('assets/icons/forward-10.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        display: inline-block;
+        width: 1.8em;
+        height: 1.8em;
+        filter: brightness(0) invert(1);
+        font-size: inherit;
+        align-self: anchor-center;
+    }
+
+    .vjs-skip-backward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-replay-10::before,
+    .vjs-icon-skip-back-10::before {
+        content: '';
+        background-image: url('assets/icons/replay-10.svg');
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        display: inline-block;
+        width: 1.8em;
+        height: 1.8em;
+        filter: brightness(0) invert(1);
+        font-size: inherit;
+        align-self: anchor-center; 
+    }
+
     .vjs-control-bar {
         -webkit-backdrop-filter: blur(10px);
         backdrop-filter: blur(10px);
@@ -453,7 +486,7 @@ $spacing-progress-interactive-hover: -1.4rem;
         position: absolute;
         top: 50%;
         transform: translateY(-50%) scale(0.8);
-        font-size: 3em;
+        font-size: 2em;
         color: var(--color-white);
         background-color: var(--color-seek-feedback-bg);
         border-radius: 50%;
@@ -467,12 +500,31 @@ $spacing-progress-interactive-hover: -1.4rem;
         transition: opacity $transition-base ease-out, transform $transition-base ease-out;
         z-index: $z-index-control-bar;
 
+        &::before {
+            content: '';
+            position: absolute;
+            width: 1.5em;
+            height: 1.5em;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: brightness(0) invert(1);
+        }
+
         &.is-forward {
             left: 75%;
+
+            &::before {
+                background-image: url('assets/icons/forward-10.svg');
+            }
         }
 
         &.is-backward {
             left: 25%;
+
+            &::before {
+                background-image: url('assets/icons/replay-10.svg');
+            }
         }
 
         &.is-visible {

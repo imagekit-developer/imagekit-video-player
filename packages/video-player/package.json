@@ -1,7 +1,7 @@
 {
   "name": "@imagekit/video-player",
   "version": "1.0.0",
-  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Angular)",
+  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue)",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -30,28 +30,18 @@
   "scripts": {
     "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
     "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
-    "build:angular": "node package.js",
     "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
     "build:assets": "cp -r javascript/assets dist/",
     "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css)",
     "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
-    "dev:angular": "ng-packagr -p ng-package.json --watch",
     "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
   },
   "peerDependencies": {
-    "@angular/common": "^17.0.0 || ^18.0.0 || ^20.0.0",
-    "@angular/core": "^17.0.0 || ^18.0.0 || ^20.0.0",
     "react": "^17 || ^18",
     "react-dom": "^17 || ^18",
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
-    "@angular/common": {
-      "optional": true
-    },
-    "@angular/core": {
-      "optional": true
-    },
     "react": {
       "optional": true
     },
@@ -63,11 +53,6 @@
     }
   },
   "devDependencies": {
-    "@angular/cli": "^20.0.1",
-    "@angular/common": "^20.0.2",
-    "@angular/compiler": "^20.0.0",
-    "@angular/compiler-cli": "^20.0.0",
-    "@angular/core": "^20.0.2",
     "@imagekit/javascript": "^5.0.0",
     "@types/lodash": "^4.14.200",
     "@types/react": "^18.0.0",

@@ -99,7 +99,7 @@ class Thumbnail extends ClickableComponent {
         spinner.remove();
       }
 
-      const imgEl = super.createEl('img', {
+    const imgEl = super.createEl('img', {
         loading: 'lazy',
         src: url,
         alt: this.getTitle() || '',
@@ -110,10 +110,7 @@ class Thumbnail extends ClickableComponent {
         if (!this.el_) {
           return;
         }
-        this.player_.error({
-          message: `Failed to load thumbnail for playlist item: ${err.message}`,
-          cause: err,
-        });
+        this.player_.log.error(`Failed to load thumbnail for playlist item: ${err.message}`);
         if (spinner) {
           spinner.remove();
         }

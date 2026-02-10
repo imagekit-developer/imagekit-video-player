@@ -29,7 +29,7 @@ export interface ProductProps {
 }
 
 export interface ShoppableProps {
-  autoClose?: number;
+  autoClose?: number | false;
   products: ProductProps[];
   showPostPlayOverlay?: boolean;
   startState?: 'closed' | 'open' | 'openOnPlay';

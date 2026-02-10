@@ -93,7 +93,7 @@ export class SeekThumbnailsManager {
       log.debug('SeekThumbnailsManager initialized');
       return mgr;
     } catch (err) {
-      log.warn('Error initializing seek thumbnails:', err);
+      log.error('Error initializing seek thumbnails:', err);
       return null;
     }
   }

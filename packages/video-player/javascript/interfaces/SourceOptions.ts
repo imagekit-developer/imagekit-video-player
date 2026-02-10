@@ -47,7 +47,7 @@ export interface SourceOptions {
     transformation?: Transformation[];
 
     /**
-     * A set of up to four recommendations to show in the overlay when this video ends.
+     * A set of recommendations to show in the overlay when this video ends.
      */
     recommendations?: SourceOptions[];
 
