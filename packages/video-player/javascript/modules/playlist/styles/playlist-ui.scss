@@ -160,6 +160,13 @@
     flex: 0 0 clamp(40px, 50%, 80px);
     min-width: 0;
   }
+
+  .vjs-playlist-item.vjs-selected {
+  
+    &::before {
+      left: calc(var(--playlist-item-padding-left));
+    }
+  }
 }
 
 

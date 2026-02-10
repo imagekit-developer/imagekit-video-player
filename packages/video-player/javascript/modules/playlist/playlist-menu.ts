@@ -6,6 +6,8 @@ import { PlaylistMenuItem } from './playlist-menu-item';
 import { Playlist } from './playlist';
 import { IKPlayerOptions } from '../../interfaces';
 import { CleanupRegistry } from '../../utils';
+import { isEqual, pick } from 'lodash';
+import { SOURCE_OPTION_KEYS } from './utils';
 
 const Component = videojs.getComponent('Component') as typeof ComponentType;
 
@@ -78,48 +80,58 @@ export class PlaylistMenu extends Component {
 
   /** Render or re-render the playlist UI */
   private update(): void {
-    // Guard: if el_ doesn’t exist yet, skip
     if (!this.el_) return;
 
-    this.empty_();
-
     const items = this.playlist.getItems();
-    const listEl = document.createElement('ol');
-    listEl.className = 'vjs-playlist-item-list';
-    this.el_.appendChild(listEl);
+    const currentIndex = this.playlist.getCurrentIndex?.() ?? 0;
 
-    this.items = items.map((item, index) => {
-      const menuItem = new PlaylistMenuItem(
-        this.player_,
-        this.playlist,
-        {
-          item,
-          showDescription: this.options_.showDescription,
-          playOnSelect:    this.options_.playOnSelect,
-        },
-        this.playerOptions
-      );
-      listEl.appendChild(menuItem.el_);
-      return menuItem;
-    });
-
-    // Highlight current and up-next
-    const current = this.playlist.getCurrentIndex?.() ?? 0;
-    this.items.forEach((mi, i) => {
-      if (i === current) {
-        addSelectedClass(mi);
-        videojs.dom.addClass(
-          mi.el_.querySelector('.vjs-playlist-thumbnail')!,
-          'vjs-playlist-now-playing'
+    const contentChanged =
+      this.items.length !== items.length ||
+      this.items.some((mi, i) => {
+        const menuItem = mi.getItem();
+        const playlistItem = items[i];
+        return !isEqual(
+          pick(menuItem, SOURCE_OPTION_KEYS),
+          pick(playlistItem, SOURCE_OPTION_KEYS)
         );
+      });
+
+    if (contentChanged) {
+      this.empty_();
+
+      const listEl = document.createElement('ol');
+      listEl.className = 'vjs-playlist-item-list';
+      this.el_.appendChild(listEl);
+
+      this.items = items.map((item, index) => {
+        const menuItem = new PlaylistMenuItem(
+          this.player_,
+          this.playlist,
+          {
+            item,
+            showDescription: this.options_.showDescription,
+            playOnSelect: this.options_.playOnSelect,
+          },
+          this.playerOptions
+        );
+        listEl.appendChild(menuItem.el_);
+        return menuItem;
+      });
+    }
+
+    this.items.forEach((mi, i) => {
+      const thumbnail = mi.el_.querySelector('.vjs-playlist-thumbnail');
+      if (i === currentIndex) {
+        addSelectedClass(mi);
+        if (thumbnail) {
+          videojs.dom.addClass(thumbnail, 'vjs-playlist-now-playing');
+        }
       } else {
         removeSelectedClass(mi);
+        if (thumbnail) {
+          videojs.dom.removeClass(thumbnail, 'vjs-playlist-now-playing');
+        }
       }
-      // if (i === current + 1) {
-      //   upNext(mi);
-      // } else {
-      //   notUpNext(mi);
-      // }
     });
   }
 

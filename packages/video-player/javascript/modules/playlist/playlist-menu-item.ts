@@ -66,7 +66,7 @@ export class PlaylistMenuItem extends Component {
     }
   }
 
-  private getItem() {
+  getItem() {
     return this.options_.item;
   }
 
