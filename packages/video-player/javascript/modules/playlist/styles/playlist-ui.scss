@@ -101,6 +101,7 @@
   container-type: size;
 
   .vjs-playlist-item {
+    display: flex;
     width: 20%;
     height: 100%;
     flex-shrink: 0;
@@ -114,6 +115,7 @@
     padding-left: clamp(4px, 3%, 28px);
     --playlist-item-padding-left: clamp(4px, 3%, 28px);
     margin-bottom: 0;
+    overflow: hidden;
 
     @container (max-width: 600px) {
       padding-left: clamp(4px, 2%, 6px);
@@ -147,12 +149,16 @@
   }
 
   .vjs-playlist-thumbnail {
-    width: clamp(80px, 100%, 100%);
+    height: calc(100% - clamp(40px, 50%, 80px) - clamp(4px, 3%, 8px) - clamp(4px, 2%, 6px) * 2);
+    width: auto;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    flex-shrink: 0;
   }
-
+  
   .vjs-playlist-details {
-    flex-grow: 0;
-    min-height: clamp(40px, 50%, 80px);;
+    flex: 0 0 clamp(40px, 50%, 80px);
+    min-width: 0;
   }
 }
 

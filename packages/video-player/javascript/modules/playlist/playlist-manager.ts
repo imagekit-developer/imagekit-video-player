@@ -124,7 +124,7 @@ export class PlaylistManager {
     const isHorizontal = opts.widgetProps?.direction === 'horizontal';
 
     if (isHorizontal) {
-      const playlistHeight = Math.min(playerHeight * 0.25, 200);
+      const playlistHeight = Math.min(playerHeight * 0.45, 200);
       this.playerContainer_.style.width = `${playerWidth}px`;
       this.playerContainer_.style.height = `${playerHeight + playlistHeight}px`;
       if (this.playlistMenu) {
