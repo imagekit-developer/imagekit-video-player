@@ -393,7 +393,26 @@ $spacing-progress-interactive-hover: -1.4rem;
             max-width: 13em;
             width: auto;
             padding: 0.2em 0;
-            overflow: hidden;
+            overflow-y: auto;
+            max-height: 20em;
+            // Firefox
+            scrollbar-gutter: stable;
+            scrollbar-width: thin;
+            // Chrome, Safari, Edge
+            &::-webkit-scrollbar {
+                width: 8px;
+                height: 8px;
+            }
+            &::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            &::-webkit-scrollbar-thumb {
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+                &:hover {
+                    background-color: rgba(0, 0, 0, 0.3);
+                }
+            }
         }
 
         .vjs-selected {

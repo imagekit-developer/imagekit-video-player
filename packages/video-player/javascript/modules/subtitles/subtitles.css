@@ -1,3 +1,9 @@
 .vjs-text-track-display .vjs-word-highlight {
-    color: #FFD54F;
+    color: var(--subtitle-highlight-color, #FFD54F);
+}
+
+.vjs-highlight-color-setting .vjs-highlight-color {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
 }

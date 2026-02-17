@@ -18,6 +18,7 @@ import { initializeLogoButton } from './modules/logo-button/init';
 import { setupKeyboardShortcuts } from './modules/keyboard-shortcuts';
 import { setupContextMenu } from './modules/context-menu/setup';
 import { createSourceOverride } from './modules/source-handler';
+import { extendTrackSettings } from './modules/subtitles/track-settings-extension';
 
 const defaults: IKPlayerOptions = {
   imagekitId: '',
@@ -114,6 +115,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         );
 
         initializeLogoButton(this.player, this.ikGlobalSettings_);
+        extendTrackSettings(this.player);
       });
 
       this.player.ready(() => {
