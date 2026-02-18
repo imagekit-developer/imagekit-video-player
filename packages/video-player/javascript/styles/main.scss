@@ -483,12 +483,6 @@ $spacing-progress-interactive-hover: -1.4rem;
         pointer-events: none;
     }
 
-    .vjs-text-track-display {
-        .vjs-text-track-cue > div {
-            background-color: var(--color-subtitle-bg) !important;
-            padding: 0.3em 0.5em;
-        }
-    }
 
     .vjs-present-upcoming {
         pointer-events: auto;
