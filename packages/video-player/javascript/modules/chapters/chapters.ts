@@ -86,6 +86,14 @@ export async function initChapterMarkers(
   ikGlobalSettings: IKPlayerOptions,
   signerFn?: (src: string) => Promise<string>
 ): Promise<void> {
+
+  cleanupChapterTextTracks(player);
+  cleanupChapterLabelDisplay(player);
+  const existing = player.getChild('ChapterMarkersProgressBarControl');
+  if (existing) {
+    existing.dispose();
+  }
+
   if (!source) return;
   
   const src = Array.isArray(source) ? source[0] : source;
@@ -152,7 +160,6 @@ export async function initChapterMarkers(
   }
 
   if (chapterList.length) {
-    cleanupChapterTextTracks(player);
 
     try {
       const trackEl = player.addRemoteTextTrack(
@@ -168,7 +175,6 @@ export async function initChapterMarkers(
         trackEl.track.addCue(cue);
       });
 
-      cleanupChapterLabelDisplay(player);
       setupChapterLabelDisplay(player, trackEl.track);
 
       const controlBar = player.getChild('ControlBar');

@@ -74,23 +74,33 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           this.shoppableManager_ = undefined;
         }
 
+        const initPromises: Promise<void>[] = [];
+
         if (this.ikGlobalSettings_.seekThumbnails && this.currentSource_) {
-          const mgr = await SeekThumbnailsManager.initSeekThumbnails(
-            this.player,
-            this.currentSource_,
-            this.ikGlobalSettings_
+          initPromises.push(
+            SeekThumbnailsManager.initSeekThumbnails(
+              this.player,
+              this.currentSource_,
+              this.ikGlobalSettings_
+            ).then(mgr => {
+              if (mgr) {
+                this.seekThumbnailsManager_ = mgr;
+              }
+            })
           );
-          if (mgr) {
-            this.seekThumbnailsManager_ = mgr;
-          }
         }
 
-        await initChapterMarkers(this.player, this.currentSource_, this.ikGlobalSettings_, this.ikGlobalSettings_.signerFn);
-        await this.initRecommendationsOverlay();
+        initPromises.push(
+          initChapterMarkers(this.player, this.currentSource_, this.ikGlobalSettings_, this.ikGlobalSettings_.signerFn)
+        );
 
-        if (this.currentSource_ && this.currentSource_.shoppable) {
+        initPromises.push(this.initRecommendationsOverlay());
+
+        if (this.currentSource_?.shoppable) {
           this.shoppableManager_ = new ShoppableManager(this.player, this.currentSource_);
         }
+
+        await Promise.all(initPromises);
       });
 
       this.player.ready(() => {
