@@ -8,6 +8,35 @@ const HLS_MASTER_SUFFIX = 'ik-master.m3u8';
 const DASH_MASTER_SUFFIX = 'ik-master.mpd';
 const THUMBNAIL_SUFFIX = 'ik-thumbnail.jpg';
 
+const ALLOWED_TRANSFORM_PARAMS_CHAPTERS = new Set(['so', 'eo', 'du']);
+
+/**
+ * Filters the 'tr' query parameter to only include allowed transformation parameters.
+ * Handles chained transformations (separated by :) and normal transformations (separated by ,).
+ * @param url - The URL to filter
+ * @param allowedParams - Set of allowed transformation parameter names
+ * @returns The same URL object with filtered tr parameter (mutated in place)
+ */
+export function filterTrQueryParam(url: URL, allowedParams: ReadonlySet<string>): void {
+  const transformationString = url.searchParams.get('tr');
+  if (transformationString) {
+    const filteredChains = transformationString.split(':').map(chain => {
+      // Split each chain by comma to get individual transformation params
+      const filteredParams = chain.split(',').filter(param => {
+        // Extract the key (part before the first '-')
+        const key = param.split('-')[0];
+        return allowedParams.has(key);
+      });
+      return filteredParams.join(',');
+    }).filter(chain => chain.length > 0);
+    
+    if (filteredChains.length > 0) {
+      url.searchParams.set('tr', filteredChains.join(':'));
+    } else {
+      url.searchParams.delete('tr');
+    }
+  }
+}
 /**
  * Prepares a video source by applying ABS suffix, transformations, and signing.
  * @param input - String URL or SourceOptions object
@@ -21,14 +50,13 @@ export async function prepareSource(
   let source: SourceOptions =
     typeof input === 'string' ? { src: input } : { ...input };
 
-  const { src: absSrc, transformation: absTransforms } =
-    addABSSuffixToSrcURL(source, opts);
-  source.src = absSrc;
+  const { src: finalSrc, transformation: finalTransformations } =
+    resolveSourceUrlAndTransformations(source, opts);
 
   source.src = ikBuild({
-    src: source.src,
+    src: finalSrc,
     urlEndpoint: '',
-    transformation: absTransforms ?? [],
+    transformation: finalTransformations,
   });
 
   if (opts.signerFn) {
@@ -102,12 +130,13 @@ export async function waitForVideoReady(
 
 
 /**
- * Appends ABS suffix and adds streamingResolutions to transformations if ABS is configured.
+ * Resolves the final source URL and transformations from input and options.
+ * Handles ABS configuration (adds suffix and streamingResolutions) and determines final transformations.
  * @param input - String URL or SourceOptions
  * @param opts - ImageKit player options
- * @returns Object with modified src URL and transformation array
+ * @returns Object with modified src URL and final transformation array
  */
-export function addABSSuffixToSrcURL(
+export function resolveSourceUrlAndTransformations(
   input: string | SourceOptions,
   opts: IKPlayerOptions
 ): { src: string; transformation: Transformation[] } {
@@ -121,11 +150,13 @@ export function addABSSuffixToSrcURL(
 
   const existingTransforms: Transformation[] =
     (typeof input === 'object' && input.transformation) ? input.transformation : (opts.transformation || []);
+  
+  let finalTransformations: Transformation[] = existingTransforms;
 
   if (absOpts) {
     if (!isTransformationAllowedWithABS(existingTransforms)) {
       throw new Error(
-        'You can transform the final video using any supported video transformation parameter in ImageKit except w, h, ar, f, vc, ac, and q. '
+        'You can transform the final video using any supported video transformation parameter in ImageKit except w, h, ar, f, vc, ac, and q.'
       );
     }
     if (absOpts.protocol === 'hls') {
@@ -133,18 +164,17 @@ export function addABSSuffixToSrcURL(
     } else if (absOpts.protocol === 'dash') {
       url.pathname += `/${DASH_MASTER_SUFFIX}`;
     }
-    return {
-      src: url.toString(),
-      transformation: [
-        ...existingTransforms,
-        { streamingResolutions: absOpts.sr.map(res => res as unknown as StreamingResolution) },
-      ],
-    };
+
+    finalTransformations = [...existingTransforms, { streamingResolutions: absOpts.sr.map(res => res as unknown as StreamingResolution) }];
+  }
+
+  if(finalTransformations.length > 0 && url.searchParams.get('tr') !== null) {
+    url.searchParams.delete('tr');
   }
 
   return {
     src: url.toString(),
-    transformation: [...existingTransforms],
+    transformation: finalTransformations,
   };
 }
 
@@ -172,18 +202,13 @@ export async function preparePosterSrc(
     url.pathname = `${url.pathname.replace(/\/$/, '')}/${THUMBNAIL_SUFFIX}`;
   }
 
-  url.search = '';
   posterSrcUrl = url.toString();
-
-  posterSrcUrl = ikBuild({
-    src: posterSrcUrl,
-    urlEndpoint: '',
-    transformation: input.transformation ?? opts.transformation ?? [],
-  });
 
   if (input.poster && (input.poster.src || input.poster.transformation)) {
     const baseVideoUrl = new URL(videoSrcUrl);
-    baseVideoUrl.search = '';
+    if(baseVideoUrl.searchParams.get('tr') !== null) {
+      baseVideoUrl.searchParams.delete('tr');
+    }
     posterSrcUrl = ikBuild({
       src: input.poster.src ?? baseVideoUrl.toString() + `/${THUMBNAIL_SUFFIX}`,
       urlEndpoint: '',
@@ -218,17 +243,7 @@ export async function prepareSeekThumbnailVttSrc(
 
   const url = new URL(videoSrcUrl);
   url.pathname = `${url.pathname.replace(/\/$/, '')}/ik-seek-thumbnail-track.vtt`;
-  url.search = '';
   seekThumbnailVttSrc = url.toString();
-
-  const { transformation: absTransforms } =
-    addABSSuffixToSrcURL(input, opts);
-
-  seekThumbnailVttSrc = ikBuild({
-    src: seekThumbnailVttSrc,
-    urlEndpoint: '',
-    transformation: absTransforms ?? [],
-  });
 
   if (opts.signerFn) {
     try {
@@ -264,11 +279,10 @@ export async function prepareChaptersVttSrc(
     url.pathname = `${url.pathname.replace(/\/$/, '')}/ik-genchapter.vtt`;
   }
 
-  url.search = '';
-  chaptersVttSrc = url.toString();
+  filterTrQueryParam(url, ALLOWED_TRANSFORM_PARAMS_CHAPTERS);
 
   chaptersVttSrc = ikBuild({
-    src: chaptersVttSrc,
+    src: url.toString(),
     urlEndpoint: '',
     transformation: [],
   });
