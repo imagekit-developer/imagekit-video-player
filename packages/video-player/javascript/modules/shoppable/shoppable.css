@@ -44,6 +44,7 @@
   background: rgba(255, 255, 255, 0.5);
   -ms-overflow-style: none;
   scrollbar-width: none;
+  container-type: inline-size;
 }
 
 .vjs-shoppable-panel::-webkit-scrollbar {
@@ -160,7 +161,7 @@
   background: rgba(0, 0, 0, 1);
   color: #fff;
   padding: 8px;
-  font-size: 14px;
+  font-size: 10px;
   text-align: center;
   white-space: normal;
   overflow: hidden;
@@ -172,19 +173,55 @@
   justify-content: center;
 }
 
+@container (min-width: 120px) {
+  .vjs-shoppable-item-info {
+    font-size: 12px;
+  }
+}
+
+@container (min-width: 140px) {
+  .vjs-shoppable-item-info {
+    font-size: 14px;
+  }
+}
+
 .vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: 500;
   line-height: 1.3;
   background: rgba(0, 0, 0, 1);
-  height: 3.5em;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding: 6px;
+  padding-bottom: 0px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: unset;
+  margin-bottom: 8px;
+}
+
+@container (min-width: 600px) {
+  .vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+    font-size: 12px;
+    padding: 7px;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+  }
+}
+
+@container (min-width: 700px) {
+  .vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+    font-size: 14px;
+    padding: 8px;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+  }
 }
 
 .vjs-shoppable-postplay-carousel .vjs-shoppable-item {
-  width: 200px;
+  width: clamp(100px, 25%, 200px);
   flex-shrink: 0;
   border: 1px solid rgba(255, 255, 255, 0.4);
 }
@@ -295,23 +332,23 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: clamp(12px, 1.5%, 24px);
   box-sizing: border-box;
+  container-type: inline-size;
+  row-gap: clamp(12px, 1.5%, 24px);
 }
 
 .vjs-shoppable-postplay-title {
   color: #fff;
   font-size: 24px;
-  margin-bottom: 24px;
   font-weight: bold;
 }
 
 .vjs-shoppable-postplay-carousel {
   display: flex;
-  gap: 20px;
+  gap: clamp(12px, 1.5%, 24px);
   overflow-x: auto;
   max-width: 100%;
-  padding-bottom: 20px;
   cursor: grab;
   user-select: none;
   -ms-overflow-style: none;
@@ -326,64 +363,7 @@
   cursor: grabbing;
 }
 
-.vjs-shoppable-postplay-card {
-  position: relative;
-  flex-shrink: 0;
-  text-align: center;
-  color: #fff;
-  font-size: 14px;
-  cursor: pointer;
-  transition: transform 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-}
-
-.vjs-shoppable-postplay-card:hover {
-  transform: scale(1.05);
-}
-
-.vjs-shoppable-postplay-card img {
-  width: 160px;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 12px;
-  margin-bottom: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.vjs-shoppable-postplay-card-title {
-  max-width: 160px;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.vjs-shoppable-postplay-card-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 160px;
-  height: 160px;
-  background: rgba(0, 0, 0, 0.6);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 10px;
-  box-sizing: border-box;
-  border-radius: 12px;
-  opacity: 0;
-  transition: opacity 0.2s ease-in-out;
-  pointer-events: none;
-}
-
-.vjs-shoppable-postplay-card:hover .vjs-shoppable-postplay-card-overlay {
-  opacity: 1;
-}
-
 .vjs-shoppable-replay-btn {
-  margin-top: 30px;
   padding: 12px 24px;
   background-color: rgba(255, 255, 255, 0.9);
   color: #111;

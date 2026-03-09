@@ -8,6 +8,7 @@ import type {
 import { AugmentedSourceOptions } from 'javascript/interfaces/AugementedSourceOptions';
 import { CleanupRegistry } from '../../utils';
 import ShoppablePanelItem from './shoppable-item';
+
 export class ShoppableManager {
   private player_: Player;
   private shoppable_: ShoppableProps;
