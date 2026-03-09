@@ -24,9 +24,70 @@ interface SubtitleTrackData {
     default: boolean;
 }
 
+interface TimedWord {
+    word: string;
+    start: number;
+    end: number;
+}
+
+interface TranscriptSegment {
+    transcript: string;
+    confidence: number;
+    words: Array<TimedWord>;
+}
+
+interface TranscriptParagraph {
+    text: string;
+    start: number;
+    end: number;
+    confidence: number;
+}
+
+interface TranscriptData {
+    languageCode: string;
+    transcript: Array<TranscriptSegment>;
+    paragraphs?: Array<TranscriptParagraph>;
+}
+
 const DEFAULT_AI_GENERATED_SUBTITLE_LABEL = 'Auto-generated Subtitles';
 
 const ALLOWED_TRANSFORM_PARAMS_SUBTITLES = new Set(['so', 'eo', 'du']);
+
+const MAX_TIME_GAP_SECONDS = 3;
+const DEFAULT_MAX_CHARS = 60;
+const READY_STATE_HAVE_METADATA = 1;
+
+// Module-level logger for subtitle functions
+let moduleLogger: { warn?: (msg: string) => void; error?: (msg: string) => void } | null = null;
+
+/**
+ * Set the logger for subtitle module functions
+ */
+function setLogger(logger: { warn?: (msg: string) => void; error?: (msg: string) => void }): void {
+    moduleLogger = logger;
+}
+
+/**
+ * Log a warning message using module logger or console fallback
+ */
+function logWarn(message: string): void {
+    if (moduleLogger?.warn) {
+        moduleLogger.warn(message);
+    } else {
+        console.warn(message);
+    }
+}
+
+/**
+ * Log an error message using module logger or console fallback
+ */
+function logError(message: string): void {
+    if (moduleLogger?.error) {
+        moduleLogger.error(message);
+    } else {
+        console.error(message);
+    }
+}
 
 function hasSrc(opts: RemoteTextTrackOptions): opts is TextTrackOptions & { src: string } {
     return typeof (opts as any).src === 'string';
@@ -68,12 +129,148 @@ function disableOtherTracks(player: Player, activeTrack: any): void {
     }
 }
 
+/**
+ * Initialize a function when the player has loaded metadata.
+ * If metadata is already loaded, executes immediately; otherwise waits for the 'loadedmetadata' event.
+ */
+async function initWhenReady(player: Player, initFn: () => void | Promise<void>): Promise<void> {
+    if (player.readyState() >= READY_STATE_HAVE_METADATA) {
+        await initFn();
+    } else {
+        player.one('loadedmetadata', async () => await initFn());
+    }
+}
+
+/**
+ * Creates captions with word-level highlighting
+ */
+function createHighlightedCaptions(
+    wordGroups: Array<Array<TimedWord>>,
+    addCaption: (caption: CaptionData) => void
+): void {
+    wordGroups.forEach(block => {
+        block.forEach((word, idx) => {
+            addCaption({
+                startTime: word.start,
+                endTime: word.end,
+                text: block
+                    .map(w => (w === word ? `<c.vjs-word-highlight>${w.word}</c>` : w.word))
+                    .join(' ')
+            });
+
+            if (block[idx + 1] && word.end < block[idx + 1].start) {
+                addCaption({
+                    startTime: word.end,
+                    endTime: block[idx + 1].start,
+                    text: block.map(w => w.word).join(' ')
+                });
+            }
+        });
+    });
+}
+
+/**
+ * Creates regular captions without word highlighting
+ */
+function createRegularCaptions(
+    wordGroups: Array<Array<TimedWord>>,
+    addCaption: (caption: CaptionData) => void,
+    previousText: string | null = null,
+    nextText: string | null = null
+): void {
+    wordGroups.forEach(block => {
+        if (block.length > 0) {
+            let text = block.map(w => w.word).join(' ');
+            
+            // Add context if provided
+            if (previousText || nextText) {
+                const contextLines: string[] = [];
+                if (previousText) contextLines.push(previousText);
+                contextLines.push(text);
+                if (nextText) contextLines.push(nextText);
+                text = contextLines.join('\n');
+            }
+
+            addCaption({
+                startTime: block[0].start,
+                endTime: block[block.length - 1].end,
+                text
+            });
+        }
+    });
+}
+
+/**
+ * Groups words into cues based on character limits and time gaps.
+ * Uses a soft limit for equal distribution and a hard limit (maxChars) that is never exceeded.
+ */
+function groupWordsByChars(
+    words: Array<TimedWord>,
+    sentenceLength: number,
+    maxChars: number,
+    maxTimeGap: number
+): Array<Array<TimedWord>> {
+    const groups: Array<Array<TimedWord>> = [];
+    
+    // Calculate soft limit for equal distribution of characters across cues
+    const divisor = Math.ceil(sentenceLength / maxChars);
+    const softLimit = Math.floor(sentenceLength / divisor);
+
+    let currentGroup: Array<TimedWord> = [];
+    let currentLine = "";
+    let lastEnd = words[0]?.start;
+
+    words.forEach((word, ind) => {
+            // Validate individual word length
+            if (word.word.length > maxChars) {
+                logWarn(`Individual word "${word.word}" is longer than maxChars (${maxChars})`);
+            }
+
+        const gap = word.start - lastEnd;
+        const token = (currentLine ? " " : "") + word.word;
+        const newLineLength = (currentLine + token).length;
+
+        // Determine if we should create a new cue
+        const shouldBreak = 
+            (newLineLength > softLimit && newLineLength <= maxChars && gap <= maxTimeGap) ||
+            gap > maxTimeGap || 
+            newLineLength > maxChars;
+
+        if (shouldBreak && currentGroup.length > 0 && newLineLength > maxChars) {
+            // Hard limit exceeded - don't add current word, start new group
+            groups.push([...currentGroup]);
+            currentGroup = [word];
+            currentLine = word.word;
+            lastEnd = word.end;
+        } else if (shouldBreak && currentGroup.length > 0) {
+            // Soft limit or time gap - add current word and start new group
+            currentGroup.push(word);
+            groups.push([...currentGroup]);
+            currentGroup = [];
+            currentLine = "";
+            lastEnd = ind < words.length - 1 ? words[ind + 1]?.start : word.end;
+        } else {
+            // Add word to current group
+            currentGroup.push(word);
+            currentLine += token;
+            lastEnd = word.end;
+        }
+
+        // Last word of segment
+        if (ind === words.length - 1 && currentGroup.length > 0) {
+            groups.push(currentGroup);
+        }
+    });
+
+    return groups;
+}
+
 export function validateRemoteTextTrackOptions(opts: RemoteTextTrackOptions): void {
     if (isAutoGenerate(opts)) {
         const conflicting = ['src', 'kind', 'srclang'].filter(key => key in opts);
         if (conflicting.length > 0) {
             throw new Error(
-                `Cannot specify [\`${conflicting.map(k => k).join('`, `')}\`] when \`autoGenerate\` is true.`
+                `Cannot specify [\`${conflicting.join('`, `')}\`] when \`autoGenerate\` is true.`
             );
         }
 
@@ -85,12 +282,12 @@ export function validateRemoteTextTrackOptions(opts: RemoteTextTrackOptions): vo
         }
     }
 
-    if (hasSrc(opts) && (opts.maxWordsPerLine || opts.highlightWords)) {
+    if (hasSrc(opts) && (opts.maxChars || opts.highlightWords)) {
         const srcURL = new URL(opts.src);
         const isTranscript = srcURL.pathname.endsWith('.transcript');
         if (!isTranscript) {
             throw new Error(
-                '`src` must be a transcript URL when using `maxWordsPerLine` or `highlightWords`.'
+                '`src` must be a transcript URL when using `maxChars` or `highlightWords`.'
             );
         }
     }
@@ -111,9 +308,9 @@ export function validateRemoteTextTrackOptions(opts: RemoteTextTrackOptions): vo
             );
         }
 
-        if (opts.maxWordsPerLine || opts.highlightWords) {
+        if (opts.maxChars || opts.highlightWords) {
             throw new Error(
-                '`translations` cannot be used with `maxWordsPerLine` or `highlightWords`.'
+                '`translations` cannot be used with `maxChars` or `highlightWords`.'
             );
         }
 
@@ -148,7 +345,7 @@ async function generateCaptions(params: {
     transcriptUrl: string;
 }): Promise<SubtitleTrackData | null> {
     let { opts, transcriptUrl } = params;
-    const maxWordsPerLine = opts.maxWordsPerLine ?? 4;
+    const maxChars = opts.maxChars ?? DEFAULT_MAX_CHARS;
     const highlightWords = opts.highlightWords ?? false;
 
     const raw = await fetch(transcriptUrl).then(r => {
@@ -156,71 +353,33 @@ async function generateCaptions(params: {
         return r.text();
     });
 
-    const transcriptData = JSON.parse(raw) as {
-        languageCode: string;
-        transcript: Array<{
-            transcript: string;
-            confidence: number;
-            words: Array<{
-                word: string;
-                start: number;
-                end: number;
-            }>;
-        }>;
-        paragraphs?: Array<{
-            text: string;
-            start: number;
-            end: number;
-            confidence: number;
-        }>;
-    };
+    const transcriptData = JSON.parse(raw) as TranscriptData;
 
     const entries = transcriptData.transcript;
 
     const parseTranscript = (): CaptionData[] => {
         const captions: CaptionData[] = [];
-
+        const maxTimeGap = MAX_TIME_GAP_SECONDS;
         const addCaption = ({ startTime, endTime, text }: CaptionData) => {
             captions.push({ startTime, endTime, text });
         };
 
+
+        // Process each segment
         entries.forEach(segment => {
             const words = segment.words;
 
             if (words && words.length > 0) {
+                const sentenceLength = segment.transcript.length;
+                const wordGroups = groupWordsByChars(words, sentenceLength, maxChars, maxTimeGap);
+
                 if (highlightWords) {
-                    for (let i = 0; i < words.length; i += maxWordsPerLine) {
-                        const block = words.slice(i, Math.min(i + maxWordsPerLine, words.length));
-
-                        block.forEach((word, idx) => {
-                            addCaption({
-                                startTime: word.start,
-                                endTime: word.end,
-                                text: block
-                                    .map(w => (w === word ? `<c.vjs-word-highlight>${w.word}</c>` : w.word))
-                                    .join(' ')
-                            });
-
-                            if (block[idx + 1] && word.end < block[idx + 1].start) {
-                                addCaption({
-                                    startTime: word.end,
-                                    endTime: block[idx + 1].start,
-                                    text: block.map(w => w.word).join(' ')
-                                });
-                            }
-                        });
-                    }
+                    createHighlightedCaptions(wordGroups, addCaption);
                 } else {
-                    for (let i = 0; i < words.length; i += maxWordsPerLine) {
-                        const block = words.slice(i, Math.min(i + maxWordsPerLine, words.length));
-                        addCaption({
-                            startTime: block[0].start,
-                            endTime: block[block.length - 1].end,
-                            text: block.map(w => w.word).join(' ')
-                        });
-                    }
+                    createRegularCaptions(wordGroups, addCaption);
                 }
             } else {
+                // Fallback for segments without word-level timing
                 addCaption({
                     startTime: (segment as any).start_time || 0,
                     endTime: (segment as any).end_time || 0,
@@ -303,8 +462,7 @@ async function prepareSubtitleSrc(
         if (signerFn) {
             try {
                 const signer = signerFn;
-                src = await signer(transcriptUrl.toString());
-                translatedUrls = await Promise.all(translatedUrls.map(url => signer(url)));
+                [src, ...translatedUrls] = await Promise.all([signer(src), ...translatedUrls.map(url => signer(url))]);
             } catch (err) {
                 throw new Error(`Failed to sign subtitle URLs: ${err instanceof Error ? err.message : String(err)}`);
             }
@@ -362,6 +520,171 @@ async function initBaseTrack(
 }
 
 /**
+ * Parse VTT and convert to synthetic transcript structure with equal time per word
+ */
+function parseVTTToSyntheticTranscript(vttText: string): Array<{
+    transcript: string;
+    originalCueText: string;
+    startTime: number;
+    endTime: number;
+    words: Array<{ word: string; start: number; end: number }>;
+}> {
+    const segments: Array<{
+        transcript: string;
+        originalCueText: string;
+        startTime: number;
+        endTime: number;
+        words: Array<{ word: string; start: number; end: number }>;
+    }> = [];
+
+    // Normalize and split into cue blocks
+    const rawBlocks = vttText.replace(/\r\n|\r|\n/g, '\n').split(/\n{2,}/);
+
+    for (const block of rawBlocks) {
+        const lines = block.trim().split('\n');
+        
+        // Find the timing line (contains "-->")
+        const timeLine = lines.find((l) => /-->/.test(l));
+        if (!timeLine) continue;
+
+        // Extract start and end timestamps
+        const [startRaw, endRaw] = timeLine.split('-->').map((s) => s.trim());
+        const startTime = parseVTTTimestamp(startRaw);
+        const endTime = parseVTTTimestamp(endRaw);
+
+        // Get the text (everything after the timing line)
+        const timeLineIndex = lines.findIndex((l) => /-->/.test(l));
+        const textLines = lines.slice(timeLineIndex + 1);
+        const text = textLines.join(' ').trim();
+
+        if (!text || isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+            continue;
+        }
+
+        // Split text into words
+        const words = text.split(/\s+/).filter(w => w.length > 0);
+        
+        if (words.length === 0) continue;
+
+        // Calculate equal time per word
+        const duration = endTime - startTime;
+        const timePerWord = duration / words.length;
+
+        // Create synthetic word-level timing
+        const syntheticWords = words.map((word, index) => ({
+            word: word,
+            start: startTime + (index * timePerWord),
+            end: startTime + ((index + 1) * timePerWord)
+        }));
+
+        segments.push({
+            transcript: text,
+            originalCueText: text,
+            startTime: startTime,
+            endTime: endTime,
+            words: syntheticWords
+        });
+    }
+
+    return segments;
+}
+
+/**
+ * Parse VTT timestamp to seconds
+ */
+function parseVTTTimestamp(timestamp: string): number {
+    // Supports both "HH:MM:SS.mmm" and "MM:SS.mmm"
+    const parts = timestamp.split(':');
+    
+    if (parts.length === 3) {
+        // HH:MM:SS.mmm
+        const hours = parseInt(parts[0], 10);
+        const minutes = parseInt(parts[1], 10);
+        const seconds = parseFloat(parts[2].replace(',', '.'));
+        return hours * 3600 + minutes * 60 + seconds;
+    } else if (parts.length === 2) {
+        // MM:SS.mmm
+        const minutes = parseInt(parts[0], 10);
+        const seconds = parseFloat(parts[1].replace(',', '.'));
+        return minutes * 60 + seconds;
+    }
+    
+    return 0;
+}
+
+/**
+ * Generate captions from VTT (for translations with maxChars support)
+ */
+async function generateCaptionsFromVTT(params: {
+    vttUrl: string;
+    maxChars: number;
+    label: string;
+    defaultTrack: boolean;
+}): Promise<SubtitleTrackData | null> {
+    const { vttUrl, maxChars, label, defaultTrack } = params;
+
+    try {
+        const response = await fetch(vttUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch VTT: ${response.status}`);
+        }
+        const vttText = await response.text();
+
+        // Convert VTT to synthetic transcript
+        const syntheticSegments = parseVTTToSyntheticTranscript(vttText);
+
+        if (syntheticSegments.length === 0) {
+            return null;
+        }
+
+        // Use the same caption generation logic as base subtitles
+        const captions: CaptionData[] = [];
+        const maxTimeGap = MAX_TIME_GAP_SECONDS;
+        const addCaption = ({ startTime, endTime, text }: CaptionData) => {
+            captions.push({ startTime, endTime, text });
+        };
+
+        // Process each segment with context
+        syntheticSegments.forEach((segment, segmentIndex) => {
+            const words = segment.words;
+            const sentenceLength = segment.transcript.length;
+            const wordGroups = groupWordsByChars(words, sentenceLength, maxChars, maxTimeGap);
+
+            // Get previous and next segment text for context only if time gap is less than maxTimeGap
+            let previousText: string | null = null;
+            if (segmentIndex > 0) {
+                const previousSegment = syntheticSegments[segmentIndex - 1];
+                const timeGap = segment.startTime - previousSegment.endTime;
+                if (timeGap < maxTimeGap) {
+                    previousText = previousSegment.originalCueText;
+                }
+            }
+
+            let nextText: string | null = null;
+            if (segmentIndex < syntheticSegments.length - 1) {
+                const nextSegment = syntheticSegments[segmentIndex + 1];
+                const timeGap = nextSegment.startTime - segment.endTime;
+                if (timeGap < maxTimeGap) {
+                    nextText = nextSegment.originalCueText;
+                }
+            }
+
+            createRegularCaptions(wordGroups, addCaption, previousText, nextText);
+        });
+
+        return {
+            captions,
+            languageCode: 'unknown', // Will be set by caller
+            label,
+            default: defaultTrack,
+        };
+    } catch (error) {
+        logError(`Failed to generate captions from VTT: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+
+/**
  * Create translation tracks
  */
 function createTranslationTracks(
@@ -369,6 +692,8 @@ function createTranslationTracks(
     options: AutoGeneratedTextTrackOptions & { translations: Array<{ langCode: string; label?: string; default?: boolean }> },
     translationUrls: string[]
 ): void {
+    const maxChars = DEFAULT_MAX_CHARS;
+
     options.translations.forEach((t, index) => {
         const langCode = t.langCode.toLowerCase();
         const languageName = getLanguageName(langCode);
@@ -378,7 +703,7 @@ function createTranslationTracks(
         if (vttUrl) {
             const translatedTrack = player.addRemoteTextTrack({
                 kind: 'subtitles',
-                src: vttUrl,
+                src: '',
                 srclang: langCode,
                 label,
                 default: t.default ?? false,
@@ -392,14 +717,45 @@ function createTranslationTracks(
             //@ts-ignore
             const translatedTextTrack = translatedTrack.track;
 
-            if (t.default) {
-                //@ts-ignore
-                translatedTextTrack.mode = 'showing';
-                disableOtherTracks(player, translatedTextTrack);
-            } else {
-                //@ts-ignore
-                translatedTextTrack.mode = 'disabled';
-            }
+            // Load and process VTT with maxChars support
+            const initTranslatedTrack = async () => {
+                try {
+                    const trackData = await generateCaptionsFromVTT({
+                        vttUrl,
+                        maxChars,
+                        label,
+                        defaultTrack: t.default ?? false,
+                    });
+
+                    if (!trackData) {
+                        throw new Error('Failed to generate captions from VTT');
+                    }
+
+                    // Set language code
+                    translatedTextTrack.language = langCode;
+
+                    // Add cues to the track
+                    trackData.captions.forEach(caption => {
+                        translatedTextTrack.addCue(new VTTCue(caption.startTime, caption.endTime, caption.text));
+                    });
+
+                    // Set mode
+                    if (t.default) {
+                        //@ts-ignore
+                        translatedTextTrack.mode = 'showing';
+                        disableOtherTracks(player, translatedTextTrack);
+                    } else {
+                        //@ts-ignore
+                        translatedTextTrack.mode = 'disabled';
+                    }
+                } catch (err) {
+                    logError(`Failed to load translated track for ${langCode}: ${err instanceof Error ? err.message : String(err)}`);
+                    translatedTrack.label = `${label} (failed to load)`;
+                }
+            };
+
+            // Initialize track when player is ready
+            initWhenReady(player, initTranslatedTrack);
         }
     });
 
@@ -420,6 +776,9 @@ export async function setTextTracks(
     currentSource: SourceOptions,
     signerFn?: (src: string) => Promise<string> | undefined
 ): Promise<void> {
+    // Initialize module logger with player's logger
+    setLogger(player.log);
+
     for (const options of textTracks) {
         try {
             // Validate the options
@@ -432,9 +791,11 @@ export async function setTextTracks(
 
                 if (!isTranscript) {
                     // Pass through to original addRemoteTextTrack for regular VTT/SRT files
+                    const [preparedSrc] = await prepareSubtitleSrc(options, currentSource, signerFn);
+
                     player.addRemoteTextTrack({
                         kind: options.kind || 'subtitles',
-                        src: options.src,
+                        src: preparedSrc,
                         srclang: options.srclang || 'en',
                         label: options.label || 'Subtitles',
                         default: options.default ?? false,
@@ -476,16 +837,12 @@ export async function setTextTracks(
                         try {
                             await initBaseTrack(player, trackEl, options, baseTranscriptUrl);
                         } catch (err) {
-                            player.log.error(`Base subtitle setup failed: ${err instanceof Error ? err.message : String(err)}`);
+                            logError(`Base subtitle setup failed: ${err instanceof Error ? err.message : String(err)}`);
                             trackEl.label = 'Failed to load subtitles';
                         }
                     };
 
-                    if (player.readyState() >= 1) {
-                        await initTrack();
-                    } else {
-                        player.one('loadedmetadata', initTrack);
-                    }
+                    await initWhenReady(player, initTrack);
                 }
 
                 // Create translation tracks
@@ -494,19 +851,15 @@ export async function setTextTracks(
                         try {
                             createTranslationTracks(player, options, translationUrls);
                         } catch (err) {
-                            player.log.error(`Translation tracks setup failed: ${err instanceof Error ? err.message : String(err)}`);
+                            logError(`Translation tracks setup failed: ${err instanceof Error ? err.message : String(err)}`);
                         }
                     };
 
-                    if (player.readyState() >= 1) {
-                        initTranslations();
-                    } else {
-                        player.one('loadedmetadata', initTranslations);
-                    }
+                    initWhenReady(player, initTranslations);
                 }
             }
         } catch (err) {
-            player.log.error(`Failed to setup text track: ${err instanceof Error ? err.message : String(err)}`);
+            logError(`Failed to setup text track: ${err instanceof Error ? err.message : String(err)}`);
         }
     }
 }

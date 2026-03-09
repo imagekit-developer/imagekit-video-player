@@ -258,14 +258,15 @@ export async function prepareSeekThumbnailVttSrc(
 
 /**
  * Builds a chapters VTT URL from a video source.
+ * Also generates translated chapter URLs if translations are provided in textTracks.
  * @param input - Source options with video URL
  * @param opts - ImageKit player options
- * @returns Fully built and signed chapters VTT URL
+ * @returns Object containing baseUrl and translatedUrls map
  */
 export async function prepareChaptersVttSrc(
   input: SourceOptions,
   opts: IKPlayerOptions
-): Promise<string> {
+): Promise<{ baseUrl: string; translatedUrls: Map<string, string> }> {
   let videoSrcUrl = input.src;
   let chaptersVttSrc: string;
 
@@ -295,7 +296,47 @@ export async function prepareChaptersVttSrc(
     }
   }
 
-  return chaptersVttSrc;
+  const baseUrl = chaptersVttSrc;
+  const translatedUrls = new Map<string, string>();
+
+  // Check if user has translation options in textTracks
+  if (input.textTracks) {
+    for (const textTrack of input.textTracks) {
+      if ('translations' in textTrack && Array.isArray(textTrack.translations)) {
+        // Generate translated chapter URLs for each translation
+        for (const translation of textTrack.translations) {
+          const langCode = translation.langCode.toLowerCase();
+          const translatedChapterUrl = new URL(baseUrl);
+          
+          // Add translation parameter, same as subtitle logic
+          const existingTr = translatedChapterUrl.searchParams.get('tr');
+          if (existingTr) {
+            translatedChapterUrl.searchParams.set('tr', `${existingTr},lang-${langCode}`);
+          } else {
+            translatedChapterUrl.searchParams.set('tr', `lang-${langCode}`);
+          }
+
+          let finalUrl = translatedChapterUrl.toString();
+          
+          // Sign the URL if signerFn is provided
+          if (opts.signerFn) {
+            try {
+              // remove ik-s and ik-t query params before signing
+              finalUrl = finalUrl.replace(/ik-s=[^&]*&?/g, '').replace(/ik-t=[^&]*&?/g, '');
+              finalUrl = await opts.signerFn(finalUrl);
+            } catch (err) {
+              console.error(`Failed to sign translated chapter URL for ${langCode}:`, err);
+              continue;
+            }
+          }
+
+          translatedUrls.set(langCode, finalUrl);
+        }
+      }
+    }
+  }
+
+  return { baseUrl, translatedUrls };
 }
 
 /**

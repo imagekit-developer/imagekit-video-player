@@ -91,7 +91,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
         }
 
         initPromises.push(
-          initChapterMarkers(this.player, this.currentSource_, this.ikGlobalSettings_, this.ikGlobalSettings_.signerFn)
+          initChapterMarkers(this.player, this.currentSource_, this.ikGlobalSettings_)
         );
 
         initPromises.push(this.initRecommendationsOverlay());
