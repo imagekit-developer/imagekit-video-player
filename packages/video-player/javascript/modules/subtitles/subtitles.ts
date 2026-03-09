@@ -524,16 +524,10 @@ async function initBaseTrack(
  */
 function parseVTTToSyntheticTranscript(vttText: string): Array<{
     transcript: string;
-    originalCueText: string;
-    startTime: number;
-    endTime: number;
     words: Array<{ word: string; start: number; end: number }>;
 }> {
     const segments: Array<{
         transcript: string;
-        originalCueText: string;
-        startTime: number;
-        endTime: number;
         words: Array<{ word: string; start: number; end: number }>;
     }> = [];
 
@@ -579,9 +573,6 @@ function parseVTTToSyntheticTranscript(vttText: string): Array<{
 
         segments.push({
             transcript: text,
-            originalCueText: text,
-            startTime: startTime,
-            endTime: endTime,
             words: syntheticWords
         });
     }
@@ -613,6 +604,19 @@ function parseVTTTimestamp(timestamp: string): number {
 }
 
 /**
+ * Format seconds to VTT timestamp (HH:MM:SS.mmm)
+ */
+function formatVTTTimestamp(seconds: number): string {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    const hoursStr = hours.toString().padStart(2, '0');
+    const minutesStr = minutes.toString().padStart(2, '0');
+    const secsStr = secs.toFixed(3).padStart(6, '0');
+    return `${hoursStr}:${minutesStr}:${secsStr}`;
+}
+
+/**
  * Generate captions from VTT (for translations with maxChars support)
  */
 async function generateCaptionsFromVTT(params: {
@@ -640,37 +644,67 @@ async function generateCaptionsFromVTT(params: {
         // Use the same caption generation logic as base subtitles
         const captions: CaptionData[] = [];
         const maxTimeGap = MAX_TIME_GAP_SECONDS;
-        const addCaption = ({ startTime, endTime, text }: CaptionData) => {
-            captions.push({ startTime, endTime, text });
-        };
 
-        // Process each segment with context
-        syntheticSegments.forEach((segment, segmentIndex) => {
+        // First, generate all word groups from all segments
+        const allWordGroups: Array<Array<TimedWord>> = [];
+        syntheticSegments.forEach((segment) => {
             const words = segment.words;
             const sentenceLength = segment.transcript.length;
             const wordGroups = groupWordsByChars(words, sentenceLength, maxChars, maxTimeGap);
-
-            // Get previous and next segment text for context only if time gap is less than maxTimeGap
-            let previousText: string | null = null;
-            if (segmentIndex > 0) {
-                const previousSegment = syntheticSegments[segmentIndex - 1];
-                const timeGap = segment.startTime - previousSegment.endTime;
-                if (timeGap < maxTimeGap) {
-                    previousText = previousSegment.originalCueText;
-                }
-            }
-
-            let nextText: string | null = null;
-            if (segmentIndex < syntheticSegments.length - 1) {
-                const nextSegment = syntheticSegments[segmentIndex + 1];
-                const timeGap = nextSegment.startTime - segment.endTime;
-                if (timeGap < maxTimeGap) {
-                    nextText = nextSegment.originalCueText;
-                }
-            }
-
-            createRegularCaptions(wordGroups, addCaption, previousText, nextText);
+            
+            wordGroups.forEach(group => {
+                allWordGroups.push(group);
+            });
         });
+
+        // Now process each word group with context from previous/next word groups
+        allWordGroups.forEach((currentGroup, groupIndex) => {
+            const currentText = currentGroup.map(w => w.word).join(' ');
+            
+            // Get previous word group text if available and within time gap
+            let previousText: string | null = null;
+            if (groupIndex > 0) {
+                const previousGroup = allWordGroups[groupIndex - 1];
+                const timeGap = currentGroup[0].start - previousGroup[previousGroup.length - 1].end;
+                if (timeGap < maxTimeGap) {
+                    previousText = previousGroup.map(w => w.word).join(' ');
+                }
+            }
+            
+            // Get next word group text if available and within time gap
+            let nextText: string | null = null;
+            if (groupIndex < allWordGroups.length - 1) {
+                const nextGroup = allWordGroups[groupIndex + 1];
+                const timeGap = nextGroup[0].start - currentGroup[currentGroup.length - 1].end;
+                if (timeGap < maxTimeGap) {
+                    nextText = nextGroup.map(w => w.word).join(' ');
+                }
+            }
+            
+            // Build caption text with context
+            let text = currentText;
+            if (previousText || nextText) {
+                const contextLines: string[] = [];
+                if (previousText) contextLines.push(previousText);
+                contextLines.push(currentText);
+                if (nextText) contextLines.push(nextText);
+                text = contextLines.join('\n');
+            }
+            
+            captions.push({
+                startTime: currentGroup[0].start,
+                endTime: currentGroup[currentGroup.length - 1].end,
+                text
+            });
+        });
+        
+        // Also log as VTT format for easier reading
+        const vttOutput = captions.map((caption, index) => {
+            const startTime = formatVTTTimestamp(caption.startTime);
+            const endTime = formatVTTTimestamp(caption.endTime);
+            return `${index + 1}\n${startTime} --> ${endTime}\n${caption.text}`;
+        }).join('\n\n');
+        // console.log('Final captions as VTT:\nWEBVTT\n\n' + vttOutput);
 
         return {
             captions,
