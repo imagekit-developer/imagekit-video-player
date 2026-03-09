@@ -33,4 +33,4 @@ The SDK is written in TypeScript, offering first-class TypeScript support. Enjoy
 
 ## Documentation
 
-Refer to the [ImageKit official documentation](https://docs.imagekit.io/video-player/overview) for more details on how to use the SDK.
+Refer to the [ImageKit official documentation](https://imagekit.io/docs/video-player/overview) for more details on how to use the SDK.

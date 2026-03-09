@@ -21,7 +21,7 @@ const srcConfig = {
   textTracks: [
     {
       autoGenerate: true,
-      maxWordsPerLine: 4,
+      maxChars: 20,
       highlightWords: true,
     },
     {

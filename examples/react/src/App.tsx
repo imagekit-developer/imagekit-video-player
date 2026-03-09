@@ -57,7 +57,7 @@ export default function App() {
                 textTracks: [
                     {
                         autoGenerate: true,
-                        maxWordsPerLine: 4,
+                        maxChars: 60,
                         highlightWords: true,
                         default: true // Indicates whether this track is active by default
                     }]
@@ -84,7 +84,7 @@ export default function App() {
                     controls: true,
                     muted: false,
                     height: 540,
-                    width: 960,
+                    width: 524,
                 }}
                 playlist={playlist}
             />

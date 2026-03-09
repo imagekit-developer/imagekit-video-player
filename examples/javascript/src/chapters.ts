@@ -23,6 +23,22 @@ const videoSrc = 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_R
 const srcConfigAuto = {
   src: videoSrc,
   chapters: true,
+  textTracks: [
+    {
+      autoGenerate: true as const,
+      translations: [
+        {
+          langCode: 'hi' as const,
+          label: 'Hindi (AI)',
+          default: true,
+        },
+        {
+          langCode: 'de' as const,
+          label: 'German (AI)',
+        },
+      ],
+    }
+  ],
 };
 
 // Method 2: Load from VTT URL
@@ -66,7 +82,7 @@ tabButtons.forEach((button) => {
     button.classList.add('active');
 
     const tabName = button.getAttribute('data-tab');
-    
+
     // Update source config based on selected tab
     switch (tabName) {
       case 'auto':

@@ -169,6 +169,14 @@
         .help-text a:hover {
             text-decoration: underline;
         }
+        .help-text code {
+            background-color: #f7fafc;
+            padding: 0.125rem 0.25rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #2d3748;
+        }
     </style>
 </head>
 <body>
@@ -187,6 +195,12 @@
                 <div class="form-group">
                     <label for="src-url">Source URL</label>
                     <input type="url" id="src-url" name="src-url" placeholder="Enter video source URL" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="transformation">Transformation (JSON, optional)</label>
+                    <input type="text" id="transformation" name="transformation" placeholder='[{"width": 800, "height": 600}]' />
+                    <div class="help-text">JSON array of transformation objects. Example: <code>[{"width": 800, "height": 600}]</code></div>
                 </div>
                 
                 <div class="form-group">
@@ -212,9 +226,9 @@
                         </div>
                         <div id="subtitles-options" class="sub-options" style="display: none;">
                             <div class="form-group">
-                                <label for="max-words">Max Words (optional)</label>
-                                <input type="number" id="max-words" name="max-words" min="1" placeholder="e.g., 4" />
-                                <div class="help-text">Maximum number of words to display per subtitle line</div>
+                                <label for="max-chars">Max Chars (optional)</label>
+                                <input type="number" id="max-chars" name="max-chars" min="1" placeholder="e.g., 60" />
+                                <div class="help-text">Maximum number of characters that can appear on a subtitle frame</div>
                             </div>
                             <div class="checkbox-item">
                                 <input type="checkbox" id="word-highlight" name="word-highlight" />
