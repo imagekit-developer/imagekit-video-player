@@ -685,9 +685,9 @@ async function generateCaptionsFromVTT(params: {
             let text = currentText;
             if (previousText || nextText) {
                 const contextLines: string[] = [];
-                if (previousText) contextLines.push(previousText);
+                // if (previousText) contextLines.push(previousText);
                 contextLines.push(currentText);
-                if (nextText) contextLines.push(nextText);
+                // if (nextText) contextLines.push(nextText);
                 text = contextLines.join('\n');
             }
             
