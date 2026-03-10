@@ -5,11 +5,9 @@
   "workspaces": {
     "packages": [
       "packages/*",
-      "examples/javascript"
+      "examples/*"
     ],
     "nohoist": [
-      "**/@angular/**",
-      "**/ng-packagr/**",
       "**/video.js/**"
     ]
   },
