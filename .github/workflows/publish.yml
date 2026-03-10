@@ -1,0 +1,85 @@
+name: Publish NPM
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: NPM dist tag (alpha, beta, latest)
+        required: true
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - latest
+
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    name: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: |
+          yarn install --immutable
+
+      - name: Build packages
+        run: |
+          yarn build
+
+      - name: Determine NPM tag
+        id: npm-tag
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            NPM_TAG="${{ github.event.inputs.tag }}"
+          elif [ "${{ github.event_name }}" == "release" ]; then
+            # For releases, use 'latest' tag unless version contains alpha/beta
+            RELEASE_TAG="${{ github.event.release.tag_name }}"
+            if [[ "$RELEASE_TAG" == *"alpha"* ]] || [[ "$RELEASE_TAG" == *"-alpha"* ]]; then
+              NPM_TAG="alpha"
+            elif [[ "$RELEASE_TAG" == *"beta"* ]] || [[ "$RELEASE_TAG" == *"-beta"* ]]; then
+              NPM_TAG="beta"
+            else
+              NPM_TAG="latest"
+            fi
+          else
+            NPM_TAG="alpha"
+          fi
+          
+          echo "tag=$NPM_TAG" >> $GITHUB_OUTPUT
+
+      - name: Publish to NPM
+        run: |
+          cd packages/video-player
+          
+          # Publish with the specified tag
+          npm publish --tag ${{ steps.npm-tag.outputs.tag }} --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Output published version
+        run: |
+          cd packages/video-player
+          PUBLISHED_VERSION=$(node -p "require('./package.json').version")
+          echo "✅ Published @imagekit/video-player@${PUBLISHED_VERSION} with tag: ${{ steps.npm-tag.outputs.tag }}"
