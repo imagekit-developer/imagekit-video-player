@@ -268,7 +268,7 @@ export async function prepareChaptersVttSrc(
   opts: IKPlayerOptions
 ): Promise<{ baseUrl: string; translatedUrls: Map<string, string> }> {
   let videoSrcUrl = input.src;
-  let chaptersVttSrc: string;
+  let baseUrl: string;
 
   const url = new URL(videoSrcUrl);
 
@@ -282,21 +282,12 @@ export async function prepareChaptersVttSrc(
 
   filterTrQueryParam(url, ALLOWED_TRANSFORM_PARAMS_CHAPTERS);
 
-  chaptersVttSrc = ikBuild({
+  baseUrl = ikBuild({
     src: url.toString(),
     urlEndpoint: '',
     transformation: [],
   });
 
-  if (opts.signerFn) {
-    try {
-      chaptersVttSrc = await opts.signerFn(chaptersVttSrc);
-    } catch (err) {
-      throw new Error(`Signing failed: ${err}`);
-    }
-  }
-
-  const baseUrl = chaptersVttSrc;
   const translatedUrls = new Map<string, string>();
 
   // Check if user has translation options in textTracks
@@ -321,8 +312,6 @@ export async function prepareChaptersVttSrc(
           // Sign the URL if signerFn is provided
           if (opts.signerFn) {
             try {
-              // remove ik-s and ik-t query params before signing
-              finalUrl = finalUrl.replace(/ik-s=[^&]*&?/g, '').replace(/ik-t=[^&]*&?/g, '');
               finalUrl = await opts.signerFn(finalUrl);
             } catch (err) {
               console.error(`Failed to sign translated chapter URL for ${langCode}:`, err);
@@ -333,6 +322,15 @@ export async function prepareChaptersVttSrc(
           translatedUrls.set(langCode, finalUrl);
         }
       }
+    }
+  }
+
+  // sign the base URL if signerFn is provided
+  if (opts.signerFn) {
+    try {
+      baseUrl = await opts.signerFn(baseUrl);
+    } catch (err) {
+      throw new Error(`Signing failed: ${err}`);
     }
   }
 

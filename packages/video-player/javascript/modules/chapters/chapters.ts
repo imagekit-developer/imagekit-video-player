@@ -1,7 +1,7 @@
 import type Player from 'video.js/dist/types/player';
 import type { SourceOptions, IKPlayerOptions } from '../../interfaces';
 import { ChapterMarker, parseChaptersFromVTT } from './chapterMarkerProgressBar';
-import { prepareChaptersVttSrc } from '../../utils';
+import { prepareChaptersVttSrc, CleanupRegistry } from '../../utils';
 
 interface ChapterTrackMetadata {
   langCode: string;
@@ -11,6 +11,12 @@ interface ChapterTrackMetadata {
 
 // Map to store chapter tracks by language
 const chapterTracksCache = new Map<string, ChapterTrackMetadata>();
+
+// Cleanup registry for per-chapter resources (tracks, labels, progress bar)
+let perChapterCleanup: CleanupRegistry | null = null;
+
+// Cleanup registry for persistent resources (subtitle sync listener)
+let persistentCleanup: CleanupRegistry | null = null;
 
 /**
  * Clean up existing chapter text tracks from the player.
@@ -48,14 +54,36 @@ function cleanupChapterLabelDisplay(player: Player): void {
 
 /**
  * Clean up all chapter-related components from the player.
- * Removes chapter text tracks, label display, and progress bar control.
+ * Removes chapter text tracks, label display, progress bar control, and per-chapter event listeners.
+ * Does NOT clean up persistent listeners (like subtitle sync).
  */
 function cleanupChapters(player: Player): void {
   cleanupChapterTextTracks(player);
   cleanupChapterLabelDisplay(player);
+  
+  // Dispose per-chapter cleanups (cuechange listeners, etc.)
+  if (perChapterCleanup) {
+    perChapterCleanup.dispose();
+    perChapterCleanup = null;
+  }
+  
   const existing = player.getChild('ChapterMarkersProgressBarControl');
   if (existing) {
     existing.dispose();
+  }
+}
+
+/**
+ * Clean up ALL chapter resources including persistent listeners.
+ * Should be called when completely removing chapters (e.g., new source).
+ */
+function cleanupAllChapters(player: Player): void {
+  cleanupChapters(player);
+  
+  // Dispose persistent cleanups (subtitle sync listener)
+  if (persistentCleanup) {
+    persistentCleanup.dispose();
+    persistentCleanup = null;
   }
 }
 
@@ -160,12 +188,19 @@ function applyChaptersToPlayer(player: Player, chapterList: ChapterMarker[]): vo
 function setupSubtitleChapterSync(player: Player): void {
   const textTracks = player.textTracks();
   
-  textTracks.addEventListener('change', () => {
+  // Initialize persistent cleanup registry if needed
+  if (!persistentCleanup) {
+    persistentCleanup = new CleanupRegistry();
+  }
+  
+  const handler = () => {
     let foundActiveTrack = false;
     
     // Check for active subtitle track
-    for (let i = 0; i < textTracks.length; i++) {
-      const track = textTracks[i];
+    // TextTrackList is array-like, iterate using index access
+    const textTracksList = textTracks as unknown as TextTrack[];
+    for (let i = 0; i < textTracksList.length; i++) {
+      const track = textTracksList[i];
       
       // Find the active subtitle track
       if ((track.kind === 'subtitles' || track.kind === 'captions') && track.mode === 'showing') {
@@ -184,7 +219,10 @@ function setupSubtitleChapterSync(player: Player): void {
     if (!foundActiveTrack && chapterTracksCache.has('base')) {
       switchChaptersLanguage(player, 'base');
     }
-  });
+  };
+  
+  // Register the event listener with persistent cleanup registry
+  persistentCleanup.registerEventListener(textTracks as unknown as EventTarget, 'change', handler);
 }
 
 /**
@@ -211,7 +249,7 @@ function setupChapterLabelDisplay(player: Player, chaptersTrack: TextTrack): voi
   spacer.classList.add('vjs-control-bar-chapter-wrapper');
   spacer.appendChild(controlBarChapterHolder);
 
-  chaptersTrack.addEventListener('cuechange', () => {
+  const cueChangeHandler = () => {
     // Safari needs Array.from() for activeCues
     const activeCues = Array.from(chaptersTrack.activeCues);
     if (activeCues.length > 0) {
@@ -220,7 +258,13 @@ function setupChapterLabelDisplay(player: Player, chaptersTrack: TextTrack): voi
     } else {
       controlBarChapterHolder.innerText = '';
     }
-  });
+  };
+
+  // Register the cuechange listener with per-chapter cleanup registry
+  if (!perChapterCleanup) {
+    perChapterCleanup = new CleanupRegistry();
+  }
+  perChapterCleanup.registerEventListener(chaptersTrack, 'cuechange', cueChangeHandler);
 }
 
 /**
@@ -236,7 +280,8 @@ export async function initChapterMarkers(
   ikGlobalSettings: IKPlayerOptions
 ): Promise<void> {
 
-  cleanupChapters(player);
+  // Clean up ALL chapters including persistent listeners for new source
+  cleanupAllChapters(player);
 
   // Clear cache for new source
   chapterTracksCache.clear();
