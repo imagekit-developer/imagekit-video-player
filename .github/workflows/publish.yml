@@ -81,7 +81,6 @@ jobs:
 
       - name: Output published version
         run: |
-          cp README.md packages/video-player/
           cd packages/video-player
           PUBLISHED_VERSION=$(node -p "require('./package.json').version")
           echo "✅ Published @imagekit/video-player@${PUBLISHED_VERSION} with tag: ${{ steps.npm-tag.outputs.tag }}"
