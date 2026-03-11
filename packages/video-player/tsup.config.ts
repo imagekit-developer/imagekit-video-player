@@ -11,7 +11,8 @@ export default defineConfig({
   },
   // The single output directory
   outDir: 'dist',
-  format: ["esm", "cjs"],
+  format: ["esm", "cjs", "iife"],
+  globalName: "ImageKitVideoPlayer",
   // Generate DTS files for all entry points
   dts: true,
   sourcemap: true,
