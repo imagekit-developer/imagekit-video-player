@@ -13,6 +13,8 @@ export interface SourceOverrideOptions {
   options: IKPlayerOptions;
   /** Callback to get the current source */
   getCurrentSource: () => SourceOptions | null;
+  /** Callback to get the original current source */
+  getOriginalCurrentSource: () => SourceOptions | null;
   /** Callback to update the current source */
   onSourceUpdate: (source: SourceOptions) => void;
   /** Callback to update the original source */
@@ -161,24 +163,32 @@ export function createSourceOverride(
   player: Player,
   overrideOptions: SourceOverrideOptions
 ): any {
-  const { options, getCurrentSource, onSourceUpdate, onOriginalSourceUpdate, hasPreparedSrc } = overrideOptions;
+  const { options, getCurrentSource, getOriginalCurrentSource, onSourceUpdate, onOriginalSourceUpdate, hasPreparedSrc } = overrideOptions;
   const nativeSrc = player.src.bind(player);
   let srcCallVersion = 0;
 
   return (source?: SourceOptions) => {
     if (source === undefined) {
-      return getCurrentSource();
+      return getOriginalCurrentSource();
     }
 
     validateSourceOptions(source);
+
+    // Clone the source immediately after validation to prevent mutating the original
+    const sourceClone = { ...source };
+    onOriginalSourceUpdate({ ...sourceClone });
+    onSourceUpdate({ ...sourceClone });
 
     const myCallId = ++srcCallVersion;
 
     showLoadingState(player);
 
-    onOriginalSourceUpdate({ ...source });
+    const currentSource = getCurrentSource();
+    if (!currentSource) {
+      return;
+    }
 
-    prepareSourceIfNeeded(source, options)
+    prepareSourceIfNeeded(currentSource, options)
       .then(async (prepared: SourceOptions) => {
         if (myCallId !== srcCallVersion) {
           return;
@@ -186,8 +196,8 @@ export function createSourceOverride(
 
         const { maxTries, videoTimeoutInMS, delayInMS } = options;
 
-        if (!hasPreparedSrc(source)) {
-          ensurePrepared(source as AugmentedSourceOptions).src = prepared.src;
+        if (!hasPreparedSrc(currentSource)) {
+          ensurePrepared(currentSource as AugmentedSourceOptions).src = prepared.src;
         }
 
         onSourceUpdate(prepared);
