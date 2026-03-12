@@ -4,7 +4,7 @@ import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
 const playerOptions = {
-  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
   logo: {
     showLogo: true,
     logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
@@ -13,7 +13,7 @@ const playerOptions = {
 };
 
 const srcConfig = {
-  src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
 };
 
 const codeToDisplay = buildPlayerInitCode({

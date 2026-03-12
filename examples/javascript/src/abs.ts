@@ -4,7 +4,7 @@ import { formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
 const playerOptions = {
-  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
   logo: {
     showLogo: true,
     logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
@@ -17,7 +17,7 @@ const videoJsOptions = {
 };
 
 const srcConfigDash = {
-  src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4',
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
   abs: {
     protocol: 'dash',
     sr: [240, 360, 720, 1080],
@@ -25,7 +25,7 @@ const srcConfigDash = {
 };
 
 const srcConfigHls = {
-  src: 'https://stage-ik.imagekit.io/nnstage/Videos/sample_1280x720_surfing_with_audio.mp4',
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
   abs: {
     protocol: 'hls',
     sr: [240, 360, 720, 1080],

@@ -13,89 +13,85 @@ const playerOptions = {
 };
 
 const srcConfig = {
-  src: 'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/shoppable_demo.mp4?updatedAt=1752633516273',
+  src: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/video.mp4",
   shoppable: {
     products: [
       {
         productId: 1,
-        productName: 'Classic Aviators',
-        highlightTime: { start: 2, end: 6 }, // Highlight from 0s to 6s
-        imageUrl:
-          'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses3.jpeg?updatedAt=1752632518026',
+        productName: "Classic Aviators",
+        highlightTime: { start: 2, end: 6 },
+        imageUrl: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/aviators.jpeg",
         hotspots: [
           {
-            time: '00:06',
-            x: '50%',
-            y: '25%',
-            tooltipPosition: 'left',
-            clickUrl: 'https://images.pexels.com/photos/701877/pexels-photo-701877.jpeg',
-          },
+            time: "00:06",
+            x: "48%",
+            y: "35%",
+            tooltipPosition: "left",
+            clickUrl: "https://images.pexels.com/photos/701877/pexels-photo-701877.jpeg"
+          }
         ],
         onHover: {
-          action: 'overlay',
-          args: 'Click to see this product in the video',
+          action: "overlay",
+          args: "Click to see this product in the video"
         },
         onClick: {
-          action: 'seek',
+          action: "seek",
           pause: 5,
-          args: { time: '00:06' },
-        },
+          args: { time: "00:06" }
+        }
       },
       {
         productId: 2,
-        productName: 'Wooden frame glasses for personal use',
-        imageUrl:
-          'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses2.jpeg?updatedAt=1752632501675',
+        productName: "Wooden frame glasses",
+        imageUrl: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/wooden_frames.jpeg",
         onHover: {
-          action: 'switch',
+          action: "switch",
           args: {
-            url: 'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/glasses.jpeg?updatedAt=1752632426600',
-          },
+            url: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/wooden_frames.jpeg"
+          }
         },
         onClick: {
-          action: 'goto',
+          action: "goto",
           pause: true,
           args: {
-            url: 'https://www.pexels.com/search/wooden%20glasses%20frames/',
-          },
-        },
+            url: "https://www.pexels.com/search/wooden%20glasses%20frames/"
+          }
+        }
       },
       {
         productId: 3,
-        productName: 'Sunglasses',
-        imageUrl:
-          'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/sunglass.jpeg?updatedAt=1752633002810',
+        productName: "Sunglasses",
+        imageUrl: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/sunglass.jpeg",
         onHover: {
-          action: 'overlay',
-          args: 'Click to go to website',
+          action: "overlay",
+          args: "Click to go to website"
         },
         onClick: {
-          action: 'goto',
+          action: "goto",
           pause: true,
           args: {
-            url: 'https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/',
-          },
-        },
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+        }
       },
       {
         productId: 4,
-        productName: 'Eye protection',
-        highlightTime: { start: 7, end: 9 }, // Highlight from 0s to 6s
-        imageUrl:
-          'https://ik.imagekit.io/a1yisxurxo/aman/shoppable%20vidoes/protection.jpeg?updatedAt=1752633320623',
+        productName: "Eye protection",
+        highlightTime: { start: 7, end: 9 },
+        imageUrl: "https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/protection.jpeg",
         onClick: {
-          action: 'goto',
+          action: "goto",
           pause: true,
           args: {
-            url: 'https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/',
-          },
-        },
-      },
+            url: "https://www.pexels.com/photo/red-lens-sunglasses-on-sand-near-sea-at-sunset-selective-focus-photography-46710/"
+          }
+        }
+      }
     ],
     showPostPlayOverlay: true,
     autoClose: false,
-    startState: 'open',
-  },
+    startState: "open"
+  }
 };
 
 const codeToDisplay = buildPlayerInitCode({
@@ -107,5 +103,11 @@ const codeToDisplay = buildPlayerInitCode({
 
 document.getElementById('code-display')!.textContent = codeToDisplay.trim();
 
-const player = videoPlayer('player', playerOptions);
-player.src(srcConfig);
+// Helper function to initialize players
+function initPlayer(playerId: string, options: typeof playerOptions, config: typeof srcConfig) {
+  const player = videoPlayer(playerId, options);
+  player.src(config);
+}
+
+// Initialize all players
+initPlayer('player', playerOptions, srcConfig);

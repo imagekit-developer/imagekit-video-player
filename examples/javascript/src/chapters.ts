@@ -5,7 +5,7 @@ import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
 const playerOptions = {
-  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
   logo: {
     showLogo: true,
     logoImageUrl: 'https://imagekit.io/icons/icon-144x144.png',
@@ -17,8 +17,7 @@ const videoJsOptions = {
   muted: true,
 };
 
-const videoSrc = 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true';
-
+const videoSrc = 'https://ik.imagekit.io/ikmedia/docs/video-player/subtitle_chapter/demo.mp4';
 // Method 1: Auto-generate chapters (AI)
 const srcConfigAuto = {
   src: videoSrc,
@@ -45,7 +44,7 @@ const srcConfigAuto = {
 const srcConfigUrl = {
   src: videoSrc,
   chapters: {
-    url: 'https://ik.imagekit.io/zuqlyov9d/chapters.vtt', // Replace with your VTT file URL
+    url: 'https://ik.imagekit.io/ikmedia/docs/video-player/subtitle_chapter/demo.vtt', // Replace with your VTT file URL
   },
 };
 
@@ -54,9 +53,10 @@ const srcConfigManual = {
   src: videoSrc,
   chapters: {
     0: 'Introduction',
-    20: 'Main Content',
-    30: 'Key Points',
-    60: 'Conclusion',
+    146: 'Main Content',
+    302: 'Advanced Topics',
+    443: 'Q&A Session',
+    563: 'Conclusion'
   },
 };
 

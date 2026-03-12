@@ -4,7 +4,7 @@ import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
 const playerOptions = {
-  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
   floatingWhenNotVisible: 'right',
   logo: {
     showLogo: true,

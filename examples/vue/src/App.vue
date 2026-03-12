@@ -2,17 +2,12 @@
   <div class="container">
     <h1>ImageKit Video Player (Vue) Example</h1>
     <div>
-      <IKVideoPlayer
-        ref="playerRef"
-        :ikOptions="ikOptions"
-        :videoJsOptions="{
-          controls: true,
-          muted: false,
-          height: 540,
-          width: 960,
-        }"
-        :playlist="playlist"
-      />
+      <IKVideoPlayer ref="playerRef" :ikOptions="ikOptions" :videoJsOptions="{
+        controls: true,
+        muted: false,
+        height: 540,
+        width: 960,
+      }" :playlist="playlist" />
     </div>
   </div>
 </template>
@@ -34,8 +29,36 @@ const playlist: {
   options?: PlaylistOptions;
 } = {
   sources: [
-    { src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4' },
-    { src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4' },
+    {
+      src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/horses.mp4",
+      info: { title: "Horses Running", description: "Horses grazing in the field" },
+    },
+    {
+      src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/lion.mp4",
+      info: {
+        title: "Lion",
+        description: "Lion roaming in the wild",
+      },
+    },
+    {
+      src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/dog_running.mp4",
+      info: { title: "Dog Running" },
+    },
+    {
+      src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/man_smiling.mp4",
+      info: {
+        title: "Man Smiling",
+        description: "Man smiling at the camera",
+      },
+    },
+    {
+      src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/rhino.mp4",
+      info: { title: "Rhino at the zoo" },
+    },
+    {
+      src: "https://ik.imagekit.io/demo/sample-video.mp4",
+      info: { title: "Bird on branch" }
+    }
   ],
   options: { autoAdvance: 5 }, // Set autoAdvance to a valid number (e.g., 5 seconds)
 };
@@ -63,7 +86,7 @@ onMounted(() => {
         if (playlistManager) {
           console.log('Playlist manager available:', playlistManager);
         }
-        
+
         const currentSource = plugin.getOriginalCurrentSource();
         console.log('Current source:', currentSource);
       }

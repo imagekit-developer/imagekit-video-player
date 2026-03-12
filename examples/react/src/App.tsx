@@ -25,12 +25,12 @@ export default function App() {
 
     // 2) For a single video source (SourceOptions)
     const singleSource: SourceOptions = {
-        src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
+        src: 'https://ik.imagekit.io/demo/sample-video.mp4',
         transformation: [
             { width: 400, height: 400 },
         ],
         chapters: true,
-        info: { title: 'Dog', description: 'This is a video containing dog wearing cap.' }
+        info: { title: 'Bird on branch', description: 'This is a video containing bird on a branch.' }
     };
 
     // 3) (alternative) for a playlist of videos
@@ -40,34 +40,36 @@ export default function App() {
     } = {
         sources: [
             {
-                src: 'https://ik.imagekit.io/zuqlyov9d/SEO-friendly%20file%20names.mp4',
-                transformation: [
-                    { width: 400, height: 400 },
-                ],
-                chapters: true,
-                info: { title: 'Dog', description: 'This is a video containing dog wearing cap.' }
+              src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/horses.mp4",
+              info: { title: "Horses Running", description: "Horses grazing in the field" },
             },
             {
-                src: 'https://ik.imagekit.io/zuqlyov9d/example_video_2.mp4',
-                transformation: [
-                    { width: 400, height: 400 },
-                ],
-                chapters: true,
-                info: { title: 'Human', description: 'This is a video showing human lying on the grass. He is smiling.' },
-                textTracks: [
-                    {
-                        autoGenerate: true,
-                        maxChars: 60,
-                        highlightWords: true,
-                        default: true // Indicates whether this track is active by default
-                    }]
+              src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/lion.mp4",
+              info: {
+                title: "Lion",
+                description: "Lion roaming in the wild",
+              },
             },
             {
-                src: 'https://ik.imagekit.io/zuqlyov9d/sample-video.mp4',
-                chapters: true,
-                info: { title: 'Bird', description: 'This video depicts bird chirping. It is sitting on a tree branch.' },
+              src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/dog_running.mp4",
+              info: { title: "Dog Running" },
             },
-        ], options: {
+            {
+              src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/man_smiling.mp4",
+              info: {
+                title: "Man Smiling",
+                description: "Man smiling at the camera",
+              },
+            },
+            {
+              src: "https://ik.imagekit.io/ikmedia/docs/video-player/playlist/rhino.mp4",
+              info: { title: "Rhino at the zoo"},
+            },
+            {
+              src: "https://ik.imagekit.io/demo/sample-video.mp4",
+              info: { title: "Bird on branch"}
+            }
+          ], options: {
             autoAdvance: 1,
             repeat: true,
             presentUpcoming: 10,
@@ -84,7 +86,7 @@ export default function App() {
                     controls: true,
                     muted: false,
                     height: 540,
-                    width: 524,
+                    width: 960,
                 }}
                 playlist={playlist}
             />

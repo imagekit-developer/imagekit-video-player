@@ -4,7 +4,7 @@ import { buildPlayerInitCode, formatObjectAsCode } from './codegen';
 
 // --- Actual Player Initialization (single source of truth) ---
 const playerOptions = {
-  imagekitId: 'zuqlyov9d', // Replace with your ImageKit ID
+  imagekitId: 'imagekit_id', // Replace with your ImageKit ID
   seekThumbnails: true,
   logo: {
     showLogo: true,
@@ -18,7 +18,7 @@ const videoJsOptions = {
 };
 
 const srcConfig = {
-  src: 'https://stage-ik.imagekit.io/a8fli6vdg/New%20Folder33/JackMa_RuBbxVpuX.mp4?updatedAt=1762764326271&version=yashtest3&ik=debug=true',
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
 };
 
 const codeToDisplay = buildPlayerInitCode({
