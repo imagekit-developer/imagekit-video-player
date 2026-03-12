@@ -8,9 +8,10 @@ $transition-base: 0.2s;
 $transition-fade: 1s;
 
 $z-index-controls: 1;
-$z-index-control-bar: 2;
+$z-index-control-bar: 6;
 $z-index-chapter-tooltip: 4;
 $z-index-thumbnail: 5;
+$z-index-menu: 7;
 
 // Spacing (em-based for scalability)
 $spacing-control-bar-bottom: 3em;
@@ -112,6 +113,7 @@ $spacing-progress-interactive-hover: -1.4rem;
         padding: 0.4em 0.6em;
         top: $spacing-time-tooltip-offset;
         font-size: 0.8em;
+        z-index: 3;
     }
 
     .vjs-big-play-button {
@@ -291,6 +293,11 @@ $spacing-progress-interactive-hover: -1.4rem;
         z-index: $z-index-control-bar;
         font-size: 120%;
 
+        .vjs-menu-button {
+            position: relative;
+            z-index: $z-index-menu;
+        }
+
         .vjs-volume-panel {
             margin-right: 0.5em;
 
@@ -389,12 +396,16 @@ $spacing-progress-interactive-hover: -1.4rem;
     }
 
     .vjs-menu {
+        position: absolute;
+        z-index: $z-index-menu;
+        
         .vjs-menu-content {
             max-width: 13em;
             width: auto;
             padding: 0.2em 0;
             overflow-y: auto;
             max-height: 20em;
+            z-index: $z-index-menu;
             // Firefox
             scrollbar-gutter: stable;
             scrollbar-width: thin;
@@ -558,14 +569,23 @@ $spacing-progress-interactive-hover: -1.4rem;
         }
     }
 
-    .vjs-http-source-selector>.vjs-button {
-        font-size: 1.6em;
-        margin-right: -12px;
-        margin-left: -12px;
-    }
+    .vjs-http-source-selector {
+        z-index: $z-index-menu;
+        
+        >.vjs-button {
+            font-size: 1.6em;
+            margin-right: -12px;
+            margin-left: -12px;
+        }
 
-    .vjs-http-source-selector>.vjs-menu {
-        margin-bottom: 1.8em
+        >.vjs-menu {
+            // margin-bottom already set in general .vjs-menu rule above
+            z-index: $z-index-menu;
+            
+            .vjs-menu-content {
+                z-index: $z-index-menu;
+            }
+        }
     }
 
     .vjs-http-source-selector>.vjs-button.vjs-icon-cog::before {
