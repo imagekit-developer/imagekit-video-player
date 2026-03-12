@@ -201,16 +201,13 @@ export async function preparePosterSrc(
   } else {
     url.pathname = `${url.pathname.replace(/\/$/, '')}/${THUMBNAIL_SUFFIX}`;
   }
-
+  // strip all transformation parameters
+  url.searchParams.delete('tr');
   posterSrcUrl = url.toString();
 
   if (input.poster && (input.poster.src || input.poster.transformation)) {
-    const baseVideoUrl = new URL(videoSrcUrl);
-    if(baseVideoUrl.searchParams.get('tr') !== null) {
-      baseVideoUrl.searchParams.delete('tr');
-    }
     posterSrcUrl = ikBuild({
-      src: input.poster.src ?? baseVideoUrl.toString() + `/${THUMBNAIL_SUFFIX}`,
+      src: input.poster.src ?? url.toString() + `/${THUMBNAIL_SUFFIX}`,
       urlEndpoint: '',
       transformation: input.poster.transformation!,
     });
