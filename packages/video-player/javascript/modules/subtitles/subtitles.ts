@@ -113,10 +113,7 @@ function getLanguageName(langCode: string): string {
         return langCode;
     }
 
-    return languageName
-        .split('_')
-        .map(word => word.charAt(0) + word.slice(1).toLowerCase())
-        .join(' ');
+    return languageName;
 }
 
 function disableOtherTracks(player: Player, activeTrack: any): void {

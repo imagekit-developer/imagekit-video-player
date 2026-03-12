@@ -15,10 +15,15 @@ export default defineConfig({
   globalName: "ImageKitVideoPlayer",
   // Generate DTS files for all entry points
   dts: true,
-  sourcemap: true,
-  // @todo: Remove splitting and treeshake options if not needed
-  splitting: false, // Disable code splitting for simplicity
-  treeshake: false,
+  // Disable sourcemaps by default for smaller builds (can be enabled with --sourcemap flag)
+  // Sourcemaps add ~13MB to the build output
+  sourcemap: false,
+  // Enable tree shaking to remove unused code
+  treeshake: true,
+  // Enable minification for smaller bundle sizes
+  minify: true,
+  // Disable code splitting for simplicity (keeps single-file outputs)
+  splitting: false,
   clean: true, // Clean the entire dist folder once
   // This onSuccess script will run after all builds are complete
   onSuccess: "npm run build:css",
@@ -30,7 +35,6 @@ export default defineConfig({
     ".css": "empty",
     ".tsx": "tsx",
   },
-  // We handle the main CSS file with the sass script, so we don't want
-  // tsup to bundle any other CSS imports.
-  external: [/\.css$/],
+  external: [
+    /\.css$/],
 });
