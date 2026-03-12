@@ -147,6 +147,9 @@ class ImageKitVideoPlayerPlugin extends Plugin {
       getCurrentSource: () => {
         return this.currentSource_;
       },
+      getOriginalCurrentSource: () => {
+        return this.originalCurrentSource_;
+      },
       onSourceUpdate: (source: SourceOptions) => {
         this.currentSource_ = source;
       },
