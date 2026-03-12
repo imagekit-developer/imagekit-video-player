@@ -194,11 +194,18 @@ function setupSubtitleChapterSync(player: Player): void {
   }
   
   const handler = () => {
+    // Get fresh reference to textTracks inside handler to avoid stale references
+    // when source changes and textTracks are cleared/reset
+    const currentTextTracks = player.textTracks();
+    if (!currentTextTracks) {
+      return;
+    }
+    
     let foundActiveTrack = false;
     
     // Check for active subtitle track
     // TextTrackList is array-like, iterate using index access
-    const textTracksList = textTracks as unknown as TextTrack[];
+    const textTracksList = currentTextTracks as unknown as TextTrack[];
     for (let i = 0; i < textTracksList.length; i++) {
       const track = textTracksList[i];
       
@@ -265,6 +272,7 @@ function setupChapterLabelDisplay(player: Player, chaptersTrack: TextTrack): voi
     perChapterCleanup = new CleanupRegistry();
   }
   perChapterCleanup.registerEventListener(chaptersTrack, 'cuechange', cueChangeHandler);
+  cueChangeHandler();
 }
 
 /**
@@ -292,6 +300,18 @@ export async function initChapterMarkers(
   if (!src.chapters) return;
 
   let chapterList: ChapterMarker[] = [];
+
+  function waitForLoadedMetadata(player: Player): Promise<void> {
+    return new Promise((resolve) => {
+      if (player.readyState() > 0) {
+        resolve();
+        return;
+      }
+      player.one('loadedmetadata', () => resolve());
+    });
+  }
+
+  await waitForLoadedMetadata(player);
 
   if (typeof src.chapters === 'object' && 'url' in src.chapters) {
     // Manual VTT URL - load directly
