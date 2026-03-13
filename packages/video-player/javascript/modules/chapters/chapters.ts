@@ -60,13 +60,13 @@ function cleanupChapterLabelDisplay(player: Player): void {
 function cleanupChapters(player: Player): void {
   cleanupChapterTextTracks(player);
   cleanupChapterLabelDisplay(player);
-  
+
   // Dispose per-chapter cleanups (cuechange listeners, etc.)
   if (perChapterCleanup) {
     perChapterCleanup.dispose();
     perChapterCleanup = null;
   }
-  
+
   const existing = player.getChild('ChapterMarkersProgressBarControl');
   if (existing) {
     existing.dispose();
@@ -79,7 +79,7 @@ function cleanupChapters(player: Player): void {
  */
 function cleanupAllChapters(player: Player): void {
   cleanupChapters(player);
-  
+
   // Dispose persistent cleanups (subtitle sync listener)
   if (persistentCleanup) {
     persistentCleanup.dispose();
@@ -123,22 +123,33 @@ async function loadChaptersForLanguage(
 /**
  * Switch chapters to match the active subtitle language
  */
+let isSwitchingChapters = false;
+
 async function switchChaptersLanguage(
   player: Player,
   langCode: string
 ): Promise<void> {
-  const metadata = chapterTracksCache.get(langCode);
-  
-  if (!metadata) {
-    player.log.warn(`No chapter track found for language: ${langCode}`);
-    return;
+  if (isSwitchingChapters) {
+    return; // Prevent concurrent switches
   }
 
-  // Clean up existing chapters
-  cleanupChapters(player);
+  isSwitchingChapters = true;
+  try {
+    const metadata = chapterTracksCache.get(langCode);
 
-  // Apply new chapters
-  applyChaptersToPlayer(player, metadata.chapterList);
+    if (!metadata) {
+      player.log.warn(`No chapter track found for language: ${langCode}`);
+      return;
+    }
+
+    // Clean up existing chapters
+    cleanupChapters(player);
+
+    // Apply new chapters
+    applyChaptersToPlayer(player, metadata.chapterList);
+  } finally {
+    isSwitchingChapters = false;
+  }
 }
 
 /**
@@ -186,50 +197,77 @@ function applyChaptersToPlayer(player: Player, chapterList: ChapterMarker[]): vo
  * Setup listener for subtitle track changes to switch chapters accordingly
  */
 function setupSubtitleChapterSync(player: Player): void {
-  const textTracks = player.textTracks();
-  
   // Initialize persistent cleanup registry if needed
   if (!persistentCleanup) {
     persistentCleanup = new CleanupRegistry();
   }
-  
+
+  let currentChapterLang = 'base';
+  let pendingSwitch: number | null = null;
+
   const handler = () => {
     // Get fresh reference to textTracks inside handler to avoid stale references
     // when source changes and textTracks are cleared/reset
     const currentTextTracks = player.textTracks();
-    if (!currentTextTracks) {
+    if (!currentTextTracks || player.isDisposed()) {
       return;
     }
-    
-    let foundActiveTrack = false;
-    
+
+    let targetLang = 'base';
+
     // Check for active subtitle track
     // TextTrackList is array-like, iterate using index access
     const textTracksList = currentTextTracks as unknown as TextTrack[];
     for (let i = 0; i < textTracksList.length; i++) {
       const track = textTracksList[i];
-      
+
       // Find the active subtitle track
       if ((track.kind === 'subtitles' || track.kind === 'captions') && track.mode === 'showing') {
-        const langCode = track.language || 'en';
-        
-        // Switch chapters to match this language
-        if (chapterTracksCache.has(langCode)) {
-          switchChaptersLanguage(player, langCode);
-          foundActiveTrack = true;
-        }
+        targetLang = track.language || 'en';
         break;
       }
     }
-    
-    // If no subtitle track is active (user turned off captions), revert to base chapters
-    if (!foundActiveTrack && chapterTracksCache.has('base')) {
-      switchChaptersLanguage(player, 'base');
+
+    // normalize base language fallback
+    if (!chapterTracksCache.has(targetLang) && chapterTracksCache.has('base')) {
+      targetLang = 'base';
     }
+
+    // Skip if already on this language
+    if (targetLang === currentChapterLang) {
+      return;
+    }
+
+    // Debounce to avoid rapid switching
+    if (pendingSwitch !== null) {
+      clearTimeout(pendingSwitch);
+    }
+
+    pendingSwitch = window.setTimeout(() => {
+      pendingSwitch = null;
+      if (player.isDisposed() || !chapterTracksCache.has(targetLang)) {
+        return;
+      }
+
+      currentChapterLang = targetLang;
+      switchChaptersLanguage(player, targetLang).catch((err) => {
+        player.log.warn('Chapter switch failed:', err);
+      });
+    }, 50); // Small delay to let Video.js finish internal updates
   };
-  
-  // Register the event listener with persistent cleanup registry
-  persistentCleanup.registerEventListener(textTracks as unknown as EventTarget, 'change', handler);
+
+  // Defer listener setup to next tick to ensure TextTrackList is stable
+  setTimeout(() => {
+    if (player.isDisposed()) return;
+
+    const textTracks = player.textTracks();
+    persistentCleanup!.registerEventListener(
+      textTracks as unknown as EventTarget,
+      'change',
+      handler
+    );
+    handler(); // initial sync
+  }, 0);
 }
 
 /**
@@ -252,7 +290,11 @@ function setupChapterLabelDisplay(player: Player, chaptersTrack: TextTrack): voi
     return;
   }
 
-  spacer.innerHTML = '';
+  const existingDisplay = spacer.querySelector('.vjs-control-bar-chapter-display');
+  if (existingDisplay) {
+    existingDisplay.remove();
+  }
+
   spacer.classList.add('vjs-control-bar-chapter-wrapper');
   spacer.appendChild(controlBarChapterHolder);
 
@@ -295,7 +337,7 @@ export async function initChapterMarkers(
   chapterTracksCache.clear();
 
   if (!source) return;
-  
+
   const src = Array.isArray(source) ? source[0] : source;
   if (!src.chapters) return;
 
@@ -317,7 +359,7 @@ export async function initChapterMarkers(
     // Manual VTT URL - load directly
     try {
       let vttUrl = src.chapters.url;
-      
+
       if (ikGlobalSettings.signerFn) {
         try {
           vttUrl = await ikGlobalSettings.signerFn(vttUrl);
@@ -326,7 +368,7 @@ export async function initChapterMarkers(
           return;
         }
       }
-      
+
       const res = await fetch(vttUrl);
       if (!res.ok) {
         player.log.warn(`VTT fetch failed with status: (${res.status}); skipping chapters.`);
@@ -361,7 +403,7 @@ export async function initChapterMarkers(
     // Auto-generate chapters with translations support
     try {
       const { baseUrl, translatedUrls } = await prepareChaptersVttSrc(src, ikGlobalSettings);
-      
+
       // Load base language chapters
       chapterList = await loadChaptersForLanguage(player, baseUrl, 'base');
 
