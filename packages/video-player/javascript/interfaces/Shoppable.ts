@@ -8,15 +8,32 @@ export interface Hotspot {
   clickUrl: string;
 }
 
-export interface InteractionProps {
-  action: 'overlay' | 'seek' | 'goto' | 'switch';
-  /** in seconds or true/false for pause behavior */
-  pause?: number | boolean;
-  args?: {
-    time?: string;
-    url?: string;
-  };
-}
+export type InteractionProps =
+  | {
+      action: 'overlay';
+      /** in seconds or true/false for pause behavior */
+      pause?: number | boolean;
+      /** The overlay text to display */
+      args?: string;
+    }
+  | {
+      action: 'seek';
+      /** in seconds or true/false for pause behavior */
+      pause?: number | boolean;
+      /** Time to seek to (e.g., "00:06") */
+      args?: {
+        time?: string;
+      };
+    }
+  | {
+      action: 'goto' | 'switch';
+      /** in seconds or true/false for pause behavior */
+      pause?: number | boolean;
+      /** URL to navigate to or switch to */
+      args?: {
+        url?: string;
+      };
+    };
 
 export interface ProductProps {
   productId: number;

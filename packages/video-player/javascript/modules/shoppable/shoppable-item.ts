@@ -69,7 +69,10 @@ class ShoppablePanelItem extends ClickableComponent {
         // 1. Determine which image URL and cache position to use.
         const isAlt = !!altImg;
         const cacheIndex = isAlt ? 1 : 0;
-        const imageUrl = isAlt ? item.onHover?.args?.url : item.imageUrl;
+        // Type-safe: when isAlt is true, we know onHover.action is 'switch' or 'goto', so args is an object with url
+        const imageUrl = isAlt && item.onHover && (item.onHover.action === 'switch' || item.onHover.action === 'goto') && typeof item.onHover.args === 'object' && item.onHover.args?.url
+            ? item.onHover.args.url
+            : item.imageUrl;
 
         // 2. Validate that we found a URL to process.
         if (!imageUrl) {
@@ -178,7 +181,7 @@ class ShoppablePanelItem extends ClickableComponent {
             if (prod.onHover.action === 'overlay' && prod.onHover.args) {
                 const hoverOverlay = document.createElement('div');
                 hoverOverlay.className = 'vjs-shoppable-item-overlay';
-                hoverOverlay.textContent = prod.onHover.args as string;
+                hoverOverlay.textContent = prod.onHover.args;
                 el.appendChild(hoverOverlay);
             }
         }
