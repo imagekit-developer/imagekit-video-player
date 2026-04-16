@@ -79,6 +79,13 @@ function buildPlayerConfig(
         playerOptions.seekThumbnails = true;
     }
 
+    if (features.includes('analytics')) {
+        playerOptions.analytics = {
+            enabled: true,
+            user_id: 'test_user_id',
+        };
+    }
+
     // Add signer function if URL is provided
     if (signerUrl && signerUrl.trim()) {
         playerOptions.signerFn = async (url: string): Promise<string> => {

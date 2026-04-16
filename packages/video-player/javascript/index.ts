@@ -19,6 +19,7 @@ import { setupKeyboardShortcuts } from './modules/keyboard-shortcuts';
 import { setupContextMenu } from './modules/context-menu/setup';
 import { createSourceOverride } from './modules/source-handler';
 import { extendTrackSettings } from './modules/subtitles/track-settings-extension';
+import { createAnalyticsTracker } from './modules/analytics/analytics-tracker';
 
 const defaults: IKPlayerOptions = {
   imagekitId: '',
@@ -48,11 +49,30 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   constructor(player: Player, options: IKPlayerOptions) {
     super(player);
 
+    const pageLoadStartMonotonic =
+      typeof performance !== 'undefined' ? performance.now() : 0;
+
     this.ikGlobalSettings_ = videojs.mergeOptions(defaults, options);
     try {
       validateIKPlayerOptions(this.ikGlobalSettings_);
 
       this.overrideSrc();
+
+      const analyticsOpts = this.ikGlobalSettings_.analytics;
+      if (analyticsOpts?.enabled) {
+        createAnalyticsTracker({
+          config: {
+            user_id: analyticsOpts.user_id,
+            customDimensions: analyticsOpts.customDimensions,
+            debug: false,
+          },
+          imagekitId: this.ikGlobalSettings_.imagekitId,
+          player: this.player,
+          getCurrentSource: () => this.getOriginalCurrentSource(),
+          cleanup: this.cleanup_,
+          pageLoadStartMonotonic,
+        });
+      }
 
       this.playlistManager_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
 

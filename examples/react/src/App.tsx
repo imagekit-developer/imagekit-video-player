@@ -21,6 +21,10 @@ export default function App() {
             logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
             logoOnclickUrl: 'https://imagekit.io/',
         },
+        analytics: {
+            enabled: true,
+            user_id: 'test_user_id',
+        },
     };
 
     // 2) For a single video source (SourceOptions)
