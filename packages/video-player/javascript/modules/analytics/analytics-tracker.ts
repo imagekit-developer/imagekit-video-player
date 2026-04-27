@@ -63,7 +63,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
 
   const session = getOrCreateSession();
   const playerInstanceId = createPlayerInstanceId();
-  let currentPlaybackId: string | null = null;
+  let currentPlaybackId: string | null = createPlaybackId();
+  let hasLoadedFirstView = false;
   let previousVideoSourceUrl: string | null = null;
   let playerReadyMonotonic = 0;
   let playingTimeAccumulatedMs = 0;
@@ -203,7 +204,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
         case 'load_start': {
           const source = sig.source;
           const videoSourceUrl = source?.src ?? '';
-          const isFirstView = currentPlaybackId === null;
+          const isFirstView = !hasLoadedFirstView;
           const prevSourceUrl = previousVideoSourceUrl;
           const isVideoChange = !isFirstView && !!videoSourceUrl && !!prevSourceUrl && videoSourceUrl !== prevSourceUrl;
 
@@ -232,7 +233,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
             });
           }
 
-          const newPlaybackId = createPlaybackId();
+          const newPlaybackId = isFirstView ? currentPlaybackId! : createPlaybackId();
+          hasLoadedFirstView = true;
           stateMachine.dispatch(
             {
               type: 'load_start',

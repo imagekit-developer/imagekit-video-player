@@ -119,8 +119,8 @@ type IKEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
 type IKPlaybackEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
   IKEventWithName<TName, { playback_id: string } & TExtra>;
 
-export type IKSessionInitEvent = IKEventWithName<'sessioninit'>;
-export type IKPlayerReadyEvent = IKEventWithName<
+export type IKSessionInitEvent = IKPlaybackEventWithName<'sessioninit'>;
+export type IKPlayerReadyEvent = IKPlaybackEventWithName<
   'playerready',
   { page_load_time_ms: number; player_startup_time_ms: number }
 >;
