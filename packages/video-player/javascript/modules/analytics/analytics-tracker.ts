@@ -71,6 +71,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
   let lastTimeupdateEmitMonotonic = 0;
   let lastEmittedPlaybackTimeMs = 0;
   let progressiveBitrateBps: number | undefined;
+  let detectedVideoCodec: string | undefined;
+  let detectedAudioCodec: string | undefined;
 
   const context: IKAnalyticsClientContext = {
     imagekit_id: imagekitId,
@@ -151,6 +153,9 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
 
   const captureContext = (): Partial<InternalAnalyticsEvent> => {
     const src = getCurrentSource();
+    // Use player.currentSrc() for the actual URL being played (e.g. .m3u8 after HLS transform)
+    // Fall back to the original source URL if currentSrc is not yet available
+    const actualSrc = player.currentSrc?.() || src?.src;
     const el = player.el()?.querySelector('video') as HTMLVideoElement | null | undefined;
     const vw = el?.videoWidth ?? 0;
     const vh = el?.videoHeight ?? 0;
@@ -161,7 +166,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     const scale = computeVideoUpDownScalePercentages(el);
 
     return {
-      video_source_url: src?.src,
+      video_source_url: actualSrc,
       video_width_pixels: vw || undefined,
       video_height_pixels: vh || undefined,
       video_total_duration_ms: totalDurMs,
@@ -169,6 +174,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
       playing_time_ms: playingTimeAccumulatedMs,
       video_upscale_percentage: scale.video_upscale_percentage,
       video_downscale_percentage: scale.video_downscale_percentage,
+      audio_codec: detectedAudioCodec,
+      video_codec: detectedVideoCodec,
     };
   };
 
@@ -213,6 +220,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
           lastEmittedPlaybackTimeMs = 0;
           lastTimeupdateEmitMonotonic = 0;
           progressiveBitrateBps = undefined;
+          detectedVideoCodec = undefined;
+          detectedAudioCodec = undefined;
 
           // For progressive sources (no ABR), estimate bitrate from Content-Length + duration.
           const isABR = !!source?.abs;
@@ -232,6 +241,23 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
                 .catch(() => { /* ignore – CORS or network failure */ });
             });
           }
+
+          // Extract codec info from HLS/DASH — available after first segment is parsed
+          player.one('canplay', () => {
+            try {
+              const tech = (player as any).tech?.(true);
+              const vhs = tech?.vhs ?? tech?.hls;
+              if (vhs) {
+                // sourceUpdater_.codecs has {video: "avc1...", audio: "mp4a..."} after transmux
+                const pc = vhs.playlistController_ ?? vhs.masterPlaylistController_;
+                const codecs = pc?.sourceUpdater_?.codecs;
+                if (codecs && typeof codecs === 'object') {
+                  if (codecs.video) detectedVideoCodec = codecs.video;
+                  if (codecs.audio) detectedAudioCodec = codecs.audio;
+                }
+              }
+            } catch { /* ignore */ }
+          });
 
           const newPlaybackId = isFirstView ? currentPlaybackId! : createPlaybackId();
           hasLoadedFirstView = true;
