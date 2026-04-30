@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev # Or your default branch, e.g., 'main'
+      - video_analytics
   workflow_dispatch:
 
 permissions:
