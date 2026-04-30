@@ -207,7 +207,7 @@ export async function preparePosterSrc(
 
   if (input.poster && (input.poster.src || input.poster.transformation)) {
     posterSrcUrl = ikBuild({
-      src: input.poster.src ?? url.toString() + `/${THUMBNAIL_SUFFIX}`,
+      src: input.poster.src ?? url.toString(),
       urlEndpoint: '',
       transformation: input.poster.transformation!,
     });

@@ -1,7 +1,8 @@
 /**
  * Hardcoded analytics ingest / batching defaults (not configurable via IKPlayerOptions).
  */
-export const ANALYTICS_INGEST_URL = 'http://localhost:8081/analytics/ingest';
+export const ANALYTICS_INGEST_URL = 'https://stage.imagekit.io/video-analytics-ingest/analytics/ingest';
+// export const ANALYTICS_INGEST_URL = 'http://localhost:8081/analytics/ingest';
 
 export const ANALYTICS_FLUSH_INTERVAL_MS = 5000;
 
