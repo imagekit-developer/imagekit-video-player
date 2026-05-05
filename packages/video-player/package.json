@@ -1,7 +1,7 @@
 {
   "name": "@imagekit/video-player",
   "version": "1.0.0-beta.2",
-  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue)",
+  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue, Astro)",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -23,10 +23,17 @@
       "import": "./dist/vue/index.mjs",
       "require": "./dist/vue/index.js"
     },
+    "./astro": "./astro/IKVideoPlayer.astro",
+    "./astro/types": {
+      "types": "./dist/astro/index.d.ts",
+      "import": "./dist/astro/index.mjs",
+      "require": "./dist/astro/index.js"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "astro"
   ],
   "scripts": {
     "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
@@ -38,11 +45,15 @@
     "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
   },
   "peerDependencies": {
+    "astro": ">=3.2.0",
     "react": "^17 || ^18",
     "react-dom": "^17 || ^18",
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -58,6 +69,7 @@
     "@types/lodash": "^4.14.200",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "astro": ">=3.2.0",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

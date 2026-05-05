@@ -1,0 +1,106 @@
+---
+/**
+ * ImageKit Video Player component for Astro.
+ *
+ * Uses the Custom Element pattern recommended by Astro for reusable components
+ * with per-instance client-side state. The player is initialized via the
+ * `@imagekit/video-player` JavaScript API inside a `connectedCallback`,
+ * ensuring each instance on the page manages its own lifecycle independently.
+ *
+ * @example
+ * ```astro
+ * ---
+ * import { IKVideoPlayer } from '@imagekit/video-player/astro';
+ * ---
+ * <IKVideoPlayer
+ *   ikOptions={{ imagekitId: 'your_id' }}
+ *   videoJsOptions={{ controls: true, fluid: true }}
+ *   source={{ src: 'https://ik.imagekit.io/your_id/video.mp4' }}
+ * />
+ * ```
+ */
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
+
+export interface Props {
+  /** ImageKit player options (imagekitId is required) */
+  ikOptions: IKPlayerOptions;
+  /** Standard Video.js options (controls, fluid, autoplay, etc.) */
+  videoJsOptions?: Record<string, any>;
+  /** Video source configuration (provide either source or playlist, not both) */
+  source?: SourceOptions;
+  /** Playlist configuration (provide either source or playlist, not both) */
+  playlist?: {
+    sources: SourceOptions[];
+    options?: PlaylistOptions;
+  };
+}
+
+const {
+  ikOptions,
+  videoJsOptions = {},
+  source,
+  playlist,
+} = Astro.props;
+
+const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist });
+---
+
+<ik-video-player data-config={config}>
+  <video class="video-js"></video>
+</ik-video-player>
+
+<script>
+  import { videoPlayer } from '@imagekit/video-player';
+  import '@imagekit/video-player/styles.css';
+
+  class IKVideoPlayerElement extends HTMLElement {
+    private _initialized = false;
+    private _player: ReturnType<typeof videoPlayer> | null = null;
+
+    connectedCallback() {
+      if (this._initialized) return;
+      this._initialized = true;
+
+      const raw = this.dataset.config;
+      if (!raw) return;
+
+      const { ikOptions, videoJsOptions, source, playlist } = JSON.parse(raw);
+      const videoEl = this.querySelector('video');
+      if (!videoEl) return;
+
+      const player = videoPlayer(videoEl, ikOptions, videoJsOptions);
+      this._player = player;
+
+      if (source && playlist) {
+        console.warn(
+          '[IKVideoPlayer] Both `source` and `playlist` were provided. Using `playlist`.'
+        );
+      }
+
+      if (playlist?.sources?.length) {
+        const playlistMgr = player.playlist({
+          sources: playlist.sources,
+          options: playlist.options || {},
+        });
+        playlistMgr.loadFirstItem();
+      } else if (source) {
+        player.src(source);
+      }
+    }
+
+    disconnectedCallback() {
+      this._player?.dispose?.();
+      this._player = null;
+      this._initialized = false;
+    }
+  }
+
+  customElements.define('ik-video-player', IKVideoPlayerElement);
+</script>
+
+<style>
+  ik-video-player {
+    display: block;
+    width: 100%;
+  }
+</style>

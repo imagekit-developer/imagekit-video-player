@@ -7,7 +7,9 @@ export default defineConfig({
     'index': 'javascript/index.ts',
     // This will generate `dist/react/index.{js,mjs,d.ts}`
     'react/index': 'react-wrapper/index.ts',
-    'vue/index': 'vue/index.ts'
+    'vue/index': 'vue/index.ts',
+    // Type declarations for the Astro wrapper (component is shipped as source)
+    'astro/index': 'astro/index.ts',
   },
   // The single output directory
   outDir: 'dist',
@@ -34,7 +36,9 @@ export default defineConfig({
     // it's better to tell esbuild to just ignore it.
     ".css": "empty",
     ".tsx": "tsx",
+    ".astro": "empty",
   },
   external: [
-    /\.css$/],
+    /\.css$/,
+    /\.astro$/],
 });
