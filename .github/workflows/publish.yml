@@ -75,7 +75,7 @@ jobs:
           cd packages/video-player
           
           # Publish with the specified tag
-          npm publish --tag ${{ steps.npm-tag.outputs.tag }} --access public
+          npm publish --tag ${{ steps.npm-tag.outputs.tag }} --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
