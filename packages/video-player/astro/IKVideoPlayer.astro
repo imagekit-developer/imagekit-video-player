@@ -40,13 +40,14 @@ const {
   videoJsOptions = {},
   source,
   playlist,
+  id,
 } = Astro.props;
 
 const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist });
 ---
 
-<ik-video-player data-config={config}>
-  <video class="video-js"></video>
+<ik-video-player data-config={config} id={id}>
+  <video class="video-js" ></video>
 </ik-video-player>
 
 <script>
@@ -56,6 +57,10 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist });
   class IKVideoPlayerElement extends HTMLElement {
     private _initialized = false;
     private _player: ReturnType<typeof videoPlayer> | null = null;
+    
+    public getPlayer() {
+      return this._player;
+    }
 
     connectedCallback() {
       if (this._initialized) return;
@@ -97,10 +102,3 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist });
 
   customElements.define('ik-video-player', IKVideoPlayerElement);
 </script>
-
-<style>
-  ik-video-player {
-    display: block;
-    width: 100%;
-  }
-</style>
