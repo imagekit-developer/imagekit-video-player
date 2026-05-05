@@ -66,5 +66,9 @@
     "typescript": "~5.8.0",
     "video.js": "^8.20.0",
     "vue": "^3.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/imagekit-developer/imagekit-video-player.git"
   }
 }
