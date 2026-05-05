@@ -37,6 +37,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
           cache: 'yarn'
 
       - name: Install dependencies
@@ -73,8 +74,6 @@ jobs:
           cp README.md packages/video-player/
           cd packages/video-player
           
-          [ -n "$NODE_AUTH_TOKEN" ] && npm config set //registry.npmjs.org/:_authToken "$NODE_AUTH_TOKEN"
-
           # Publish with the specified tag
           npm publish --tag ${{ steps.npm-tag.outputs.tag }} --access public --provenance
         env:
