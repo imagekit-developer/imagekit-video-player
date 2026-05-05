@@ -1,0 +1,27 @@
+// import videojs css
+@use "../../../../node_modules/video.js/dist/video-js.css";
+
+// @use all modules
+@use "../modules/http-source-selector/plugin.scss";
+
+@use "../modules/playlist/styles/playlist-ui.scss";
+
+@use "../modules/playlist/styles/present-upcoming.scss";
+
+@use "../modules/chapters/chapter.scss";
+
+@use "../modules/recommendations-overlay/recommendation-overlay.css";
+
+@use "../modules/seek-thumbnails/seek-thumbnails.css";
+
+@use "../modules/subtitles/subtitles.css";
+
+@use "../modules/shoppable/shoppable.css";
+
+@use "../modules/floating-player/floating-player.css";
+
+@use "../modules/context-menu/context-menu.css";
+
+@use "../modules/logo-button/logo-button.scss";
+
+@use "./main.scss"

@@ -1,0 +1,51 @@
+/**
+ * Updated styles for the Video.js Context Menu
+ * - Increases overall size and font size.
+ * - Left-aligns text for a more standard menu look.
+ * - Aligns hover effects and spacing with the native Video.js theme.
+ */
+
+ .vjs-contextmenu-ui-menu {
+  /* Set a minimum width to make the menu feel more substantial */
+  min-width: 12em;
+  position: absolute;
+}
+ 
+.vjs-contextmenu-ui-menu .vjs-menu-content {
+  /* Use the standard Video.js semi-transparent background */
+  background-color: #2B333F;
+  background-color: rgba(43, 51, 63, 0.85); /* Slightly less transparent for readability */
+  border-radius: 0.3em;
+  /* Increased padding for more breathing room around the items */
+  padding: 0.5em;
+}
+ 
+.vjs-contextmenu-ui-menu .vjs-menu-item {
+  /* --- REQUEST: Font to be little big --- */
+  font-size: 1.3em; /* Increased from 1em */
+  color: #ffffff;
+
+  /* --- REQUEST: Items to be left aligned --- */
+  text-align: left;
+  
+  /* --- AESTHETICS: Better spacing and alignment --- */
+  padding: 0.7em 1.2em; /* Increased padding for a less cramped feel */
+  line-height: 1.4;
+  cursor: pointer;
+  margin: 1px 0;
+  border-radius: 0.2em;
+  text-transform: none;
+  justify-content: flex-start;
+  
+  /* Use a smooth transition for the hover effect, just like native VJS controls */
+  transition: background-color 0.15s ease-in-out;
+}
+ 
+/* --- AESTHETICS: Hover state aligned with Video.js native theme --- */
+.vjs-contextmenu-ui-menu .vjs-menu-item:hover,
+.vjs-contextmenu-ui-menu .vjs-menu-item:focus {
+  /* A lighter shade of the background, similar to VJS control bar button hovers */
+  background-color: #3d4858;
+  /* Removed the text-shadow for a cleaner, more modern look */
+  text-shadow: none;
+}

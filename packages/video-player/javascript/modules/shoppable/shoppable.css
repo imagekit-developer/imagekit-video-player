@@ -1,0 +1,416 @@
+.video-js.shoppable-panel-visible .vjs-control-bar {
+  width: 80% !important;
+  transition: width 0.35s ease-in-out;
+}
+
+.vjs-shoppable-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.vjs-shoppable-bar-inner {
+  position: absolute;
+  top: 0;
+  left: 80%;
+  width: 20%;
+  height: 100%;
+  transform: translateX(100%);
+  transition: transform 0.35s ease-in-out;
+  pointer-events: all;
+}
+
+.video-js.shoppable-panel-visible .vjs-shoppable-bar-inner {
+  transform: translateX(0%);
+}
+
+.video-js.shoppable-panel-hidden .vjs-shoppable-bar-inner {
+  transform: translateX(100%);
+  transition: none;
+}
+
+.vjs-shoppable-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.5);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  container-type: inline-size;
+}
+
+.vjs-shoppable-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.vjs-shoppable-toggle {
+  position: absolute;
+  top: 15px;
+  right: 100%;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 5px 0 0 5px;
+  cursor: pointer;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.vjs-shoppable-toggle-icon {
+  width: 50%;
+  height: 50%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  position: absolute;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.vjs-shoppable-toggle .icon-open {
+  opacity: 1;
+}
+
+.vjs-shoppable-toggle .icon-close {
+  opacity: 1;
+}
+
+.vjs-shoppable-toggle-icon.animate,
+.vjs-shoppable-toggle-icon:hover {
+  animation: tada 1s infinite;
+}
+
+@keyframes tada {
+  0% { transform: scale3d(1, 1, 1); }
+  10%, 20% { transform: scale3d(0.9, 0.9, 0.9) rotate3d(0, 0, 1, -3deg); }
+  30%, 50%, 70%, 90% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, 3deg); }
+  40%, 60%, 80% { transform: scale3d(1.1, 1.1, 1.1) rotate3d(0, 0, 1, -3deg); }
+  100% { transform: scale3d(1, 1, 1); }
+}
+
+.video-js.shoppable-panel-visible .vjs-shoppable-toggle .icon-open {
+  opacity: 0;
+}
+
+.video-js.shoppable-panel-visible .vjs-shoppable-toggle .icon-close {
+  opacity: 1;
+}
+
+/* --- Item Layout --- */
+
+.vjs-shoppable-item {
+  display: flex;
+  flex-direction: column;
+  margin: 10px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.3s, transform 0.2s;
+  background-color: rgba(0, 0, 0, 0.05);
+  text-decoration: none !important; /* Removes the underline */
+}
+
+.vjs-shoppable-item:hover {
+  transform: scale(1.03);
+}
+
+.vjs-shoppable-item.active {
+  border-color: #2563eb;
+}
+
+.vjs-shoppable-image-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+}
+
+.vjs-shoppable-item-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease-in-out;
+  z-index: 1;
+}
+
+.vjs-shoppable-item-img-alt {
+  opacity: 0;
+}
+
+.vjs-shoppable-item:hover .vjs-shoppable-item-img-alt {
+  opacity: 1;
+}
+
+.vjs-shoppable-item-info {
+  position: static;
+  width: 100%;
+  background: rgba(0, 0, 0, 1);
+  color: #fff;
+  padding: 8px;
+  font-size: 10px;
+  text-align: center;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 2;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@container (min-width: 120px) {
+  .vjs-shoppable-item-info {
+    font-size: 12px;
+  }
+}
+
+@container (min-width: 140px) {
+  .vjs-shoppable-item-info {
+    font-size: 14px;
+  }
+}
+
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.3;
+  background: rgba(0, 0, 0, 1);
+  padding: 6px;
+  padding-bottom: 0px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: unset;
+  margin-bottom: 8px;
+}
+
+@container (min-width: 600px) {
+  .vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+    font-size: 12px;
+    padding: 7px;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+  }
+}
+
+@container (min-width: 700px) {
+  .vjs-shoppable-postplay-carousel .vjs-shoppable-item-info {
+    font-size: 14px;
+    padding: 8px;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+  }
+}
+
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item {
+  width: clamp(100px, 25%, 200px);
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.vjs-shoppable-postplay-carousel .vjs-shoppable-item:hover {
+  border: 1px solid rgba(255, 255, 255, 1);
+}
+
+.vjs-shoppable-item-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  box-sizing: border-box;
+  opacity: 0;
+  transition: opacity 0.25s ease-in-out;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.vjs-shoppable-item:hover .vjs-shoppable-item-overlay {
+  opacity: 1;
+}
+
+/* --- Hotspot Styles --- */
+
+.vjs-shoppable-hotspot {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  z-index: 5;
+}
+
+.vjs-shoppable-hotspot::after {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.9);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s infinite;
+}
+
+.vjs-shoppable-hotspot-tooltip {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  top: -12px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
+
+.vjs-shoppable-hotspot-tooltip.tooltip-position-top {
+  top: -8px;
+  left: 50%;
+  transform: translate(-50%, -100%);
+}
+
+.vjs-shoppable-hotspot-tooltip.tooltip-position-bottom {
+  bottom: -8px;
+  left: 50%;
+  transform: translate(-50%, 100%);
+}
+
+.vjs-shoppable-hotspot-tooltip.tooltip-position-left {
+  top: 50%;
+  left: -8px;
+  transform: translate(-100%, -50%);
+}
+
+.vjs-shoppable-hotspot-tooltip.tooltip-position-right {
+  top: 50%;
+  right: -8px;
+  transform: translate(100%, -50%);
+}
+
+/* --- Post-Play Overlay Styles --- */
+
+.vjs-shoppable-postplay-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 1);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(12px, 1.5%, 24px);
+  box-sizing: border-box;
+  container-type: inline-size;
+  row-gap: clamp(12px, 1.5%, 24px);
+}
+
+.vjs-shoppable-postplay-title {
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.vjs-shoppable-postplay-carousel {
+  display: flex;
+  gap: clamp(12px, 1.5%, 24px);
+  overflow-x: auto;
+  max-width: 100%;
+  cursor: grab;
+  user-select: none;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.vjs-shoppable-postplay-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.vjs-shoppable-postplay-carousel.is-grabbing {
+  cursor: grabbing;
+}
+
+.vjs-shoppable-replay-btn {
+  padding: 12px 24px;
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #111;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+.vjs-shoppable-replay-btn:hover {
+  background-color: #fff;
+  transform: scale(1.05);
+}
+
+/* --- Utility and Spinner Styles --- */
+
+.vjs-hidden {
+  display: none !important;
+}
+
+.vjs-shoppable-item-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2em;
+  height: 2em;
+  margin: -1em 0 0 -1em;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: vjs-shoppable-item-spinner 1s linear infinite;
+  z-index: 2;
+}
+
+@keyframes vjs-shoppable-item-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vjs-shoppable-item-placeholder {
+  background: #303030;
+  height: 100%;
+}

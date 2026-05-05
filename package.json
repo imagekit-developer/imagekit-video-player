@@ -1,0 +1,22 @@
+{
+  "name": "imagekit-video-player",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": {
+    "packages": [
+      "packages/*",
+      "examples/*"
+    ],
+    "nohoist": [
+      "**/video.js/**"
+    ]
+  },
+  "scripts": {
+    "build": "lerna run build",
+    "dev": "lerna run build && lerna run dev --parallel"
+  },
+  "devDependencies": {
+    "lerna": "^8.1.8"
+  },
+  "packageManager": "yarn@4.9.2"
+}

@@ -1,0 +1,747 @@
+{
+    "transcript": [
+      {
+        "transcript": "If everybody say, this is going to be very tough, I'm very interested in that tough question.",
+        "confidence": 0.9951172,
+        "words": [
+          {
+            "word": "If",
+            "start": 0.48,
+            "end": 0.72
+          },
+          {
+            "word": "everybody",
+            "start": 0.72,
+            "end": 1.32
+          },
+          {
+            "word": "say,",
+            "start": 1.32,
+            "end": 1.68
+          },
+          {
+            "word": "this",
+            "start": 1.68,
+            "end": 2
+          },
+          {
+            "word": "is",
+            "start": 2,
+            "end": 2.24
+          },
+          {
+            "word": "going",
+            "start": 2.24,
+            "end": 2.44
+          },
+          {
+            "word": "to",
+            "start": 2.44,
+            "end": 2.56
+          },
+          {
+            "word": "be",
+            "start": 2.56,
+            "end": 2.68
+          },
+          {
+            "word": "very",
+            "start": 2.68,
+            "end": 2.92
+          },
+          {
+            "word": "tough,",
+            "start": 2.92,
+            "end": 3.36
+          },
+          {
+            "word": "I'm",
+            "start": 3.68,
+            "end": 4.32
+          },
+          {
+            "word": "very",
+            "start": 4.4,
+            "end": 4.8
+          },
+          {
+            "word": "interested",
+            "start": 4.8,
+            "end": 5.32
+          },
+          {
+            "word": "in",
+            "start": 5.32,
+            "end": 5.48
+          },
+          {
+            "word": "that",
+            "start": 5.48,
+            "end": 5.64
+          },
+          {
+            "word": "tough",
+            "start": 5.64,
+            "end": 5.92
+          },
+          {
+            "word": "question.",
+            "start": 5.92,
+            "end": 6.24
+          }
+        ]
+      },
+      {
+        "transcript": "And I pick up and say, how can we do in a different way?",
+        "confidence": 0.76464844,
+        "words": [
+          {
+            "word": "And",
+            "start": 6.32,
+            "end": 6.6
+          },
+          {
+            "word": "I",
+            "start": 6.6,
+            "end": 6.76
+          },
+          {
+            "word": "pick",
+            "start": 6.76,
+            "end": 6.96
+          },
+          {
+            "word": "up",
+            "start": 6.96,
+            "end": 7.28
+          },
+          {
+            "word": "and",
+            "start": 7.28,
+            "end": 7.6
+          },
+          {
+            "word": "say,",
+            "start": 7.6,
+            "end": 7.92
+          },
+          {
+            "word": "how",
+            "start": 8.08,
+            "end": 8.44
+          },
+          {
+            "word": "can",
+            "start": 8.44,
+            "end": 8.72
+          },
+          {
+            "word": "we",
+            "start": 8.72,
+            "end": 8.92
+          },
+          {
+            "word": "do",
+            "start": 8.92,
+            "end": 9.16
+          },
+          {
+            "word": "in",
+            "start": 9.16,
+            "end": 9.4
+          },
+          {
+            "word": "a",
+            "start": 9.4,
+            "end": 9.52
+          },
+          {
+            "word": "different",
+            "start": 9.52,
+            "end": 9.76
+          },
+          {
+            "word": "way?",
+            "start": 9.76,
+            "end": 10.12
+          }
+        ]
+      },
+      {
+        "transcript": "Because nothing is easy, nothing is free.",
+        "confidence": 0.9609375,
+        "words": [
+          {
+            "word": "Because",
+            "start": 10.12,
+            "end": 10.48
+          },
+          {
+            "word": "nothing",
+            "start": 10.88,
+            "end": 11.44
+          },
+          {
+            "word": "is",
+            "start": 11.44,
+            "end": 11.84
+          },
+          {
+            "word": "easy,",
+            "start": 11.84,
+            "end": 12.48
+          },
+          {
+            "word": "nothing",
+            "start": 12.8,
+            "end": 13.28
+          },
+          {
+            "word": "is",
+            "start": 13.28,
+            "end": 13.56
+          },
+          {
+            "word": "free.",
+            "start": 13.56,
+            "end": 13.92
+          }
+        ]
+      },
+      {
+        "transcript": "If you want to be successful, you have to think different, you have to do different.",
+        "confidence": 0.99902344,
+        "words": [
+          {
+            "word": "If",
+            "start": 14.64,
+            "end": 14.92
+          },
+          {
+            "word": "you",
+            "start": 14.92,
+            "end": 15.08
+          },
+          {
+            "word": "want",
+            "start": 15.08,
+            "end": 15.28
+          },
+          {
+            "word": "to",
+            "start": 15.28,
+            "end": 15.44
+          },
+          {
+            "word": "be",
+            "start": 15.44,
+            "end": 15.56
+          },
+          {
+            "word": "successful,",
+            "start": 15.56,
+            "end": 16.32
+          },
+          {
+            "word": "you",
+            "start": 16.72,
+            "end": 17.08
+          },
+          {
+            "word": "have",
+            "start": 17.08,
+            "end": 17.32
+          },
+          {
+            "word": "to",
+            "start": 17.32,
+            "end": 17.56
+          },
+          {
+            "word": "think",
+            "start": 17.56,
+            "end": 17.92
+          },
+          {
+            "word": "different,",
+            "start": 17.92,
+            "end": 18.32
+          },
+          {
+            "word": "you",
+            "start": 19.44,
+            "end": 19.76
+          },
+          {
+            "word": "have",
+            "start": 19.76,
+            "end": 19.96
+          },
+          {
+            "word": "to",
+            "start": 19.96,
+            "end": 20.16
+          },
+          {
+            "word": "do",
+            "start": 20.16,
+            "end": 20.44
+          },
+          {
+            "word": "different.",
+            "start": 20.44,
+            "end": 20.8
+          }
+        ]
+      },
+      {
+        "transcript": "You have to pay the price.",
+        "confidence": 0.9975586,
+        "words": [
+          {
+            "word": "You",
+            "start": 21.76,
+            "end": 22.16
+          },
+          {
+            "word": "have",
+            "start": 22.24,
+            "end": 22.56
+          },
+          {
+            "word": "to",
+            "start": 22.56,
+            "end": 22.84
+          },
+          {
+            "word": "pay",
+            "start": 22.84,
+            "end": 23.12
+          },
+          {
+            "word": "the",
+            "start": 23.12,
+            "end": 23.4
+          },
+          {
+            "word": "price.",
+            "start": 23.4,
+            "end": 23.76
+          }
+        ]
+      },
+      {
+        "transcript": "Yeah, we are lucky.",
+        "confidence": 0.93098956,
+        "words": [
+          {
+            "word": "Yeah,",
+            "start": 29.76,
+            "end": 30.12
+          },
+          {
+            "word": "we",
+            "start": 30.12,
+            "end": 30.28
+          },
+          {
+            "word": "are",
+            "start": 30.28,
+            "end": 30.44
+          },
+          {
+            "word": "lucky.",
+            "start": 30.44,
+            "end": 30.96
+          }
+        ]
+      },
+      {
+        "transcript": "We work much harder than most of the people.",
+        "confidence": 0.9970703,
+        "words": [
+          {
+            "word": "We",
+            "start": 32.14,
+            "end": 32.38
+          },
+          {
+            "word": "work",
+            "start": 32.78,
+            "end": 33.18
+          },
+          {
+            "word": "much",
+            "start": 33.58,
+            "end": 33.98
+          },
+          {
+            "word": "harder",
+            "start": 33.98,
+            "end": 34.54
+          },
+          {
+            "word": "than",
+            "start": 34.54,
+            "end": 34.86
+          },
+          {
+            "word": "most",
+            "start": 34.86,
+            "end": 35.1
+          },
+          {
+            "word": "of",
+            "start": 35.1,
+            "end": 35.3
+          },
+          {
+            "word": "the",
+            "start": 35.3,
+            "end": 35.46
+          },
+          {
+            "word": "people.",
+            "start": 35.46,
+            "end": 35.74
+          }
+        ]
+      },
+      {
+        "transcript": "We never sleep well and sound in the evening.",
+        "confidence": 0.9921875,
+        "words": [
+          {
+            "word": "We",
+            "start": 36.46,
+            "end": 36.82
+          },
+          {
+            "word": "never",
+            "start": 36.82,
+            "end": 37.18
+          },
+          {
+            "word": "sleep",
+            "start": 37.18,
+            "end": 37.66
+          },
+          {
+            "word": "well",
+            "start": 37.66,
+            "end": 38.02
+          },
+          {
+            "word": "and",
+            "start": 38.02,
+            "end": 38.3
+          },
+          {
+            "word": "sound",
+            "start": 38.3,
+            "end": 38.7
+          },
+          {
+            "word": "in",
+            "start": 38.7,
+            "end": 38.86
+          },
+          {
+            "word": "the",
+            "start": 38.86,
+            "end": 38.98
+          },
+          {
+            "word": "evening.",
+            "start": 38.98,
+            "end": 39.5
+          }
+        ]
+      },
+      {
+        "transcript": "I Travel last year 867 hours a year in the flat plane.",
+        "confidence": 0.9995117,
+        "words": [
+          {
+            "word": "I",
+            "start": 40.38,
+            "end": 40.74
+          },
+          {
+            "word": "Travel",
+            "start": 40.74,
+            "end": 41.34
+          },
+          {
+            "word": "last",
+            "start": 41.58,
+            "end": 41.9
+          },
+          {
+            "word": "year",
+            "start": 41.9,
+            "end": 42.22
+          },
+          {
+            "word": "867",
+            "start": 42.54,
+            "end": 44.78
+          },
+          {
+            "word": "hours",
+            "start": 44.94,
+            "end": 45.34
+          },
+          {
+            "word": "a",
+            "start": 45.34,
+            "end": 45.66
+          },
+          {
+            "word": "year",
+            "start": 45.66,
+            "end": 45.98
+          },
+          {
+            "word": "in",
+            "start": 46.22,
+            "end": 46.5
+          },
+          {
+            "word": "the",
+            "start": 46.5,
+            "end": 46.74
+          },
+          {
+            "word": "flat",
+            "start": 46.74,
+            "end": 47.22
+          },
+          {
+            "word": "plane.",
+            "start": 47.22,
+            "end": 47.66
+          }
+        ]
+      },
+      {
+        "transcript": "In the plane.",
+        "confidence": 0.97753906,
+        "words": [
+          {
+            "word": "In",
+            "start": 47.979,
+            "end": 48.26
+          },
+          {
+            "word": "the",
+            "start": 48.26,
+            "end": 48.46
+          },
+          {
+            "word": "plane.",
+            "start": 48.46,
+            "end": 48.94
+          }
+        ]
+      },
+      {
+        "transcript": "I'm working hard.",
+        "confidence": 0.9029948,
+        "words": [
+          {
+            "word": "I'm",
+            "start": 49.34,
+            "end": 49.74
+          },
+          {
+            "word": "working",
+            "start": 49.74,
+            "end": 50.06
+          },
+          {
+            "word": "hard.",
+            "start": 50.06,
+            "end": 50.46
+          }
+        ]
+      },
+      {
+        "transcript": "My team working very hard.",
+        "confidence": 0.9995117,
+        "words": [
+          {
+            "word": "My",
+            "start": 50.78,
+            "end": 51.18
+          },
+          {
+            "word": "team",
+            "start": 51.18,
+            "end": 51.58
+          },
+          {
+            "word": "working",
+            "start": 51.98,
+            "end": 52.38
+          },
+          {
+            "word": "very",
+            "start": 52.38,
+            "end": 52.74
+          },
+          {
+            "word": "hard.",
+            "start": 52.74,
+            "end": 53.1
+          }
+        ]
+      },
+      {
+        "transcript": "18 years.",
+        "confidence": 0.99072,
+        "words": [
+          {
+            "word": "18",
+            "start": 53.82,
+            "end": 54.22
+          },
+          {
+            "word": "years.",
+            "start": 54.22,
+            "end": 54.62
+          }
+        ]
+      },
+      {
+        "transcript": "We work like a normal company.",
+        "confidence": 0.99609375,
+        "words": [
+          {
+            "word": "We",
+            "start": 54.78,
+            "end": 55.14
+          },
+          {
+            "word": "work",
+            "start": 55.14,
+            "end": 55.5
+          },
+          {
+            "word": "like",
+            "start": 55.58,
+            "end": 55.9
+          },
+          {
+            "word": "a",
+            "start": 55.9,
+            "end": 56.1
+          },
+          {
+            "word": "normal",
+            "start": 56.1,
+            "end": 56.5
+          },
+          {
+            "word": "company.",
+            "start": 56.5,
+            "end": 56.86
+          }
+        ]
+      },
+      {
+        "transcript": "70 years, day and night.",
+        "confidence": 0.8833,
+        "words": [
+          {
+            "word": "70",
+            "start": 57.82,
+            "end": 58.22
+          },
+          {
+            "word": "years,",
+            "start": 58.3,
+            "end": 58.7
+          },
+          {
+            "word": "day",
+            "start": 59.42,
+            "end": 59.82
+          },
+          {
+            "word": "and",
+            "start": 59.9,
+            "end": 60.26
+          },
+          {
+            "word": "night.",
+            "start": 60.26,
+            "end": 60.62
+          }
+        ]
+      },
+      {
+        "transcript": "Nothing is free, nothing is easy.",
+        "confidence": 0.99975586,
+        "words": [
+          {
+            "word": "Nothing",
+            "start": 61.34,
+            "end": 61.98
+          },
+          {
+            "word": "is",
+            "start": 62.38,
+            "end": 62.78
+          },
+          {
+            "word": "free,",
+            "start": 62.78,
+            "end": 63.18
+          },
+          {
+            "word": "nothing",
+            "start": 64.36,
+            "end": 64.76
+          },
+          {
+            "word": "is",
+            "start": 64.76,
+            "end": 65.12
+          },
+          {
+            "word": "easy.",
+            "start": 65.12,
+            "end": 65.8
+          }
+        ]
+      }
+    ],
+    "languageCode": "en",
+    "paragraphs": [
+      {
+        "text": "If everybody say, this is going to be very tough, I'm very interested in that tough question. And I pick up and say, how can we do in a different way? Because nothing is easy, nothing is free. If you want to be successful, you have to think different, you have to do different. You have to pay the price.",
+        "start": 0.48,
+        "end": 23.76,
+        "confidence": 0.9951172
+      },
+      {
+        "text": "I live up by 18 years to today's size. Yeah, we are lucky. We work much harder than most of the people. We never sleep well and sound in the evening. I Travel last year 867 hours a year in the flat plane.",
+        "start": 24.88,
+        "end": 47.66,
+        "confidence": 0.45092773
+      },
+      {
+        "text": "In the plane. I'm working hard. My team working very hard. 18 years. We work like a normal company.",
+        "start": 47.979,
+        "end": 56.86,
+        "confidence": 0.97753906
+      },
+      {
+        "text": "70 years, day and night. Nothing is free, nothing is easy.",
+        "start": 57.82,
+        "end": 65.8,
+        "confidence": 0.8833
+      }
+    ]
+  }

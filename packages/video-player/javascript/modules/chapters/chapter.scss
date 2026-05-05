@@ -1,0 +1,57 @@
+.video-js {
+    .vjs-control-bar {
+        .vjs-chapter-boundary {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 2px;
+            background-color: black;
+            pointer-events: none;
+            z-index: 3;
+        }
+
+        .vjs-chapter-tooltip-container {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            font-size: 12px;
+            line-height: 1.2;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            position: absolute;
+            bottom: calc(100% + 1em);
+            transform: translateX(-50%) scaleY(0.5);
+            display: none;
+            pointer-events: none;
+            z-index: 4;
+            transition: transform 0.1s ease-in-out;
+        }
+
+        .vjs-progress-control:hover {
+            .vjs-progress-holder .vjs-chapter-tooltip-container {
+                font-size: 1em;
+            }
+        }
+
+        .vjs-control-bar-chapter-wrapper {
+            display: flex;
+            align-items: center;
+            container-type: inline-size;
+        }
+
+        .vjs-control-bar-chapter-display {
+            line-height: 1.5;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 0.5em;
+            &:not(:empty)::before {
+                content: '•';
+                padding-right: 0.5em;
+            }
+            @container (max-width: 150px) {
+                display: none;
+            }
+        }
+    }
+}

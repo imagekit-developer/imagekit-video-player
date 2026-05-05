@@ -1,0 +1,31 @@
+
+import {
+    IKPlayerOptions,
+    SourceOptions,
+    PlaylistOptions,
+    Player,
+} from '../javascript';
+
+/** Props accepted by IKVideoPlayer */
+export interface IKVideoPlayerProps {
+    /** Your ImageKit IKPlayerOptions */
+    ikOptions: IKPlayerOptions;
+    /** Any additional Video.js playerOptions (controls/autoplay/fluid/etc) */
+    videoJsOptions?: any;
+    /**
+     * Exactly one of these must be provided:
+     * - `source`: a single SourceOptions
+     * - `playlist`: an object containing `sources: SourceOptions[]` and optional playlist `options`
+     */
+    source?: SourceOptions;
+    playlist?: {
+        sources: SourceOptions[];
+        options?: PlaylistOptions;
+    };
+}
+
+/** Methods exposed via ref */
+export interface IKVideoPlayerRef {
+    /** Returns the underlying Video.js player instance (or null if not yet mounted) */
+    getPlayer: () => Player | null;
+}

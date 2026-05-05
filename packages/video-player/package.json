@@ -1,0 +1,70 @@
+{
+  "name": "@imagekit/video-player",
+  "version": "1.0.0-beta.2",
+  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue)",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "browser": "dist/index.global.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue/index.d.ts",
+      "import": "./dist/vue/index.mjs",
+      "require": "./dist/vue/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
+    "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
+    "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
+    "build:assets": "cp -r javascript/assets dist/",
+    "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css)",
+    "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
+    "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
+  },
+  "peerDependencies": {
+    "react": "^17 || ^18",
+    "react-dom": "^17 || ^18",
+    "vue": "^3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@imagekit/javascript": "^5.0.0",
+    "@types/lodash": "^4.14.200",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "lodash": "^4.17.21",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sass": "^1.75.0",
+    "tsup": "^8.3.5",
+    "typescript": "~5.8.0",
+    "video.js": "^8.20.0",
+    "vue": "^3.0.0"
+  }
+}

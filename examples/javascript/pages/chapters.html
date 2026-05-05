@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chapters Example</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <style>
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid #ddd;
+        }
+        .tab-button {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            transition: all 0.3s;
+        }
+        .tab-button:hover {
+            color: #333;
+        }
+        .tab-button.active {
+            color: #0066cc;
+            border-bottom-color: #0066cc;
+            font-weight: bold;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-link">&larr; Back to examples</a>
+        <h1>Chapters Example</h1>
+        <p>This example demonstrates three different ways to configure chapters:</p>
+        <div class="tabs">
+            <button class="tab-button active" data-tab="auto">Auto-generate (AI)</button>
+            <button class="tab-button" data-tab="url">VTT URL</button>
+            <button class="tab-button" data-tab="manual">Manual Object</button>
+        </div>
+        <video id="player" class="video-js" controls preload="auto" width="960" height="540"></video>
+        <h2>Example Code</h2>
+        <div class="code-block">
+            <pre><code id="code-display" class="language-javascript"></code></pre>
+        </div>
+    </div>
+    <script type="module" src="/src/chapters.ts"></script>
+</body>
+</html>

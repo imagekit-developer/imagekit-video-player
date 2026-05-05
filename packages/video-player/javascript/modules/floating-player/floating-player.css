@@ -1,0 +1,63 @@
+.ik-player-wrapper {
+    transition: height 0.2s ease-out;
+}
+
+.ik-player-floating {
+    position: fixed;
+    width: 360px;
+    height: 202.5px;
+    bottom: 20px;
+    z-index: 1000;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    overflow: hidden;
+    /* cursor: pointer; has been removed */
+}
+
+.ik-player-floating-right {
+    right: 20px;
+}
+
+.ik-player-floating-left {
+    left: 20px;
+}
+
+/* .ik-player-floating .vjs-captions-button,
+.ik-player-floating .vjs-chapters-button, */
+.ik-player-floating .vjs-shoppable-bar,
+.ik-player-floating .vjs-shoppable-hotspot,
+.ik-player-floating .vjs-present-upcoming,
+.ik-player-floating .vjs-shoppable-postplay-overlay,
+.ik-player-floating .vjs-recommendations-overlay {
+    display: none !important;
+}
+
+.ik-floating-close-button {
+    position: absolute;
+    top: 0.5em;
+    right: 0.5em;
+    background: rgba(43, 51, 63, 0.7);
+    border: none;
+    color: #fff;
+    font-size: 1.5em;
+    line-height: 1.5em;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001; /* Must be above the grid */
+    transition: background-color 0.2s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ik-floating-close-button:hover {
+    background-color: rgba(60, 70, 80, 0.9);
+    transform: scale(1.1);
+}
+
+.ik-floating-close-button svg {
+    width: 14px;
+    height: 14px;
+}
