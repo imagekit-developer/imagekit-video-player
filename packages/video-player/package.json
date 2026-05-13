@@ -23,23 +23,20 @@
       "import": "./dist/vue/index.mjs",
       "require": "./dist/vue/index.js"
     },
-    "./astro": "./astro/IKVideoPlayer.astro",
-    "./astro/types": {
+    "./astro": {
       "types": "./dist/astro/index.d.ts",
-      "import": "./dist/astro/index.mjs",
-      "require": "./dist/astro/index.js"
+      "default": "./dist/astro/IKVideoPlayer.astro"
     },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
-    "dist",
-    "astro"
+    "dist"
   ],
   "scripts": {
     "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
     "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
     "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
-    "build:assets": "cp -r javascript/assets dist/",
+    "build:assets": "cp -r javascript/assets dist/ && mkdir -p dist/astro && cp astro/IKVideoPlayer.astro dist/astro/IKVideoPlayer.astro",
     "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css)",
     "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
     "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
