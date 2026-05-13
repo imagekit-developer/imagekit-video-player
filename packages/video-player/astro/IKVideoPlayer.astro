@@ -150,7 +150,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
 </ik-video-player>
 
 <script>
-  import { videoPlayer } from '@imagekit/video-player';
+  import { videoPlayer, type Player } from '@imagekit/video-player';
   import '@imagekit/video-player/styles.css';
 
   type SignerFn = (url: string) => Promise<string>;
@@ -211,7 +211,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
 
   class IKVideoPlayerElement extends HTMLElement {
     private _initialized = false;
-    private _player: ReturnType<typeof videoPlayer> | null = null;
+    private _player: Player | null = null;
     /** Local copy of options; kept in sync with the plugin's internal copy. */
     private _ikOptions: any = null;
     private _signerFn?: SignerFn;
@@ -224,9 +224,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
      */
     private _pendingLoad: PendingLoad | null = null;
 
-    public getPlayer() {
-      return this._player;
-    }
+    public getPlayer(): Player | null { return this._player; }
 
     /**
      * Imperative signer assignment.
