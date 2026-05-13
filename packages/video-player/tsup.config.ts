@@ -5,6 +5,12 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// Wipe `dist/` once, BEFORE any config starts. We can't use tsup's per-config
+// `clean: true` because the two configs below run in parallel — Config 1's
+// `clean: true` would race against Config 2's emit and randomly delete
+// `dist/astro/index.{mjs,d.mts}`.
+rmSync(resolve(__dirname, 'dist'), { recursive: true, force: true });
+
 export default defineConfig([
   // ─── Config 1: Main JS + DTS bundles (core, React, Vue) ────────────────────
   {
@@ -28,7 +34,7 @@ export default defineConfig([
     minify: true,
     // Disable code splitting for simplicity (keeps single-file outputs)
     splitting: false,
-    clean: true, // Clean the entire dist folder once
+    clean: false, // Cleanup happens once at the top of this file
     // This onSuccess script will run after this config completes
     onSuccess: "npm run build:css",
     loader: {
@@ -40,24 +46,26 @@ export default defineConfig([
     external: [/\.css$/, /\.astro$/],
   },
 
-  // ─── Config 2: Astro DTS-only bundle ────────────────────────────────────────
+  // ─── Config 2: Astro entry (JS re-export + DTS) ──────────────────────────
   //
-  // The Astro component ships as a source `.astro` file (resolved at runtime
-  // via the package `exports` map's `default` condition). All we need from
-  // tsup here is a single bundled `.d.ts` so TypeScript can resolve types
-  // when a consumer imports from `@imagekit/video-player/astro`.
+  // `astro/index.ts` re-exports the default export of `IKVideoPlayer.astro`
+  // as a NAMED `IKVideoPlayer`. With `.astro` marked external, tsup emits a
+  // tiny `dist/astro/index.mjs` containing literally:
   //
-  // Using tsup (vs plain tsc) means rollup-plugin-dts BUNDLES the
-  // re-exported types from `'../javascript'` inline into one file — exactly
-  // like React/Vue types are bundled. No `dist/javascript/` side effect,
-  // no path rewriting, no separate tsconfig.
+  //   export { default as IKVideoPlayer } from './IKVideoPlayer.astro';
   //
-  // tsup always emits JS alongside DTS; we delete the three tiny JS files
-  // in `onSuccess` because nothing should ever import them at runtime.
+  // The consumer's Astro/Vite toolchain resolves that relative `.astro`
+  // import against the copy placed at `dist/astro/IKVideoPlayer.astro` by
+  // `build:assets`, and processes it. This gives consumers a named-import
+  // API (`import { IKVideoPlayer } from '@imagekit/video-player/astro'`)
+  // that matches the React/Vue wrappers.
+  //
+  // rollup-plugin-dts BUNDLES the re-exported types from `'../javascript'`
+  // inline into a single `.d.ts` — same as React/Vue.
   {
     entry: { 'astro/index': 'astro/index.ts' },
     outDir: 'dist',
-    format: ["esm"],
+    format: ["esm", "cjs", "iife"],
     dts: true,
     sourcemap: false,
     treeshake: true,
@@ -66,10 +74,5 @@ export default defineConfig([
     clean: false, // Do NOT wipe dist — Config 1 has already populated it
     loader: { ".css": "empty", ".astro": "empty" },
     external: [/\.css$/, /\.astro$/],
-    onSuccess: async () => {
-      // tsup emits JS alongside DTS; delete it since only .d.ts is needed
-      rmSync(resolve(__dirname, 'dist/astro/index.mjs'), { force: true });
-      console.log('[astro-types] Removed JS artefact from dist/astro/ — .d.ts only.');
-    },
   },
 ]);

@@ -25,7 +25,8 @@
     },
     "./astro": {
       "types": "./dist/astro/index.d.ts",
-      "default": "./dist/astro/IKVideoPlayer.astro"
+      "import": "./dist/astro/index.mjs",
+      "default": "./dist/astro/index.mjs"
     },
     "./styles.css": "./dist/styles.css"
   },
