@@ -57,7 +57,7 @@ export default defineConfig([
   {
     entry: { 'astro/index': 'astro/index.ts' },
     outDir: 'dist',
-    format: ["esm", "cjs", "iife"],
+    format: ["esm"],
     dts: true,
     sourcemap: false,
     treeshake: true,
@@ -67,14 +67,9 @@ export default defineConfig([
     loader: { ".css": "empty", ".astro": "empty" },
     external: [/\.css$/, /\.astro$/],
     onSuccess: async () => {
-      for (const f of [
-        'dist/astro/index.js',
-        'dist/astro/index.mjs',
-        'dist/astro/index.global.js',
-      ]) {
-        rmSync(resolve(__dirname, f), { force: true });
-      }
-      console.log('[astro-types] Removed JS artefacts from dist/astro/ — .d.ts only.');
+      // tsup emits JS alongside DTS; delete it since only .d.ts is needed
+      rmSync(resolve(__dirname, 'dist/astro/index.mjs'), { force: true });
+      console.log('[astro-types] Removed JS artefact from dist/astro/ — .d.ts only.');
     },
   },
 ]);
