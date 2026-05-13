@@ -2,8 +2,11 @@
 import Layout from '../layouts/Layout.astro';
 import { IKVideoPlayer } from '@imagekit/video-player/astro';
 import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player/astro';
-// Override test: imported AFTER the player component.
-// Uses same-specificity selectors (no `.video-js.video-js` trick) —
+// The player component does NOT auto-import its stylesheet — consumers
+// import it explicitly so they control bundling and CSS ordering.
+import '@imagekit/video-player/styles.css';
+// Override imported AFTER the player styles.
+// Uses same-specificity selectors —
 // so this ONLY wins if it ends up after the player's CSS in <head>.
 import '../styles/player-overrides.css';
 

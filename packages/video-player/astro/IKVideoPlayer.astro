@@ -31,10 +31,24 @@
  *        or any signing flow that doesn't fit the simple POST contract.
  *        An imperatively-set `signerFn` always wins over `signerOptions`.
  *
+ * STYLES
+ * ------
+ * This component does NOT auto-import the player stylesheet. Import it
+ * once in your app (e.g. in a shared layout) so it is bundled into your
+ * page CSS:
+ *
+ * ```astro
+ * ---
+ * // src/layouts/Layout.astro (or any page using the player)
+ * import '@imagekit/video-player/styles.css';
+ * ---
+ * ```
+ *
  * @example Declarative
  * ```astro
  * ---
  * import { IKVideoPlayer } from '@imagekit/video-player/astro';
+ * import '@imagekit/video-player/styles.css';
  * ---
  * <IKVideoPlayer
  *   ikOptions={{ imagekitId: 'your_id' }}
@@ -151,7 +165,6 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
 
 <script>
   import { videoPlayer, type Player } from '@imagekit/video-player';
-  import '@imagekit/video-player/styles.css';
 
   type SignerFn = (url: string) => Promise<string>;
 
