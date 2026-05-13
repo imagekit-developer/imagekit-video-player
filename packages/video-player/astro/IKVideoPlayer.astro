@@ -345,6 +345,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       this._initialized = false;
     }
   }
-
-  customElements.define('ik-video-player', IKVideoPlayerElement);
+  if (!customElements.get('ik-video-player')) {
+    customElements.define('ik-video-player', IKVideoPlayerElement);
+  }
 </script>
