@@ -1,6 +1,6 @@
 {
   "name": "@imagekit/video-player",
-  "version": "1.0.0-beta.3",
+  "version": "1.0.0-beta.4",
   "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue, Astro)",
   "license": "Apache-2.0",
   "main": "dist/index.js",
