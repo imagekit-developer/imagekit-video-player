@@ -65,7 +65,7 @@ export default defineConfig([
   {
     entry: { 'astro/index': 'astro/index.ts' },
     outDir: 'dist',
-    format: ["esm", "cjs", "iife"],
+    format: ["esm"],
     dts: true,
     sourcemap: false,
     treeshake: true,

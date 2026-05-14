@@ -110,21 +110,33 @@ import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/
  * for long signed URLs. Use `mode: 'imperative'` if you need a different
  * transport.
  */
-export interface SignerOptions {
-  /**
-   * `'fetch'` (default) — build a fetch-based signer from the options below.
-   * `'imperative'` — defer source loading; consumer must set `el.signerFn`.
-   */
-  mode?: 'fetch' | 'imperative';
-  /** Endpoint that returns the signed URL as plain text. Required when mode is 'fetch'. */
-  url?: string;
-  /** Extra headers merged onto the request. Only used with mode 'fetch'. */
+/**
+ * `'fetch'` mode — the wrapper builds a fetch-based signer that POSTs the
+ * source URL to `url` and uses the plain-text response as the signed URL.
+ */
+export interface FetchSignerOptions {
+  /** Defaults to `'fetch'` when omitted. */
+  mode?: 'fetch';
+  /** Endpoint that returns the signed URL as plain text. */
+  url: string;
+  /** Extra headers merged onto the request. */
   headers?: Record<string, string>;
-  /** Extra body fields merged with `{ url }` in the JSON request body. Only used with mode 'fetch'. */
+  /** Extra body fields merged with `{ url }` in the JSON request body. */
   body?: Record<string, string | number | boolean>;
-  /** `fetch` credentials mode. Defaults to `'same-origin'`. Only used with mode 'fetch'. */
+  /** `fetch` credentials mode. Defaults to `'same-origin'`. */
   credentials?: 'include' | 'same-origin' | 'omit';
 }
+
+/**
+ * `'imperative'` mode — the wrapper defers source loading until the
+ * consumer assigns `el.signerFn = fn` from a sibling `<script>`. No other
+ * fields apply.
+ */
+export interface ImperativeSignerOptions {
+  mode: 'imperative';
+}
+
+export type SignerOptions = FetchSignerOptions | ImperativeSignerOptions;
 
 export interface Props {
   /** ImageKit player options (imagekitId is required) */
@@ -228,6 +240,14 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
     /** Local copy of options; kept in sync with the plugin's internal copy. */
     private _ikOptions: any = null;
     private _signerFn?: SignerFn;
+    /**
+     * True when `_signerFn` was synthesized from declarative `signerOptions`
+     * (and therefore captures `_abortController.signal`). Such a signer
+     * becomes useless after `disconnectedCallback()` aborts the controller,
+     * so we drop it on disconnect and rebuild on reconnect. Imperative
+     * signers set via the public `signerFn` setter are preserved.
+     */
+    private _signerFnIsAutoBuilt = false;
     /** Aborts any in-flight signer requests when the element is removed. */
     private _abortController = new AbortController();
     /**
@@ -238,6 +258,27 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
     private _pendingLoad: PendingLoad | null = null;
 
     public getPlayer(): Player | null { return this._player; }
+
+    /**
+     * "Upgrade" a property that may have been assigned on this instance
+     * before the custom element definition was registered. Without this,
+     * a pre-upgrade `el.signerFn = fn` would create an own data property
+     * that permanently shadows the prototype accessor — subsequent reads
+     * see the value, but our setter never runs (so `_signerFn` stays
+     * undefined, `_ikOptions` is never patched, and pending loads are
+     * never flushed). The fix is the standard pattern: snapshot the
+     * value, delete the shadowing own property, then reassign through
+     * the now-visible accessor.
+     *
+     * See: https://web.dev/articles/custom-elements-best-practices
+     */
+    private _upgradeProperty(prop: 'signerFn') {
+      if (Object.prototype.hasOwnProperty.call(this, prop)) {
+        const value = (this as any)[prop];
+        delete (this as any)[prop];
+        (this as any)[prop] = value;
+      }
+    }
 
     /**
      * Imperative signer assignment.
@@ -253,6 +294,9 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
      */
     set signerFn(fn: SignerFn | undefined) {
       this._signerFn = fn;
+      // An imperatively-assigned signer is, by definition, not the
+      // auto-built one tied to our internal AbortSignal.
+      this._signerFnIsAutoBuilt = false;
       // Patch the plugin's live options so subsequent source loads pick up
       // the signer. `videojs.mergeOptions` deep-clones the options object we
       // passed at construction time, so mutating our local `_ikOptions` is
@@ -288,6 +332,11 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       if (this._initialized) return;
       this._initialized = true;
 
+      // Handle the case where a consumer assigned `el.signerFn = fn`
+      // before this class was registered. Must run before we read
+      // `this._signerFn` for the precedence check below.
+      this._upgradeProperty('signerFn');
+
       const raw = this.dataset.config;
       if (!raw) return;
 
@@ -308,6 +357,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
           signerOptions as ClientSignerOptions,
           this._abortController.signal,
         );
+        this._signerFnIsAutoBuilt = true;
       }
       if (this._signerFn) {
         ikOptions.signerFn = this._signerFn;
@@ -351,6 +401,15 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       // a disposed player instance.
       this._abortController.abort();
       this._abortController = new AbortController();
+      // Drop the auto-built signer because its closure captured the now-
+      // aborted signal — every future fetch through it would reject with
+      // AbortError. `connectedCallback()` will rebuild it from the stored
+      // `signerOptions` using the fresh AbortController. An imperatively
+      // assigned signer is owned by the consumer, so we leave it alone.
+      if (this._signerFnIsAutoBuilt) {
+        this._signerFn = undefined;
+        this._signerFnIsAutoBuilt = false;
+      }
       (this._player as any)?.dispose?.();
       this._player = null;
       this._ikOptions = null;

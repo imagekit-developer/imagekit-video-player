@@ -24,7 +24,7 @@
       "require": "./dist/vue/index.js"
     },
     "./astro": {
-      "types": "./dist/astro/index.d.ts",
+      "types": "./dist/astro/index.d.mts",
       "import": "./dist/astro/index.mjs",
       "default": "./dist/astro/index.mjs"
     },
