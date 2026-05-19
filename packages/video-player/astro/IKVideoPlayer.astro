@@ -1,0 +1,423 @@
+---
+/**
+ * ImageKit Video Player component for Astro.
+ *
+ * Uses the Custom Element pattern recommended by Astro for reusable components
+ * with per-instance client-side state. The player is initialized via the
+ * `@imagekit/video-player` JavaScript API inside a `connectedCallback`,
+ * ensuring each instance on the page manages its own lifecycle independently.
+ *
+ * SIGNED URL SUPPORT
+ * ------------------
+ * Astro components render on the server. Props are JSON-serialized into a
+ * `data-*` attribute, so live JavaScript functions (like a `signerFn`) cannot
+ * be passed directly. This component supports two patterns:
+ *
+ *   A. Declarative `signerOptions` prop (most users):
+ *        Pass a URL + optional headers/body. The component synthesizes a
+ *        `signerFn` on the client that POSTs the source URL to the endpoint.
+ *        For same-origin endpoints, the browser sends cookies automatically
+ *        (`credentials: 'same-origin'` is the default), so per-user auth
+ *        usually needs no extra config — your endpoint reads the session
+ *        cookie server-side.
+ *
+ *   B. Imperative property assignment (escape hatch):
+ *        Set `signerOptions={{ mode: 'imperative' }}` so the wrapper waits
+ *        instead of loading the source unsigned, then assign `el.signerFn = fn`
+ *        from a sibling `<script>`. Use this when the signer needs values
+ *        only available after the page hydrates — e.g. an in-memory access
+ *        token from an auth SDK (Auth0, Firebase, Clerk) that refreshes
+ *        client-side, a cross-origin signing endpoint with custom headers,
+ *        or any signing flow that doesn't fit the simple POST contract.
+ *        An imperatively-set `signerFn` always wins over `signerOptions`.
+ *
+ * STYLES
+ * ------
+ * This component does NOT auto-import the player stylesheet. Import it
+ * once in your app (e.g. in a shared layout) so it is bundled into your
+ * page CSS:
+ *
+ * ```astro
+ * ---
+ * // src/layouts/Layout.astro (or any page using the player)
+ * import '@imagekit/video-player/styles.css';
+ * ---
+ * ```
+ *
+ * @example Declarative
+ * ```astro
+ * ---
+ * import { IKVideoPlayer } from '@imagekit/video-player/astro';
+ * import '@imagekit/video-player/styles.css';
+ * ---
+ * <IKVideoPlayer
+ *   ikOptions={{ imagekitId: 'your_id' }}
+ *   source={{ src: 'https://ik.imagekit.io/your_id/video.mp4' }}
+ *   signerOptions={{ url: '/api/sign' }}
+ * />
+ * ```
+ *
+ * @example Imperative signer (in-memory access token from an auth SDK)
+ * ```astro
+ * <IKVideoPlayer
+ *   id="player"
+ *   ikOptions={{ imagekitId: 'your_id' }}
+ *   source={{ src: '...' }}
+ *   signerOptions={{ mode: 'imperative' }}
+ * />
+ *
+ * <script>
+ *   import { auth } from '../lib/auth-sdk';
+ *   const el = document.querySelector('#player');
+ *   el.signerFn = async (url) => {
+ *     const token = await auth.getAccessToken();
+ *     const res = await fetch('/api/sign', {
+ *       method: 'POST',
+ *       headers: {
+ *         'Content-Type': 'application/json',
+ *         Authorization: `Bearer ${token}`,
+ *       },
+ *       body: JSON.stringify({ url }),
+ *     });
+ *     return await res.text();
+ *   };
+ * </script>
+ * ```
+ */
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player';
+
+/**
+ * Declarative signer configuration. Controlled by `mode`:
+ *
+ *   - `'fetch'` (default): The wrapper builds a `signerFn` on the client
+ *     that POSTs the source URL to `url` and uses the plain-text response
+ *     as the signed URL.
+ *
+ *   - `'imperative'`: The wrapper does NOT load the source on mount. It
+ *     waits for the consumer to assign `el.signerFn = fn` from a sibling
+ *     `<script>`, then loads the source through that signer. Use this when
+ *     the signer needs values only available after hydration — e.g. an
+ *     in-memory access token from an auth SDK that refreshes client-side.
+ *
+ * Contract for a `'fetch'` endpoint:
+ *   - Accepts `POST` with JSON body `{ url: string, ...body }`
+ *   - Returns the signed URL as plain text in the response body
+ *   - Returns a 2xx status on success
+ *
+ * POST is the only supported method by design: GET would expose URLs in
+ * access logs / browser history / referrer headers, allow CDN caching of
+ * what should be fresh per-request responses, and hit URL length limits
+ * for long signed URLs. Use `mode: 'imperative'` if you need a different
+ * transport.
+ */
+/**
+ * `'fetch'` mode — the wrapper builds a fetch-based signer that POSTs the
+ * source URL to `url` and uses the plain-text response as the signed URL.
+ */
+export interface FetchSignerOptions {
+  /** Defaults to `'fetch'` when omitted. */
+  mode?: 'fetch';
+  /** Endpoint that returns the signed URL as plain text. */
+  url: string;
+  /** Extra headers merged onto the request. */
+  headers?: Record<string, string>;
+  /** Extra body fields merged with `{ url }` in the JSON request body. */
+  body?: Record<string, string | number | boolean>;
+  /** `fetch` credentials mode. Defaults to `'same-origin'`. */
+  credentials?: 'include' | 'same-origin' | 'omit';
+}
+
+/**
+ * `'imperative'` mode — the wrapper defers source loading until the
+ * consumer assigns `el.signerFn = fn` from a sibling `<script>`. No other
+ * fields apply.
+ */
+export interface ImperativeSignerOptions {
+  mode: 'imperative';
+}
+
+export type SignerOptions = FetchSignerOptions | ImperativeSignerOptions;
+
+export interface Props {
+  /** ImageKit player options (imagekitId is required) */
+  ikOptions: IKPlayerOptions;
+  /** Standard Video.js options (controls, fluid, autoplay, etc.) */
+  videoJsOptions?: Record<string, any>;
+  /** Video source configuration (provide either source or playlist, not both) */
+  source?: SourceOptions;
+  /** Playlist configuration (provide either source or playlist, not both) */
+  playlist?: {
+    sources: SourceOptions[];
+    options?: PlaylistOptions;
+  };
+  /**
+   * Declarative signer configuration. The wrapper builds a `signerFn` from
+   * this on the client. Ignored if `el.signerFn` is set imperatively.
+   */
+  signerOptions?: SignerOptions;
+  /** Optional DOM id forwarded to the custom element. */
+  id?: string;
+}
+
+const {
+  ikOptions,
+  videoJsOptions = {},
+  source,
+  playlist,
+  signerOptions,
+  id,
+} = Astro.props;
+
+const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, signerOptions });
+---
+
+<ik-video-player data-config={config} id={id}>
+  <video class="video-js vjs-default-skin" controls preload="auto" ></video>
+</ik-video-player>
+
+<script>
+  import { videoPlayer, type Player } from '@imagekit/video-player';
+
+  type SignerFn = (url: string) => Promise<string>;
+
+  /** Loose runtime shape — the discriminated public type lives in frontmatter. */
+  interface ClientSignerOptions {
+    mode?: 'fetch' | 'imperative';
+    url?: string;
+    headers?: Record<string, string>;
+    body?: Record<string, string | number | boolean>;
+    credentials?: 'include' | 'same-origin' | 'omit';
+  }
+
+  type PendingLoad =
+    | { kind: 'source'; source: any }
+    | { kind: 'playlist'; playlist: { sources: any[]; options?: any } };
+
+  /**
+   * Build a `signerFn` from declarative options.
+   *
+   * The endpoint is expected to:
+   *   - Accept `POST` with JSON body `{ url, ...opts.body }`
+   *   - Return the signed URL as plain text in the response body
+   *
+   * `cache: 'no-store'` is hardcoded so a misconfigured proxy/SW can never
+   * serve a stale signed URL — these responses must always be fresh.
+   *
+   * The optional `signal` is wired up by the custom element so an in-flight
+   * signer request is aborted if the element is removed from the DOM.
+   */
+  function buildSignerFromOptions(opts: ClientSignerOptions, signal?: AbortSignal): SignerFn {
+    const credentials = opts.credentials ?? 'same-origin';
+
+    return async (urlToSign: string) => {
+      const res = await fetch(opts.url!, {
+        method: 'POST',
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+          ...opts.headers,
+        },
+        credentials,
+        signal,
+        body: JSON.stringify({ url: urlToSign, ...opts.body }),
+      });
+      if (!res.ok) {
+        throw new Error(
+          `[IKVideoPlayer] Signer request failed: ${res.status} ${res.statusText}`
+        );
+      }
+      const signed = (await res.text()).trim();
+      if (!signed) {
+        throw new Error('[IKVideoPlayer] Signer response was empty.');
+      }
+      return signed;
+    };
+  }
+
+  class IKVideoPlayerElement extends HTMLElement {
+    private _initialized = false;
+    private _player: Player | null = null;
+    /** Local copy of options; kept in sync with the plugin's internal copy. */
+    private _ikOptions: any = null;
+    private _signerFn?: SignerFn;
+    /**
+     * True when `_signerFn` was synthesized from declarative `signerOptions`
+     * (and therefore captures `_abortController.signal`). Such a signer
+     * becomes useless after `disconnectedCallback()` aborts the controller,
+     * so we drop it on disconnect and rebuild on reconnect. Imperative
+     * signers set via the public `signerFn` setter are preserved.
+     */
+    private _signerFnIsAutoBuilt = false;
+    /** Aborts any in-flight signer requests when the element is removed. */
+    private _abortController = new AbortController();
+    /**
+     * When `signerOptions.mode === 'imperative'`, source loading is parked
+     * here until `el.signerFn` is assigned. Holds either a single source
+     * payload or a playlist payload — never both.
+     */
+    private _pendingLoad: PendingLoad | null = null;
+
+    public getPlayer(): Player | null { return this._player; }
+
+    /**
+     * "Upgrade" a property that may have been assigned on this instance
+     * before the custom element definition was registered. Without this,
+     * a pre-upgrade `el.signerFn = fn` would create an own data property
+     * that permanently shadows the prototype accessor — subsequent reads
+     * see the value, but our setter never runs (so `_signerFn` stays
+     * undefined, `_ikOptions` is never patched, and pending loads are
+     * never flushed). The fix is the standard pattern: snapshot the
+     * value, delete the shadowing own property, then reassign through
+     * the now-visible accessor.
+     *
+     * See: https://web.dev/articles/custom-elements-best-practices
+     */
+    private _upgradeProperty(prop: 'signerFn') {
+      if (Object.prototype.hasOwnProperty.call(this, prop)) {
+        const value = (this as any)[prop];
+        delete (this as any)[prop];
+        (this as any)[prop] = value;
+      }
+    }
+
+    /**
+     * Imperative signer assignment.
+     *
+     * Setting this property at any time will (re)wire the player to use the
+     * provided function for URL signing. The core player reads `signerFn`
+     * lazily at source-load time, so a late assignment takes effect for any
+     * subsequent `player.src(...)` call.
+     *
+     * If the element was rendered with `signerOptions.mode === 'imperative'`,
+     * source loading was deferred — assigning `signerFn` here flushes the
+     * pending source/playlist through the now-available signer.
+     */
+    set signerFn(fn: SignerFn | undefined) {
+      this._signerFn = fn;
+      // An imperatively-assigned signer is, by definition, not the
+      // auto-built one tied to our internal AbortSignal.
+      this._signerFnIsAutoBuilt = false;
+      // Patch the plugin's live options so subsequent source loads pick up
+      // the signer. `videojs.mergeOptions` deep-clones the options object we
+      // passed at construction time, so mutating our local `_ikOptions` is
+      // not enough — we must mutate the plugin's internal copy.
+      if (this._ikOptions) {
+        this._ikOptions.signerFn = fn;
+      }
+      const plugin = (this._player as any)?.imagekitVideoPlayer?.();
+      const liveOpts = plugin?.getPlayerOptions?.();
+      if (liveOpts) {
+        liveOpts.signerFn = fn;
+      }
+      // Flush any deferred load now that we have a signer.
+      if (fn && this._player && this._pendingLoad) {
+        const pending = this._pendingLoad;
+        this._pendingLoad = null;
+        if (pending.kind === 'playlist') {
+          const playlistMgr = (this._player as any).playlist({
+            sources: pending.playlist.sources,
+            options: pending.playlist.options || {},
+          });
+          playlistMgr.loadFirstItem();
+        } else {
+          this._player.src(pending.source);
+        }
+      }
+    }
+    get signerFn(): SignerFn | undefined {
+      return this._signerFn;
+    }
+
+    connectedCallback() {
+      if (this._initialized) return;
+      this._initialized = true;
+
+      // Handle the case where a consumer assigned `el.signerFn = fn`
+      // before this class was registered. Must run before we read
+      // `this._signerFn` for the precedence check below.
+      this._upgradeProperty('signerFn');
+
+      const raw = this.dataset.config;
+      if (!raw) return;
+
+      const { ikOptions, videoJsOptions, source, playlist, signerOptions } = JSON.parse(raw);
+      const videoEl = this.querySelector('video');
+      if (!videoEl) return;
+
+      // Resolve signing strategy. Precedence:
+      //   1. Imperative signerFn already assigned by consumer (pre-upgrade)
+      //   2. signerOptions.mode === 'fetch' (or omitted): build fetch signer
+      //   3. signerOptions.mode === 'imperative': defer source load, wait
+      //      for the consumer's later `el.signerFn = fn` assignment
+      const isImperativeMode =
+        signerOptions && (signerOptions as ClientSignerOptions).mode === 'imperative';
+
+      if (!this._signerFn && signerOptions && !isImperativeMode) {
+        this._signerFn = buildSignerFromOptions(
+          signerOptions as ClientSignerOptions,
+          this._abortController.signal,
+        );
+        this._signerFnIsAutoBuilt = true;
+      }
+      if (this._signerFn) {
+        ikOptions.signerFn = this._signerFn;
+      }
+      // Stash a local reference so the `signerFn` setter can patch it later
+      // alongside the plugin's deep-cloned copy.
+      this._ikOptions = ikOptions;
+
+      const player = videoPlayer(videoEl, ikOptions, videoJsOptions);
+      this._player = player;
+
+      if (source && playlist) {
+        console.warn(
+          '[IKVideoPlayer] Both `source` and `playlist` were provided. Using `playlist`.'
+        );
+      }
+
+      // Park the load if we're waiting for an imperative signer.
+      if (isImperativeMode && !this._signerFn) {
+        if (playlist?.sources?.length) {
+          this._pendingLoad = { kind: 'playlist', playlist };
+        } else if (source) {
+          this._pendingLoad = { kind: 'source', source };
+        }
+        return;
+      }
+
+      if (playlist?.sources?.length) {
+        const playlistMgr = (player as any).playlist({
+          sources: playlist.sources,
+          options: playlist.options || {},
+        });
+        playlistMgr.loadFirstItem();
+      } else if (source) {
+        player.src(source);
+      }
+    }
+
+    disconnectedCallback() {
+      // Cancel any pending signer requests so their resolution can't touch
+      // a disposed player instance.
+      this._abortController.abort();
+      this._abortController = new AbortController();
+      // Drop the auto-built signer because its closure captured the now-
+      // aborted signal — every future fetch through it would reject with
+      // AbortError. `connectedCallback()` will rebuild it from the stored
+      // `signerOptions` using the fresh AbortController. An imperatively
+      // assigned signer is owned by the consumer, so we leave it alone.
+      if (this._signerFnIsAutoBuilt) {
+        this._signerFn = undefined;
+        this._signerFnIsAutoBuilt = false;
+      }
+      (this._player as any)?.dispose?.();
+      this._player = null;
+      this._ikOptions = null;
+      this._pendingLoad = null;
+      this._initialized = false;
+    }
+  }
+  if (!customElements.get('ik-video-player')) {
+    customElements.define('ik-video-player', IKVideoPlayerElement);
+  }
+</script>

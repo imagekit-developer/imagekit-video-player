@@ -1,7 +1,7 @@
 {
   "name": "@imagekit/video-player",
-  "version": "1.0.0-beta.3",
-  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue)",
+  "version": "1.0.0-beta.4",
+  "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue, Astro)",
   "license": "Apache-2.0",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -23,6 +23,11 @@
       "import": "./dist/vue/index.mjs",
       "require": "./dist/vue/index.js"
     },
+    "./astro": {
+      "types": "./dist/astro/index.d.mts",
+      "import": "./dist/astro/index.mjs",
+      "default": "./dist/astro/index.mjs"
+    },
     "./styles.css": "./dist/styles.css"
   },
   "files": [
@@ -32,17 +37,21 @@
     "build": "yarn run build:tsup && yarn run build:css && yarn run build:assets",
     "build:tsup": "tsup --tsconfig tsconfig.tsup.json",
     "build:css": "sass --load-path=./node_modules javascript/styles/index.scss dist/styles.css",
-    "build:assets": "cp -r javascript/assets dist/",
+    "build:assets": "cp -r javascript/assets dist/ && mkdir -p dist/astro && cp astro/IKVideoPlayer.astro dist/astro/IKVideoPlayer.astro",
     "dev": "yarn run build && (yarn run dev:tsup & yarn run dev:css)",
     "dev:tsup": "tsup --tsconfig tsconfig.tsup.json --watch",
     "dev:css": "sass --watch --load-path=./node_modules javascript/styles/index.scss dist/styles.css"
   },
   "peerDependencies": {
+    "astro": ">=3.2.0",
     "react": "^17 || ^18",
     "react-dom": "^17 || ^18",
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -58,6 +67,7 @@
     "@types/lodash": "^4.14.200",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
+    "astro": ">=3.2.0",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
