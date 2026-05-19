@@ -1325,7 +1325,7 @@ __metadata:
     video.js: "npm:^8.20.0"
     vue: "npm:^3.0.0"
   peerDependencies:
-    astro: ">=3.0.0"
+    astro: ">=3.2.0"
     react: ^17 || ^18
     react-dom: ^17 || ^18
     vue: ^3.0.0
