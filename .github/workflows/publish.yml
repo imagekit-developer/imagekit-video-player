@@ -1,18 +1,6 @@
 name: Publish NPM
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: NPM dist tag (alpha, beta, latest)
-        required: true
-        default: 'alpha'
-        type: choice
-        options:
-          - alpha
-          - beta
-          - latest
-
   release:
     types: [published]
 
@@ -51,22 +39,15 @@ jobs:
       - name: Determine NPM tag
         id: npm-tag
         run: |
-          if [ -n "${{ github.event.inputs.tag }}" ]; then
-            NPM_TAG="${{ github.event.inputs.tag }}"
-          elif [ "${{ github.event_name }}" == "release" ]; then
-            # For releases, use 'latest' tag unless version contains alpha/beta
-            RELEASE_TAG="${{ github.event.release.tag_name }}"
-            if [[ "$RELEASE_TAG" == *"alpha"* ]] || [[ "$RELEASE_TAG" == *"-alpha"* ]]; then
-              NPM_TAG="alpha"
-            elif [[ "$RELEASE_TAG" == *"beta"* ]] || [[ "$RELEASE_TAG" == *"-beta"* ]]; then
-              NPM_TAG="beta"
-            else
-              NPM_TAG="latest"
-            fi
-          else
+          RELEASE_TAG="${{ github.event.release.tag_name }}"
+          if [[ "$RELEASE_TAG" == *"alpha"* ]]; then
             NPM_TAG="alpha"
+          elif [[ "$RELEASE_TAG" == *"beta"* ]]; then
+            NPM_TAG="beta"
+          else
+            NPM_TAG="latest"
           fi
-          
+
           echo "tag=$NPM_TAG" >> $GITHUB_OUTPUT
 
       - name: Publish to NPM
