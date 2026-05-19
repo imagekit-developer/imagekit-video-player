@@ -59,6 +59,7 @@ export class AnalyticsStateMachine {
   private seekOpen_ = false;
   private seekStartMonotonic_ = 0;
   private seekFromPositionMs_ = 0;
+  private phaseBeforeSeek_: PlaybackPhase | null = null;
   private playStartMonotonic_ = 0; // for video startup time
   private lastEventMonotonic_ = 0;
   private lastEventName_: IKAnalyticsEventName | null = null;
@@ -161,6 +162,10 @@ export class AnalyticsStateMachine {
 
       case 'pause':
         if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
+        // Defense-in-depth against seek-induced pause events that slip past the adapter
+        // (e.g. race between the browser's internal pause and the `seeking` event).
+        if (this.phase_ === 'seeking') return;
+        if (this.phase_ === 'paused') return; // de-dupe consecutive pause events
         emit('pause', ctx);
         this.phase_ = 'paused';
         return;
@@ -178,6 +183,12 @@ export class AnalyticsStateMachine {
 
       case 'seeking':
         if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
+        // Dedupe: HTML5/Video.js can fire `seeking` many times per drag as currentTime
+        // updates. Collapse a continuous seek into one row; only the first opens it.
+        if (this.phase_ === 'seeking') return;
+        // Remember whether the user was playing or paused before the seek so we can
+        // restore it on `seeked` rather than always assuming `playing`.
+        this.phaseBeforeSeek_ = this.phase_;
         this.seekOpen_ = true;
         this.seekStartMonotonic_ = now;
         this.seekFromPositionMs_ = signal.fromPositionMs;
@@ -194,12 +205,18 @@ export class AnalyticsStateMachine {
           seek_time_ms: seekTimeMs,
           ...ctx,
         });
-        this.phase_ = 'playing';
+        // Restore the pre-seek phase. If the user was paused before scrubbing, stay paused;
+        // a subsequent `playing` will move us forward when playback actually resumes.
+        const prior = this.phaseBeforeSeek_;
+        this.phaseBeforeSeek_ = null;
+        this.phase_ = prior === 'paused' ? 'paused' : 'playing';
         return;
       }
 
       case 'waiting':
-        if (this.phase_ !== 'playing' && this.phase_ !== 'play_requested') return;
+        // Only mid-play stalls count as rebuffer; initial/resume buffering is video startup.
+        if (!this.hasEmittedViewStarted_) return;
+        if (this.phase_ !== 'playing') return;
         if (this.seekOpen_) return; // do not treat seek as rebuffer
         if (this.rebufferOpen_) return;
         this.rebufferOpen_ = true;

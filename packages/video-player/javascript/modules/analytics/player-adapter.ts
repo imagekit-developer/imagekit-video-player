@@ -54,6 +54,11 @@ export function createPlayerAdapter(
   });
 
   cleanup.registerVideoJsListener(player, 'pause', () => {
+    // Suppress seek-induced pause: HTML5 video may pause internally while seeking,
+    // and Video.js' default scrub behavior calls player.pause()/play() around drags.
+    // Neither represents user intent to pause.
+    const playerAny = player as unknown as { seeking?: () => boolean; scrubbing?: () => boolean };
+    if (playerAny.seeking?.() || playerAny.scrubbing?.()) return;
     onSignal({ type: 'pause' });
   });
 
@@ -61,11 +66,17 @@ export function createPlayerAdapter(
     onSignal({ type: 'timeupdate' });
   });
 
+  // Coalesce `seeking` bursts during a single scrub: emit only when not already inside
+  // a seek window. Reset on `seeked`.
+  let seekOpenInAdapter = false;
   cleanup.registerVideoJsListener(player, 'seeking', () => {
+    if (seekOpenInAdapter) return;
+    seekOpenInAdapter = true;
     onSignal({ type: 'seeking' });
   });
 
   cleanup.registerVideoJsListener(player, 'seeked', () => {
+    seekOpenInAdapter = false;
     onSignal({ type: 'seeked' });
   });
 
