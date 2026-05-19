@@ -1,5 +1,5 @@
-ImageKit.io
-ImageKit.io Video Player
+# ImageKit.io Video Player
+
 [![Node CI](https://img.shields.io/badge/Node-CI-blue)](https://github.com/imagekit-developer/imagekit-video-player)
 [![npm version](https://img.shields.io/npm/v/@imagekit/video-player.svg)](https://www.npmjs.com/package/@imagekit/video-player)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
