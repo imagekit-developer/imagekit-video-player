@@ -14,6 +14,12 @@ export interface ImageKitVideoPlayerPluginInstance {
   getPlayerOptions(): IKPlayerOptions;
 }
 
+export interface AnalyticsConfig {
+    enabled?: boolean;
+    user_id?: string;
+    customDimensions?: Record<string, string>;
+}
+
 export interface IKPlayerOptions {
     /** Your ImageKit ID */
     imagekitId: string;
@@ -44,6 +50,8 @@ export interface IKPlayerOptions {
     delayInMS?: number;
     /** Signer function for generating signed url */
     signerFn?: (src: string) => Promise<string>;
+    /** Analytics configuration */
+    analytics?: AnalyticsConfig;
 }
 
 /**

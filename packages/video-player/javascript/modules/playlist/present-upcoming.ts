@@ -3,11 +3,18 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import type ComponentType from 'video.js/dist/types/component';
-import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
+import type { IKPlayerOptions, SourceOptions, Transformation } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
 import type { Player as ImageKitPlayer } from '../../interfaces/Player';
 
 const Component = videojs.getComponent('Component') as typeof ComponentType;
+
+const DEFAULT_TRANSFORMATION: Transformation = {
+  width: 600,
+  aspectRatio: '16-9',
+  cropMode: 'pad_resize',
+  background: 'black',
+}
 
 export class PresentUpcoming extends Component {
   private item_?: SourceOptions;
@@ -93,7 +100,22 @@ export class PresentUpcoming extends Component {
     this.titleEl_.textContent = `Next up: ${title}`;
 
     try {
-      const posterUrl = await preparePosterSrc(item, this.playerOptions_);
+      // Clone item to avoid mutating the shared object
+      const itemCopy: SourceOptions = {
+        ...item,
+        poster: item.poster ? { ...item.poster } : {}
+      };
+      
+      // Ensure poster is defined (TypeScript narrowing)
+      if (!itemCopy.poster) {
+        itemCopy.poster = {};
+      }
+      
+      // Apply default transformation if not provided
+      if (!itemCopy.poster.transformation) {
+        itemCopy.poster.transformation = [DEFAULT_TRANSFORMATION];
+      }
+      const posterUrl = await preparePosterSrc(itemCopy, this.playerOptions_);
       const img = document.createElement('img');
       img.src = posterUrl;
       img.alt = `Next up: ${title}`;
