@@ -37,9 +37,6 @@ export interface IKAnalyticsClientContext {
   device_display_height: number;
   device_display_dpr: number;
   user_agent: string;
-  user_agent_data?: unknown;
-  language?: string;
-  time_zone?: string;
   session_start_date: string; // YYYY-MM-DD
   session_start_time_iso?: string;
   player_height_pixels?: number;
@@ -50,6 +47,12 @@ export interface IKAnalyticsClientContext {
   player_software_version?: string;
   imagekit_plugin?: string;
   imagekit_plugin_version?: string;
+  /**
+   * Per-session custom dimensions, keyed by slot code (`cd_01` .. `cd_99`).
+   * Slot codes are allocated in the dashboard (Settings → Video Analytics →
+   * Custom Dimensions). Stored verbatim on the server in the matching slot.
+   */
+  custom_dimensions?: Record<string, string>;
 }
 
 /**
@@ -73,8 +76,6 @@ export interface IKAnalyticsEventBase {
   /** Optional payload; required only on specific event types (see union) */
   video_source_url?: string;
   video_source_type?: VideoSourceType;
-  video_source_hostname?: string;
-  orientation?: Orientation;
   video_width_pixels?: number;
   video_height_pixels?: number;
   video_total_duration_ms?: number;
@@ -195,7 +196,6 @@ export interface InternalAnalyticsEvent {
   event_id: string;
   video_source_url?: string;
   video_source_type?: VideoSourceType;
-  orientation?: Orientation;
   video_width_pixels?: number;
   video_height_pixels?: number;
   video_total_duration_ms?: number;
@@ -245,7 +245,14 @@ export interface IKAnalyticsIngestRequest {
   sent_at_iso?: string;
   context: IKAnalyticsClientContext;
   events: IKAnalyticsEventSlim[];
-  flush_reason?: 'interval' | 'visibility_hidden' | 'pagehide' | 'manual' | 'buffer_full' | 'dispose';
+  flush_reason?:
+    | 'interval'
+    | 'visibility_hidden'
+    | 'pagehide'
+    | 'manual'
+    | 'buffer_full'
+    | 'dispose'
+    | 'size_limit';
 }
 
 export interface AnalyticsConfig {

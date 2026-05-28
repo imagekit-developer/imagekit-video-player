@@ -36,21 +36,6 @@ function deriveVideoSourceType(url: string): VideoSourceType {
   return 'other';
 }
 
-function deriveHostname(url: string): string {
-  try {
-    return new URL(url).hostname;
-  } catch {
-    return '';
-  }
-}
-
-function deriveOrientation(width: number, height: number): 'landscape' | 'portrait' | 'square' | 'unknown' {
-  if (!width || !height) return 'unknown';
-  if (width > height) return 'landscape';
-  if (height > width) return 'portrait';
-  return 'square';
-}
-
 function assertNever(x: never): never {
   throw new Error(`Unsupported analytics event: ${String(x)}`);
 }
@@ -80,18 +65,10 @@ export function encodeEvent(
   if (internal.video_source_url) {
     base.video_source_url = internal.video_source_url;
     base.video_source_type = internal.video_source_type ?? deriveVideoSourceType(internal.video_source_url);
-    base.video_source_hostname = deriveHostname(internal.video_source_url);
   }
   if (internal.video_width_pixels != null) base.video_width_pixels = internal.video_width_pixels;
   if (internal.video_height_pixels != null) base.video_height_pixels = internal.video_height_pixels;
   if (internal.video_total_duration_ms != null) base.video_total_duration_ms = internal.video_total_duration_ms;
-  if (internal.orientation != null) base.orientation = internal.orientation;
-  else if (
-    internal.video_width_pixels != null &&
-    internal.video_height_pixels != null
-  ) {
-    base.orientation = deriveOrientation(internal.video_width_pixels, internal.video_height_pixels);
-  }
 
   if (internal.video_startup_time_ms != null) base.video_startup_time_ms = internal.video_startup_time_ms;
   if (internal.page_load_time_ms != null) base.page_load_time_ms = internal.page_load_time_ms;
