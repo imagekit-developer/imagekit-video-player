@@ -41,6 +41,27 @@ export interface AnalyticsTrackerOptions {
   pageLoadStartMonotonic?: number;
 }
 
+/** Valid slot keys: `cd_` followed by digits. */
+const CUSTOM_DIMENSION_SLOT_RE = /^cd_\d+$/;
+
+/** Validate slot keys (`cd_<digits>`) and drop invalid entries. */
+function sanitizeCustomDimensions(
+  dims: Record<string, string> | undefined
+): Record<string, string> | undefined {
+  if (!dims || typeof dims !== 'object') return undefined;
+  const out: Record<string, string> = {};
+  let count = 0;
+  for (const [slot, value] of Object.entries(dims)) {
+    if (typeof slot !== 'string' || !CUSTOM_DIMENSION_SLOT_RE.test(slot)) continue;
+    if (value === null || value === undefined) continue;
+    const s = String(value);
+    if (!s) continue;
+    out[slot] = s;
+    count++;
+  }
+  return count > 0 ? out : undefined;
+}
+
 export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
   const {
     config: userConfig,
@@ -84,18 +105,13 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     device_display_height: typeof screen !== 'undefined' ? screen.height : 0,
     device_display_dpr: typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
     user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
-    user_agent_data:
-      typeof navigator !== 'undefined'
-        ? (navigator as Navigator & { userAgentData?: unknown }).userAgentData
-        : undefined,
-    language: typeof navigator !== 'undefined' ? navigator.language : undefined,
-    time_zone: typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : undefined,
     session_start_date: session.session_start_date,
     session_start_time_iso: new Date(session.session_start_time_ms).toISOString(),
     player_software: PLAYER_SOFTWARE,
     player_software_version: PLAYER_SOFTWARE_VERSION,
     imagekit_plugin: PLUGIN_NAME,
     imagekit_plugin_version: PLUGIN_VERSION,
+    custom_dimensions: sanitizeCustomDimensions(userConfig.customDimensions),
   };
 
   const capturePlayerUiContext = (): void => {
@@ -388,7 +404,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     },
   });
 
-  // Visibility-based flush
+  // Flush when page goes hidden (e.g. tab switch, navigation away).
   if (typeof document !== 'undefined') {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
