@@ -1,9 +1,13 @@
 /**
  * Batches analytics events and flushes to ingest server.
- * Supports interval flush, lifecycle flush (visibilitychange, pagehide), and sendBeacon fallback.
+ * v1 transport: every flush is a `GET ingestUrl?d=<base64url(gzip(json))>` with `keepalive: true`.
+ * Size-based flush trigger guarantees URL stays under ANALYTICS_URL_SAFE_LIMIT_BYTES.
  */
 import type { IKAnalyticsIngestRequest, IKAnalyticsEvent, IKAnalyticsClientContext } from './types';
-import { buildIngestRequest } from './event-row-encoder';
+import { toSlimEvent } from './event-row-encoder';
+import { buildIngestRequestV1 } from './wire-format-v1';
+import { sendBatchV1 } from './transport';
+import { ANALYTICS_RAW_JSON_FLUSH_THRESHOLD } from './constants';
 
 export type FlushReason = IKAnalyticsIngestRequest['flush_reason'];
 
@@ -32,37 +36,37 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
   function doFlush(reason: FlushReason) {
     if (events.length === 0 || !lastContext) return;
     const batch = events.splice(0, events.length);
-    const req = buildIngestRequest(1, lastContext, batch, reason);
-    sendToIngest(req, reason === 'visibility_hidden' || reason === 'pagehide' || reason === 'dispose');
+    const slim = batch.map(toSlimEvent);
+    const req = buildIngestRequestV1(lastContext, slim, reason ?? '');
+    if (debug) {
+      console.log('[IK Analytics] Sending batch', req.r, req.e.length, 'events');
+    }
+    if (disposed && reason !== 'dispose' && reason !== 'pagehide' && reason !== 'visibility_hidden') return;
+    void sendBatchV1(req, { ingestUrl, debug });
   }
 
-  function sendToIngest(req: IKAnalyticsIngestRequest, useBeacon: boolean) {
-    if (disposed) return;
-    const payload = JSON.stringify(req);
-    if (debug) {
-      console.log('[IK Analytics] Sending batch', req.flush_reason, req.events.length, 'events');
-    }
-    if (useBeacon && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      const blob = new Blob([payload], { type: 'application/json' });
-      navigator.sendBeacon(ingestUrl, blob);
-    } else {
-      fetch(ingestUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: payload,
-        keepalive: true,
-      }).catch((err) => {
-        if (debug) console.warn('[IK Analytics] Flush failed', err);
-      });
-    }
+  /** Rough projected raw-JSON size of the current batch if flushed now. */
+  function projectedBatchJsonLength(): number {
+    if (!lastContext || events.length === 0) return 0;
+    const slim = events.map(toSlimEvent);
+    const req = buildIngestRequestV1(lastContext, slim, 'size_limit');
+    return JSON.stringify(req).length;
   }
 
   function push(event: IKAnalyticsEvent, context: IKAnalyticsClientContext) {
     if (disposed) return;
     lastContext = context;
     events.push(event);
+
+    // Hard cap on event count.
     if (events.length >= maxBatchSize) {
       doFlush('buffer_full');
+      return;
+    }
+
+    // Size-based trigger: keep URL safely under the limit.
+    if (projectedBatchJsonLength() >= ANALYTICS_RAW_JSON_FLUSH_THRESHOLD) {
+      doFlush('size_limit');
     }
   }
 
@@ -100,11 +104,13 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
   }
 
   function dispose() {
+    if (disposed) return;
+    // Flush remaining events BEFORE marking disposed so doFlush actually sends.
+    flush('dispose');
     disposed = true;
     stopInterval();
     visibilityCleanup?.();
     pagehideCleanup?.();
-    flush('dispose');
   }
 
   startInterval();
