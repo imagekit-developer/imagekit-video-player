@@ -14,10 +14,35 @@ export interface ImageKitVideoPlayerPluginInstance {
   getPlayerOptions(): IKPlayerOptions;
 }
 
+/** The shape returned by `mapError`. All fields are optional — omitted fields keep their original value. */
+export interface MappedError {
+    code?: string;
+    message?: string;
+    context?: string;
+}
+
+/** The error info passed into `mapError`. */
+export interface RawPlayerError {
+    code: string;
+    message?: string;
+    context?: string;
+}
+
 export interface AnalyticsConfig {
     enabled?: boolean;
     user_id?: string;
     customDimensions?: Record<string, string>;
+    /**
+     * Optional pure function called on every error before it is reported to analytics.
+     * Use it to remap or enrich error codes/messages with your own classification.
+     *
+     * @example
+     * mapError: (err) => ({
+     *   code: err.code === '2' ? 'network-or-geo' : err.code,
+     *   message: err.message,
+     * })
+     */
+    mapError?: (error: RawPlayerError) => MappedError | undefined | null;
 }
 
 export interface IKPlayerOptions {
