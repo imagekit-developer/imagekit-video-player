@@ -64,6 +64,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           config: {
             user_id: analyticsOpts.user_id,
             customDimensions: analyticsOpts.customDimensions,
+            mapError: analyticsOpts.mapError,
             debug: false,
           },
           imagekitId: this.ikGlobalSettings_.imagekitId,

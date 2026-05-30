@@ -4,7 +4,7 @@
  */
 import type Player from 'video.js/dist/types/player';
 import type { CleanupRegistry } from '../../utils';
-import type { SourceOptions } from '../../interfaces';
+import type { SourceOptions, RawPlayerError, MappedError } from '../../interfaces';
 import type { IKAnalyticsClientContext, AnalyticsConfig, InternalAnalyticsEvent } from './types';
 import {
   ANALYTICS_FLUSH_INTERVAL_MS,
@@ -30,6 +30,7 @@ export interface AnalyticsTrackerUserConfig {
   user_id?: string;
   customDimensions?: Record<string, string>;
   debug?: boolean;
+  mapError?: (error: RawPlayerError) => MappedError | undefined | null;
 }
 
 export interface AnalyticsTrackerOptions {
@@ -387,6 +388,21 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
             message = e.message;
             errCtx = JSON.stringify(err);
           }
+
+          // Allow customer to remap/enrich the error before reporting
+          if (typeof userConfig.mapError === 'function') {
+            try {
+              const mapped = userConfig.mapError({ code, message, context: errCtx });
+              if (mapped && typeof mapped === 'object') {
+                if (mapped.code !== undefined) code = String(mapped.code);
+                if (mapped.message !== undefined) message = mapped.message;
+                if (mapped.context !== undefined) errCtx = mapped.context;
+              }
+            } catch {
+              // Swallow customer code errors to protect analytics pipeline
+            }
+          }
+
           stateMachine.dispatch(
             { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
             captureContext
