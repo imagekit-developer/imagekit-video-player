@@ -168,6 +168,37 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
         signerOptions={{ mode: 'imperative' }}
       />
     </section>
+
+    <!-- ====================================================================
+         5. Analytics with imperative mapError
+         Functions can't be serialized into Astro props, so mapError is
+         assigned imperatively via el.mapError from a sibling <script>.
+    ===================================================================== -->
+    <section>
+      <h2>5. Analytics with imperative <code>mapError</code></h2>
+      <p>
+        Uses a <strong>deliberately broken URL</strong> to trigger error code
+        <code>2</code> (MEDIA_ERR_NETWORK). The <code>mapError</code> callback
+        remaps it to <code>network-or-geo</code>. Watch the box below and the
+        browser console for confirmation.
+      </p>
+      <IKVideoPlayer
+        id="player-analytics"
+        ikOptions={{
+          ...ikOptions,
+          analytics: {
+            enabled: true,
+            user_id: 'demo-user-001',
+            customDimensions: { cd_1: '1.0.0', cd_2: 'astro-example' },
+          },
+        }}
+        videoJsOptions={videoJsOptions}
+        source={{ src: 'https://ik.imagekit.io/demo/this-does-not-exist-404.mp4' }}
+      />
+      <div id="map-error-log" style="margin-top:8px;padding:10px 12px;background:#f6f8fa;border:1px solid #e0e0e0;border-radius:4px;font-family:monospace;font-size:13px;min-height:32px;">
+        Waiting for error…
+      </div>
+    </section>
   </main>
 </Layout>
 
@@ -207,6 +238,45 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
 
   if (el) {
     el.signerFn = makeSigner();
+  }
+
+  // Imperative mapError wiring for section §5.
+  // Remaps Video.js error code 2 (network) to a custom label.
+  type MapErrorFn = (error: { code: string; message?: string; context?: string }) =>
+    { code?: string; message?: string; context?: string } | null | undefined;
+  type IKAnalyticsEl = HTMLElement & { mapError?: MapErrorFn };
+
+  const analyticsEl = document.querySelector<IKAnalyticsEl>('#player-analytics');
+  const logEl = document.querySelector<HTMLDivElement>('#map-error-log');
+
+  function showLog(before: object, after: object | null | undefined) {
+    if (!logEl) return;
+    logEl.innerHTML =
+      `<strong>mapError called</strong><br>` +
+      `IN:&nbsp; <span style="color:#c7254e">${JSON.stringify(before)}</span><br>` +
+      `OUT: <span style="color:#2a7a2a">${JSON.stringify(after)}</span>`;
+  }
+
+  if (analyticsEl) {
+    analyticsEl.mapError = (err) => {
+      // Remap every Video.js MediaError code (1-4) to a readable label so the
+      // before/after diff is unmistakable in the log box.
+      const labels: Record<string, string> = {
+        '1': 'aborted',
+        '2': 'network-or-geo',
+        '3': 'decode-error',
+        '4': 'src-unsupported-or-404',
+      };
+      const result = {
+        code: labels[String(err.code)] ?? `unknown-${err.code}`,
+        message: err.message,
+        // Drop verbose context to keep payload small
+        context: undefined,
+      };
+      console.log('[mapError] IN:', err, '→ OUT:', result);
+      showLog(err, result);
+      return result;
+    };
   }
 </script>
 

@@ -175,7 +175,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
   <video class="video-js vjs-default-skin" controls preload="auto" ></video>
 </ik-video-player>
 
-<script>
+<script lang="ts">
   import { videoPlayer, type Player } from '@imagekit/video-player';
 
   type SignerFn = (url: string) => Promise<string>;
@@ -256,6 +256,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
      * payload or a playlist payload — never both.
      */
     private _pendingLoad: PendingLoad | null = null;
+    private _pendingMapError: ((error: { code: string; message?: string; context?: string }) => { code?: string; message?: string; context?: string } | null | undefined) | undefined;
 
     public getPlayer(): Player | null { return this._player; }
 
@@ -272,7 +273,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
      *
      * See: https://web.dev/articles/custom-elements-best-practices
      */
-    private _upgradeProperty(prop: 'signerFn') {
+    private _upgradeProperty(prop: 'signerFn' | 'mapError') {
       if (Object.prototype.hasOwnProperty.call(this, prop)) {
         const value = (this as any)[prop];
         delete (this as any)[prop];
@@ -328,6 +329,44 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       return this._signerFn;
     }
 
+    /**
+     * Imperative error-remapping assignment.
+     *
+     * In Astro, functions cannot be serialized into `data-config`. Assign
+     * `mapError` imperatively from a sibling `<script>`:
+     *
+     * ```html
+     * <script>
+     *   const el = document.querySelector('#player');
+     *   el.mapError = (err) => ({ code: 'custom', message: err.message });
+     * </script>
+     * ```
+     *
+     * The tracker reads `mapError` lazily on each error, so a synchronous
+     * assignment is guaranteed to be in place before any network error fires.
+     */
+    set mapError(fn: ((error: { code: string; message?: string; context?: string }) => { code?: string; message?: string; context?: string } | null | undefined) | undefined) {
+      // Patch the live analytics config object that the tracker closure
+      // captured. Since we now pass `ikGlobalSettings_.analytics` directly
+      // as the tracker's `userConfig`, mutating `.mapError` on it is picked
+      // up at the next error.
+      if (this._ikOptions?.analytics) {
+        this._ikOptions.analytics.mapError = fn;
+      } else {
+        // Player not yet initialized — stash for connectedCallback to apply.
+        this._pendingMapError = fn;
+      }
+      // Also patch the plugin's deep-cloned copy so it stays consistent.
+      const plugin = (this._player as any)?.imagekitVideoPlayer?.();
+      const liveOpts = plugin?.getPlayerOptions?.();
+      if (liveOpts?.analytics) {
+        liveOpts.analytics.mapError = fn;
+      }
+    }
+    get mapError() {
+      return this._ikOptions?.analytics?.mapError ?? this._pendingMapError;
+    }
+
     connectedCallback() {
       if (this._initialized) return;
       this._initialized = true;
@@ -336,6 +375,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       // before this class was registered. Must run before we read
       // `this._signerFn` for the precedence check below.
       this._upgradeProperty('signerFn');
+      this._upgradeProperty('mapError');
 
       const raw = this.dataset.config;
       if (!raw) return;
@@ -361,6 +401,12 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       }
       if (this._signerFn) {
         ikOptions.signerFn = this._signerFn;
+      }
+      // If mapError was assigned imperatively before the player was created,
+      // wire it into the analytics config so the tracker captures it.
+      if (this._pendingMapError && ikOptions.analytics) {
+        ikOptions.analytics.mapError = this._pendingMapError;
+        this._pendingMapError = undefined;
       }
       // Stash a local reference so the `signerFn` setter can patch it later
       // alongside the plugin's deep-cloned copy.
@@ -414,6 +460,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       this._player = null;
       this._ikOptions = null;
       this._pendingLoad = null;
+      this._pendingMapError = undefined;
       this._initialized = false;
     }
   }

@@ -61,12 +61,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
       const analyticsOpts = this.ikGlobalSettings_.analytics;
       if (analyticsOpts?.enabled) {
         createAnalyticsTracker({
-          config: {
-            user_id: analyticsOpts.user_id,
-            customDimensions: analyticsOpts.customDimensions,
-            mapError: analyticsOpts.mapError,
-            debug: false,
-          },
+          config: analyticsOpts,
           imagekitId: this.ikGlobalSettings_.imagekitId,
           player: this.player,
           getCurrentSource: () => this.getOriginalCurrentSource(),
