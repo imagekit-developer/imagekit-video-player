@@ -1,0 +1,262 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { IKVideoPlayer } from '@imagekit/video-player/astro';
+import type { IKPlayerOptions, SourceOptions, PlaylistOptions } from '@imagekit/video-player/astro';
+// The player component does NOT auto-import its stylesheet — consumers
+// import it explicitly so they control bundling and CSS ordering.
+import '@imagekit/video-player/styles.css';
+// Override imported AFTER the player styles.
+// Uses same-specificity selectors —
+// so this ONLY wins if it ends up after the player's CSS in <head>.
+import '../styles/player-overrides.css';
+
+/**
+ * ImageKit player options shared across examples.
+ * Replace `imagekitId` with your own ImageKit account ID.
+ */
+const ikOptions: IKPlayerOptions = {
+  imagekitId: 'YOUR_IMAGEKIT_ID',
+  seekThumbnails: true,
+  logo: {
+    showLogo: true,
+    logoImageUrl: 'https://ik.imgkit.net/ikmedia/logo/light_T4buIzohVH.svg',
+    logoOnclickUrl: 'https://imagekit.io/',
+  },
+};
+
+const videoJsOptions = {
+  controls: true,
+  muted: false,
+  height: 540,
+  width: 960,
+};
+
+/** Public, unsigned source. */
+const unsignedSource: SourceOptions = {
+  src: 'https://ik.imagekit.io/demo/sample-video.mp4',
+  info: {
+    title: 'Sample Video (Unsigned)',
+    description: 'Public ImageKit demo file — no signing required.',
+  },
+};
+
+/** Source that requires signing in your account. */
+const signedSourceUrl =
+  'https://ik.imagekit.io/demo/sample-video.mp4';
+
+const signedSource: SourceOptions = {
+  src: signedSourceUrl,
+  info: {
+    title: 'Private Video',
+    description: 'Will only play if a valid signer is wired up.',
+  },
+};
+
+/** Playlist of public unsigned videos. */
+const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
+  sources: [
+    {
+      src: 'https://ik.imagekit.io/ikmedia/docs/video-player/playlist/horses.mp4',
+      info: { title: 'Horses Running', description: 'Horses grazing in the field' },
+    },
+    {
+      src: 'https://ik.imagekit.io/ikmedia/docs/video-player/playlist/lion.mp4',
+      info: { title: 'Lion', description: 'Lion roaming in the wild' },
+    },
+    {
+      src: 'https://ik.imagekit.io/ikmedia/docs/video-player/playlist/dog_running.mp4',
+      info: { title: 'Dog Running' },
+    },
+  ],
+};
+---
+
+<Layout>
+  <main>
+    <h1>ImageKit Video Player — Astro examples</h1>
+
+    <!-- ====================================================================
+         Signer controls — affects only the "Imperative" section below.
+         The declarative section reads its endpoint at SSR time, so changing
+         the input here has no effect on it.
+    ===================================================================== -->
+    <section class="controls">
+      <h2>Imperative signer controls</h2>
+      <p>
+        Configure the imperative signer used by section §4. Defaults to
+        <code>http://localhost:3001/sign-url</code> from the bundled
+        <code>imagekit-signer-server</code>.
+      </p>
+      <label>
+        <input type="checkbox" id="signing-enabled" checked />
+        Enable signing for the imperative player
+      </label>
+      <label class="signer-url-label">
+        Signer URL:
+        <input
+          type="url"
+          id="signer-url"
+          value="http://localhost:3001/sign-url"
+          placeholder="http://localhost:3001/sign-url"
+        />
+      </label>
+    </section>
+
+    <!-- ====================================================================
+         1. Single source — UNSIGNED
+    ===================================================================== -->
+    <section>
+      <h2>1. Single source (unsigned)</h2>
+      <p>Plain public video. No <code>signerOptions</code>.</p>
+      <IKVideoPlayer
+        ikOptions={ikOptions}
+        videoJsOptions={videoJsOptions}
+        source={unsignedSource}
+      />
+    </section>
+
+    <!-- ====================================================================
+         2. Playlist — UNSIGNED
+    ===================================================================== -->
+    <section>
+      <h2>2. Playlist (unsigned)</h2>
+      <p>Multiple public sources rendered as a playlist.</p>
+      <IKVideoPlayer
+        ikOptions={ikOptions}
+        videoJsOptions={videoJsOptions}
+        playlist={playlist}
+      />
+    </section>
+
+    <!-- ====================================================================
+         3. Single source — SIGNED (declarative)
+         Endpoint is hardcoded at SSR time. Toggle/URL input above does NOT
+         affect this section.
+    ===================================================================== -->
+    <section>
+      <h2>3. Single source (signed — declarative)</h2>
+      <p>
+        Pass <code>signerOptions=&#123;&#123; url: '...' &#125;&#125;</code> and
+        the wrapper synthesizes a <code>signerFn</code> that POSTs the source
+        URL to your endpoint. Requires the local signer server on port 3001.
+      </p>
+      <IKVideoPlayer
+        ikOptions={ikOptions}
+        videoJsOptions={videoJsOptions}
+        source={signedSource}
+        signerOptions={{ url: 'http://localhost:3001/sign-url' }}
+      />
+    </section>
+
+    <!-- ====================================================================
+         4. Single source — SIGNED (imperative)
+         Wired up by the <script> block below using the controls in §0.
+    ===================================================================== -->
+    <section>
+      <h2>4. Single source (signed — imperative)</h2>
+      <p>
+        Rendered with <code>signerOptions=&#123;&#123; mode: 'imperative' &#125;&#125;</code>
+        so the wrapper waits to load the source until <code>el.signerFn</code>
+        is assigned. Useful when the signer needs values only available after
+        hydration (e.g. an in-memory access token from an auth SDK).
+      </p>
+      <IKVideoPlayer
+        id="player-imperative"
+        ikOptions={ikOptions}
+        videoJsOptions={videoJsOptions}
+        source={signedSource}
+        signerOptions={{ mode: 'imperative' }}
+      />
+    </section>
+  </main>
+</Layout>
+
+<script>
+  // Imperative signer wiring for section §4.
+  // Reads the URL + enabled state from the controls in §0 at the moment
+  // the signer runs. If signing is disabled, we return the URL as-is.
+  type SignerFn = (url: string) => Promise<string>;
+  type IKEl = HTMLElement & { signerFn?: SignerFn };
+
+  const el = document.querySelector<IKEl>('#player-imperative');
+  const enabledCheckbox = document.querySelector<HTMLInputElement>('#signing-enabled');
+  const urlInput = document.querySelector<HTMLInputElement>('#signer-url');
+
+  function makeSigner(): SignerFn {
+    return async (url) => {
+      const enabled = enabledCheckbox?.checked ?? true;
+      if (!enabled) {
+        // Passthrough — return the URL unmodified. The private video will
+        // likely 401/403 from ImageKit, but this demonstrates that the
+        // imperative path is in control.
+        return url;
+      }
+
+      const endpoint = urlInput?.value.trim() || 'http://localhost:3001/sign-url';
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) {
+        throw new Error(`Signer failed: ${res.status} ${res.statusText}`);
+      }
+      return (await res.text()).trim();
+    };
+  }
+
+  if (el) {
+    el.signerFn = makeSigner();
+  }
+</script>
+
+<style>
+  main {
+    width: 960px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  h1 {
+    margin: 0 0 24px;
+    color: inherit;
+    text-align: left;
+  }
+
+  h2 {
+    margin: 0 0 12px;
+    color: inherit;
+  }
+
+  section {
+    margin-bottom: 32px;
+  }
+
+  section.controls {
+    padding: 16px;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.02);
+  }
+
+  section.controls label {
+    display: block;
+    margin: 8px 0;
+  }
+
+  section.controls input[type='url'] {
+    width: 100%;
+    max-width: 480px;
+    padding: 6px 8px;
+    margin-left: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+  }
+
+  section.controls .signer-url-label {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+</style>

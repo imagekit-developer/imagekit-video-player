@@ -1,0 +1,33 @@
+/*
+ * Player overrides test — NO specificity bumping.
+ * Selectors use the same shape as the player's defaults
+ * (`.video-js .vjs-*`) so specificity is (0,0,2,0) — identical to
+ * the player's rules. Whether these overrides apply depends ENTIRELY
+ * on whether this stylesheet is emitted AFTER the player's stylesheet
+ * in the final <head>.
+ *
+ * Use these obvious colors so the result is unmistakable:
+ *   - big play button → bright orange
+ *   - progress bar    → bright magenta
+ *   - volume bar      → lime green
+ *   - control bar     → tall + translucent red
+ */
+
+.video-js .vjs-big-play-button {
+  background-color: #ff5a1f;
+  border-color: #ff5a1f;
+  color: #ffffff;
+}
+
+.video-js .vjs-play-progress {
+  background-color: #ff00aa;
+}
+
+.video-js .vjs-volume-level {
+  background-color: #00e676;
+}
+
+.video-js .vjs-control-bar {
+  height: 4em;
+  background-color: rgba(180, 0, 0, 0.6);
+}

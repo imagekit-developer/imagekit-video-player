@@ -15,6 +15,6 @@
       "vue": ["./node_modules/vue"]
     }
   },
-  "include": ["javascript/**/*", "react-wrapper/**/*", "vue/**/*"],
+  "include": ["javascript/**/*", "react-wrapper/**/*", "vue/**/*", "astro/**/*"],
   "exclude": ["angular/**/*"]
 }
