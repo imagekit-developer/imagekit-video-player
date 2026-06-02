@@ -13,7 +13,7 @@ import {
   ANALYTICS_MAX_PLAYBACK_SPEED_FACTOR,
   ANALYTICS_TIMEUPDATE_THROTTLE_MS,
 } from './constants';
-import { getOrCreateSession, createPlayerInstanceId, createPlaybackId, createEventId } from './id-factory';
+import { resolveSession, createPlayerInstanceId, createPlaybackId, createEventId } from './id-factory';
 import { AnalyticsStateMachine } from './analytics-state-machine';
 import { encodeEvent } from './event-row-encoder';
 import { createBatchQueue } from './batch-queue';
@@ -83,7 +83,9 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     customDimensions: userConfig.customDimensions,
   };
 
-  const session = getOrCreateSession();
+  // First-touch session resolution. On a fresh page load this is never a rotation
+  // (see `resolveSession` contract); we use the identity to seed the tracker context.
+  const session = resolveSession(Date.now()).identity;
   const playerInstanceId = createPlayerInstanceId();
   let currentPlaybackId: string | null = createPlaybackId();
   let hasLoadedFirstView = false;
@@ -199,6 +201,42 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
   // Session init on first use
   stateMachine.dispatch({ type: 'session_init' });
 
+  /**
+   * Check whether the persisted session has expired due to inactivity. If so, mint a new
+   * session_id, refresh the tracker's context, and dispatch `session_rotated` to the state
+   * machine — which closes the current view (`viewend(sessionrotate)`) and opens a fresh
+   * warm-resume view tagged `is_resumed_playback = true`.
+   *
+   * Called only on real user-intent signals (load_start / play / seeking) so we don't
+   * rotate on background events like `pause` or `timeupdate` (timeupdate already implies
+   * an active view; pause has no inherent intent).
+   *
+   * Touches `last_activity` (throttled) on every call.
+   */
+  const checkSessionRotation = (): void => {
+    const now = Date.now();
+    const previousSessionId = context.session_id;
+    const { identity, rotated } = resolveSession(now);
+    if (!rotated) {
+      // resolveSession already touched activity for the live path.
+      return;
+    }
+    // Update tracker context with the new session identity. Subsequent encoded
+    // event rows (and the batch envelope context) carry the new session_id.
+    context.session_id = identity.session_id;
+    context.session_start_date = identity.session_start_date;
+    context.session_start_time_iso = new Date(identity.session_start_time_ms).toISOString();
+    // Mint a new playback_id for the rotated view; tracker is the owner of playback ids.
+    const newPlaybackId = createPlaybackId();
+    currentPlaybackId = newPlaybackId;
+    stateMachine.dispatch({
+      type: 'session_rotated',
+      newPlaybackId,
+      previousSessionId,
+      videoSourceUrl: previousVideoSourceUrl ?? undefined,
+    });
+  };
+
   createPlayerAdapter(player, cleanup, getCurrentSource, {
     onSignal: (sig) => {
       switch (sig.type) {
@@ -226,6 +264,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
           break;
         }
         case 'load_start': {
+          // Real user intent: rotate session if inactive.
+          checkSessionRotation();
           const source = sig.source;
           const videoSourceUrl = source?.src ?? '';
           const isFirstView = !hasLoadedFirstView;
@@ -292,6 +332,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
           break;
         }
         case 'play':
+          // Real user intent: rotate session if inactive.
+          checkSessionRotation();
           stateMachine.dispatch({ type: 'play' }, captureContext);
           break;
         case 'playing':
@@ -351,6 +393,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
           break;
         }
         case 'seeking': {
+          // Real user intent (scrubbing the timeline): rotate session if inactive.
+          checkSessionRotation();
           const ct = player.currentTime();
           const fromMs = typeof ct === 'number' && isFinite(ct) ? ct * 1000 : 0;
           // Re-base when seeking is observed first so a racing timeupdate is less likely to use a stale baseline.

@@ -10,6 +10,12 @@ import type {
 
 export type AnalyticsSignal =
   | { type: 'session_init' }
+  | {
+      type: 'session_rotated';
+      newPlaybackId: string;
+      previousSessionId: string;
+      videoSourceUrl?: string;
+    }
   | { type: 'player_ready'; playerStartupTimeMs: number; pageLoadTimeMs?: number }
   | { type: 'load_start'; playbackId: string; videoSourceUrl: string; previousVideoSourceUrl?: string; isFirstView: boolean; isVideoChange: boolean }
   | { type: 'play' }
@@ -66,6 +72,18 @@ export class AnalyticsStateMachine {
   private eventOrder_ = 0;
   private generateEventId_: () => string;
 
+  /**
+   * Predecessor links stamped onto every event of the active view.
+   *   - cold start:                    both undefined
+   *   - videochange continuation:      previousPlaybackId_ set, previousSessionId_ undefined
+   *   - 60-min-idle warm resume:       both set
+   * Cleared when the next cold view opens; re-set when videochange / rotation occurs.
+   */
+  private previousPlaybackId_: string | undefined;
+  private previousSessionId_: string | undefined;
+  /** Last `video_source_url` observed on `load_start`; used to label the rotated viewinit. */
+  private lastVideoSourceUrl_: string | undefined;
+
   constructor(
     callbacks: AnalyticsStateMachineCallbacks,
     generateEventId: () => string
@@ -82,10 +100,17 @@ export class AnalyticsStateMachine {
       const msFromPrev = this.lastEventMonotonic_ ? Math.round(now - this.lastEventMonotonic_) : 0;
       this.eventOrder_ += 1;
       const eventId = this.generateEventId_();
+      // Stamp predecessor links on every event of a non-cold-start view so the
+      // server-side row carries them (they travel in the per-event wire row,
+      // not the batch context). Empty strings are skipped — only set when known.
+      const linkStamp: Partial<InternalAnalyticsEvent> = {};
+      if (this.previousPlaybackId_) linkStamp.previous_playback_id = this.previousPlaybackId_;
+      if (this.previousSessionId_) linkStamp.previous_session_id = this.previousSessionId_;
       this.callbacks_.onEvent({
         event,
         event_id: eventId,
         ms_from_previous_event: msFromPrev,
+        ...linkStamp,
         ...ctx,
         ...payload,
       } as InternalAnalyticsEvent);
@@ -101,6 +126,35 @@ export class AnalyticsStateMachine {
         emit('sessioninit');
         return;
 
+      case 'session_rotated': {
+        // Inactivity timeout elapsed; the tracker has already updated context with
+        // the new session_id / session_start_*. We close the prior view, re-emit
+        // sessioninit, and open a fresh warm-resume view. `playerready` is NOT
+        // re-emitted (player instance is still alive).
+        const oldPlaybackId = this.currentPlaybackId_;
+        if (this.currentPlaybackId_ && this.phase_ !== 'ended' && this.phase_ !== 'errored' && this.phase_ !== 'disposed') {
+          // Emit a viewend on the OLD view BEFORE flipping predecessor links. We
+          // do not want this viewend to carry the new view's predecessor stamps.
+          emit('viewend', { view_end_reason: 'sessionrotate' });
+          this.callbacks_.onViewEnd('sessionrotate');
+        }
+        // Reset session-level flags so sessioninit emits again.
+        this.sessionInitialized_ = false;
+        this.sessionInitialized_ = true; // mark immediately so re-entrant session_init no-ops.
+        this.callbacks_.onSessionInit();
+        // sessioninit belongs to the NEW session; do not stamp predecessor links
+        // on it (links are a property of the VIEW, not the session).
+        emit('sessioninit');
+        // Open the new warm-resume view and stamp the predecessor links.
+        this.callbacks_.onViewInit?.(signal.newPlaybackId);
+        this.openView(signal.newPlaybackId);
+        this.previousPlaybackId_ = oldPlaybackId ?? undefined;
+        this.previousSessionId_ = signal.previousSessionId || undefined;
+        const url = signal.videoSourceUrl ?? this.lastVideoSourceUrl_;
+        emit('viewinit', url ? { video_source_url: url } : {});
+        return;
+      }
+
       case 'player_ready':
         if (this.playerReady_) return;
         this.playerReady_ = true;
@@ -112,6 +166,7 @@ export class AnalyticsStateMachine {
         return;
 
       case 'load_start': {
+        const oldPlaybackId = this.currentPlaybackId_;
         if (signal.isVideoChange && this.currentPlaybackId_) {
           if (this.phase_ !== 'ended' && this.phase_ !== 'errored') {
             emit('viewend', { view_end_reason: 'videochange', video_source_url: signal.previousVideoSourceUrl });
@@ -126,6 +181,17 @@ export class AnalyticsStateMachine {
         } else {
           this.callbacks_.onViewInit?.(signal.playbackId);
         }
+        // Set predecessor links for the NEW view:
+        //   - videochange  → previous_playback_id = old pb, previous_session_id = '' (same session)
+        //   - cold start   → both cleared
+        if (signal.isVideoChange && oldPlaybackId) {
+          this.previousPlaybackId_ = oldPlaybackId;
+          this.previousSessionId_ = undefined;
+        } else {
+          this.previousPlaybackId_ = undefined;
+          this.previousSessionId_ = undefined;
+        }
+        this.lastVideoSourceUrl_ = signal.videoSourceUrl;
         this.openView(signal.playbackId);
         emit('viewinit', { video_source_url: signal.videoSourceUrl });
         return;
@@ -146,9 +212,21 @@ export class AnalyticsStateMachine {
         }
         if (!this.hasEmittedViewStarted_) {
           this.hasEmittedViewStarted_ = true;
-          const videoStartupMs = Math.round(now - this.playStartMonotonic_);
-          this.callbacks_.onViewStarted?.(videoStartupMs);
-          emit('viewstarted', { video_startup_time_ms: videoStartupMs });
+          if (this.previousSessionId_) {
+            // Warm resume (session rotated): emit `viewstarted` so engagement
+            // (has_viewstarted / exited_before_video_start) counts the view, but
+            // do NOT report a startup time — the server-side MV gates
+            // `video_startup_time_ms` on `previous_session_id = ''`. We
+            // deliberately omit the field. Video-change continuations
+            // (previousPlaybackId_ set, previousSessionId_ unset) DO report
+            // startup time — the new source genuinely had to load.
+            this.callbacks_.onViewStarted?.(0);
+            emit('viewstarted', {});
+          } else {
+            const videoStartupMs = Math.round(now - this.playStartMonotonic_);
+            this.callbacks_.onViewStarted?.(videoStartupMs);
+            emit('viewstarted', { video_startup_time_ms: videoStartupMs });
+          }
         }
         emit('playing', ctx);
         this.phase_ = 'playing';

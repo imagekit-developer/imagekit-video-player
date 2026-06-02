@@ -18,3 +18,20 @@ export const ANALYTICS_URL_SAFE_LIMIT_BYTES = 4000;
  * Sized so that after gzip + base64url expansion the final URL stays under ANALYTICS_URL_SAFE_LIMIT_BYTES.
  */
 export const ANALYTICS_RAW_JSON_FLUSH_THRESHOLD = 6000;
+
+/**
+ * Session inactivity timeout. After this much wall-clock time without a meaningful
+ * user signal (play / seeking / load_start), the next user action rotates session_id
+ * and starts a new view marked `is_resumed_playback = true`. Industry default (Mux: 60 min).
+ */
+export const ANALYTICS_SESSION_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
+
+/** Hard maximum session age. Even with continuous activity the session rotates after 24 h. */
+export const ANALYTICS_SESSION_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Minimum interval between localStorage activity touches. Bounds storage-write churn while
+ * playing; expiry is checked at every meaningful signal so the actual rotation happens
+ * close to (but never before) the inactivity window.
+ */
+export const ANALYTICS_SESSION_ACTIVITY_THROTTLE_MS = 10 * 60 * 1000;

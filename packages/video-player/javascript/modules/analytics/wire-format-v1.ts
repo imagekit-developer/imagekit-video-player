@@ -55,6 +55,8 @@ export const EVENT_FIELDS_V1 = [
   'audio_codec',                 // 30
   'video_codec',                 // 31
   'error_context',               // 32
+  'previous_playback_id',        // 33  — predecessor playback (videochange or warm resume)
+  'previous_session_id',         // 34  — predecessor session (warm resume only; gates startup-time MVs server-side)
 ] as const;
 
 export type EventFieldV1 = (typeof EVENT_FIELDS_V1)[number];

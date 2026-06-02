@@ -95,6 +95,10 @@ export function encodeEvent(
   if (internal.view_end_reason) base.view_end_reason = internal.view_end_reason;
   if (internal.new_video_source_url) base.new_video_source_url = internal.new_video_source_url;
   if (internal.next_playback_id) base.next_playback_id = internal.next_playback_id;
+  // Predecessor links stamped by the state machine on every event of a non-cold-start view.
+  // Empty strings are omitted so the wire row stays compact for cold-start playbacks.
+  if (internal.previous_playback_id) base.previous_playback_id = internal.previous_playback_id;
+  if (internal.previous_session_id) base.previous_session_id = internal.previous_session_id;
 
   for (const key of CUSTOM_DATA_KEYS) {
     if (internal[key] != null) {

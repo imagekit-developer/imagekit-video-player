@@ -25,7 +25,7 @@ export type VideoSourceType = 'hls' | 'dash' | 'mp4' | 'webm' | 'other';
 
 export type Orientation = 'landscape' | 'portrait' | 'square' | 'unknown';
 
-export type ViewEndReason = 'ended' | 'videochange' | 'error' | 'dispose' | 'navigation';
+export type ViewEndReason = 'ended' | 'videochange' | 'error' | 'dispose' | 'navigation' | 'sessionrotate';
 
 export interface IKAnalyticsClientContext {
   imagekit_id: string;
@@ -72,6 +72,22 @@ export interface IKAnalyticsEventBase {
 
   previous_event?: IKAnalyticsEventName;
   ms_from_previous_event?: number;
+
+  /**
+   * Link to the playback that immediately preceded this one in the same player
+   * instance. Set on the FIRST event of any non-cold-start playback:
+   *   - video-change continuation: previous_playback_id != '', previous_session_id = ''
+   *   - 60-min-idle warm resume:   previous_playback_id != '', previous_session_id != ''
+   * Symmetric with `next_playback_id` (forward link on the predecessor's `viewend`).
+   */
+  previous_playback_id?: string;
+  /**
+   * Link to the session that the rotated session continued from. Only set on
+   * warm resumes (session_id changed). Empty for video-change and cold-start.
+   * Server-side, `previous_session_id != ''` is the canonical "warm resume"
+   * predicate that gates startup-time metrics.
+   */
+  previous_session_id?: string;
 
   /** Optional payload; required only on specific event types (see union) */
   video_source_url?: string;
@@ -194,6 +210,8 @@ export type IKAnalyticsEvent =
 export interface InternalAnalyticsEvent {
   event: IKAnalyticsEventName;
   event_id: string;
+  previous_playback_id?: string;
+  previous_session_id?: string;
   video_source_url?: string;
   video_source_type?: VideoSourceType;
   video_width_pixels?: number;
