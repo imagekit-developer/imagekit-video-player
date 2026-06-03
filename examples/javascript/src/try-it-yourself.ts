@@ -52,6 +52,12 @@ function formatObjectAsCode(value: any): string {
     return jsonString;
 }
 
+interface AnalyticsOptions {
+    userId?: string;
+    customDimensions?: Record<string, string>;
+    mapError?: boolean;
+}
+
 /**
  * Builds the player configuration objects based on form inputs
  */
@@ -63,7 +69,8 @@ function buildPlayerConfig(
     wordHighlight?: boolean,
     translationLangs?: Array<{ label?: string; langCode: string }>,
     signerUrl?: string,
-    transformation?: Transformation[]
+    transformation?: Transformation[],
+    analyticsOptions?: AnalyticsOptions
 ): { playerOptions: IKPlayerOptions; srcConfig: SourceOptions } {
     // Build player options
     const playerOptions: IKPlayerOptions = {
@@ -82,7 +89,24 @@ function buildPlayerConfig(
     if (features.includes('analytics')) {
         playerOptions.analytics = {
             enabled: true,
-            user_id: 'test_user_id',
+            ...(analyticsOptions?.userId ? { userId: analyticsOptions.userId } : {}),
+            ...(analyticsOptions?.customDimensions && Object.keys(analyticsOptions.customDimensions).length > 0
+                ? { customDimensions: analyticsOptions.customDimensions }
+                : {}),
+            ...(analyticsOptions?.mapError
+                ? {
+                    mapError: (err: any) => {
+                        // Extract the VHS errorType from context when available,
+                        // otherwise fall back to the raw error code.
+                        try {
+                            const ctx = err?.context ? JSON.parse(err.context) : null;
+                            const errorType = ctx?.metadata?.errorType;
+                            if (errorType) return { ...err, code: errorType };
+                        } catch { /* ignore parse errors */ }
+                        return err;
+                    }
+                }
+                : {}),
         };
     }
 
@@ -190,7 +214,8 @@ function generateCode(
     wordHighlight?: boolean,
     translationLangs?: Array<{ label?: string; langCode: string }>,
     signerUrl?: string,
-    transformation?: Transformation[]
+    transformation?: Transformation[],
+    analyticsOptions?: AnalyticsOptions
 ): string {
     const { playerOptions, srcConfig } = buildPlayerConfig(
         imagekitId,
@@ -200,7 +225,8 @@ function generateCode(
         wordHighlight,
         translationLangs,
         signerUrl,
-        transformation
+        transformation,
+        analyticsOptions
     );
 
     // Keep video.js options in one place so displayed code always matches runtime config
@@ -208,12 +234,25 @@ function generateCode(
         muted: true
     };
 
-    // Format player options, but handle signerFn separately since it's a function
+    // Format player options, but handle function properties separately since they can't be JSON-serialised
     const optionsForFormatting = { ...playerOptions };
     if (optionsForFormatting.signerFn) {
         delete (optionsForFormatting as any).signerFn;
     }
+    const hasMapError = !!(analyticsOptions?.mapError && playerOptions.analytics);
+    if (hasMapError && (optionsForFormatting.analytics as any)?.mapError) {
+        delete (optionsForFormatting.analytics as any).mapError;
+    }
     let playerOptionsCode = formatObjectAsCode(optionsForFormatting);
+
+    // If mapError is enabled, inject the readable function snippet
+    if (hasMapError) {
+        // Insert mapError inside the analytics object, before its closing brace
+        playerOptionsCode = playerOptionsCode.replace(
+            /(analytics:\s*\{[^}]*)\}/,
+            `$1,\n        mapError: (err) => {\n            try {\n                const ctx = err?.context ? JSON.parse(err.context) : null;\n                const errorType = ctx?.metadata?.errorType;\n                if (errorType) return { ...err, code: errorType };\n            } catch {}\n            return err;\n        }\n    }`
+        );
+    }
     
     // If signer function exists, add it to the code
     if (playerOptions.signerFn && signerUrl) {
@@ -282,6 +321,25 @@ function updatePlayer() {
     const signerUrlInput = document.getElementById('signer-url') as HTMLInputElement;
     const signerUrl = enableSigner && signerUrlInput?.value.trim() ? signerUrlInput.value.trim() : undefined;
 
+    // Get analytics options
+    let analyticsOptions: AnalyticsOptions | undefined;
+    if (features.includes('analytics')) {
+        const userId = (document.getElementById('analytics-user-id') as HTMLInputElement)?.value.trim() || undefined;
+        const customDimensions: Record<string, string> = {};
+        const dimItems = document.querySelectorAll('#custom-dims-list .translation-lang-item');
+        dimItems.forEach(item => {
+            const key = (item.querySelector('.custom-dim-key-input') as HTMLInputElement)?.value.trim();
+            const val = (item.querySelector('.custom-dim-value-input') as HTMLInputElement)?.value.trim();
+            if (key && val) customDimensions[key] = val;
+        });
+        const mapError = (document.getElementById('enable-map-error') as HTMLInputElement)?.checked || false;
+        analyticsOptions = {
+            ...(userId ? { userId } : {}),
+            ...(Object.keys(customDimensions).length > 0 ? { customDimensions } : {}),
+            ...(mapError ? { mapError } : {}),
+        };
+    }
+
     // Get transformation
     const transformationInput = (document.getElementById('transformation') as HTMLInputElement)?.value.trim() || '';
     let transformation: Transformation[] | undefined = undefined;
@@ -308,11 +366,12 @@ function updatePlayer() {
         wordHighlight,
         translationLangsForConfig,
         signerUrl,
-        transformation
+        transformation,
+        analyticsOptions
     );
 
     // Generate and display code
-    const code = generateCode(imagekitId, srcUrl, features, maxChars, wordHighlight, translationLangsForConfig, signerUrl, transformation);
+    const code = generateCode(imagekitId, srcUrl, features, maxChars, wordHighlight, translationLangsForConfig, signerUrl, transformation, analyticsOptions);
     document.getElementById('code-display')!.textContent = code;
 
     // Get the video element before disposing
@@ -322,7 +381,7 @@ function updatePlayer() {
     if (currentPlayer) {
         try {
             // Check if player is already disposed
-            if (!currentPlayer.isDisposed && !currentPlayer.isDisposed()) {
+            if (typeof currentPlayer.isDisposed === 'function' && !currentPlayer.isDisposed()) {
                 currentPlayer.dispose();
             }
         } catch (e) {

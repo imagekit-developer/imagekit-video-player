@@ -262,6 +262,26 @@
                             <input type="checkbox" id="analytics" name="features" value="analytics" />
                             <label for="analytics">Analytics</label>
                         </div>
+                        <div id="analytics-options" class="sub-options" style="display: none;">
+                            <div class="form-group">
+                                <label for="analytics-user-id">User ID (optional)</label>
+                                <input type="text" id="analytics-user-id" name="analytics-user-id" placeholder="e.g., user_123" />
+                                <div class="help-text">Identifies the viewer in analytics dashboards</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Custom Dimensions (optional)</label>
+                                <div class="help-text" style="margin-bottom: 0.5rem;">Key–value pairs attached to every event for this view (max 5, values ≤ 256 bytes)</div>
+                                <div id="custom-dims-list"></div>
+                                <button type="button" id="add-custom-dim" class="add-button" style="margin-top: 0.5rem;">+ Add Dimension</button>
+                            </div>
+                            <div class="form-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="enable-map-error" name="enable-map-error" />
+                                    <label for="enable-map-error">Enable mapError</label>
+                                </div>
+                                <div class="help-text" style="margin-top: 0.25rem;">Adds a sample <code>mapError</code> function that extracts the VHS <code>errorType</code> as the error code</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -324,6 +344,30 @@
         addTranslationLangBtn?.addEventListener('click', () => {
             addTranslationLangItem();
         });
+
+        document.getElementById('analytics')?.addEventListener('change', function() {
+            const subOptions = document.getElementById('analytics-options');
+            if (subOptions) {
+                subOptions.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+
+        const customDimsList = document.getElementById('custom-dims-list');
+        const addCustomDimBtn = document.getElementById('add-custom-dim');
+
+        function addCustomDimItem(key = '', value = '') {
+            const item = document.createElement('div');
+            item.className = 'translation-lang-item';
+            item.innerHTML = `
+                <input type="text" class="custom-dim-key-input" placeholder="Key (e.g., plan)" value="${key}" style="flex:1" />
+                <input type="text" class="custom-dim-value-input" placeholder="Value (e.g., pro)" value="${value}" style="flex:1" />
+                <button type="button" class="remove-button">Remove</button>
+            `;
+            item.querySelector('.remove-button')?.addEventListener('click', () => item.remove());
+            customDimsList?.appendChild(item);
+        }
+
+        addCustomDimBtn?.addEventListener('click', () => addCustomDimItem());
 
         document.getElementById('translation')?.addEventListener('change', function() {
             const subOptions = document.getElementById('translation-options');
