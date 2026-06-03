@@ -12,6 +12,19 @@ export interface ImageKitVideoPlayerPluginInstance {
   getPlaylistManager(): PlaylistManager | undefined;
   getOriginalCurrentSource(): SourceOptions | null;
   getPlayerOptions(): IKPlayerOptions;
+  /**
+   * Report a non-fatal application-level error to analytics WITHOUT putting the
+   * player into an error state. Playback is unaffected. The error flows through
+   * the configured `mapError` callback (if any) before being shipped. Severity
+   * classification is handled server-side by the dashboard from the `code`.
+   *
+   * Typical use cases: subtitle/thumbnail load failures, signing endpoint
+   * failures before playback starts, recoverable CDN fallbacks, business
+   * exceptions that the application wants visibility into.
+   *
+   * No-op when analytics is disabled.
+   */
+  reportError(error: ReportableError): void;
 }
 
 /** The shape returned by `mapError`. All fields are optional — omitted fields keep their original value. */
@@ -28,19 +41,38 @@ export interface RawPlayerError {
     context?: string;
 }
 
+/**
+ * Manually-reported error payload supplied to `player.imagekitVideoPlayer().reportError()`.
+ * Severity classification is performed server-side from the `code` — do not embed severity here.
+ */
+export interface ReportableError {
+    /** Stable identifier the dashboard maps to a severity bucket. */
+    code: string;
+    /** Human-readable description, free-form. */
+    message?: string;
+    /** Free-form structured context (will be passed through `mapError`). */
+    context?: string;
+}
+
 export interface AnalyticsConfig {
     enabled?: boolean;
-    user_id?: string;
+    userId?: string;
     customDimensions?: Record<string, string>;
     /**
      * Optional pure function called on every error before it is reported to analytics.
      * Use it to remap or enrich error codes/messages with your own classification.
      *
      * @example
-     * mapError: (err) => ({
-     *   code: err.code === '2' ? 'network-or-geo' : err.code,
-     *   message: err.message,
-     * })
+     * mapError: (err) => {
+     *   try {
+     *     const ctx = JSON.parse(err.context || '{}');
+     *     // For HLS/DASH errors, ctx.metadata.errorType is something like
+     *     // 'networkrequestfailed' or 'networkrequesttimeout'.
+     *     if (ctx.metadata?.errorType) {
+     *       return { code: ctx.metadata.errorType };
+     *     }
+     *   } catch { }
+     * }
      */
     mapError?: (error: RawPlayerError) => MappedError | undefined | null;
 }

@@ -90,8 +90,7 @@ export function createPlayerAdapter(
   });
 
   cleanup.registerVideoJsListener(player, 'error', () => {
-    const err = player.error();
-    onSignal({ type: 'error', error: err });
+    onSignal({ type: 'error', error: player.error() });
   });
 
   // Source change - when playlist or src changes externally

@@ -279,6 +279,6 @@ export interface AnalyticsConfig {
   maxBatchSize: number;
   timeupdateThrottleMs: number;
   debug?: boolean;
-  user_id?: string;
+  userId?: string;
   customDimensions?: Record<string, string>;
 }

@@ -4,7 +4,7 @@
  */
 import type Player from 'video.js/dist/types/player';
 import type { CleanupRegistry } from '../../utils';
-import type { SourceOptions, RawPlayerError, MappedError } from '../../interfaces';
+import type { SourceOptions, RawPlayerError, MappedError, ReportableError } from '../../interfaces';
 import type { IKAnalyticsClientContext, AnalyticsConfig, InternalAnalyticsEvent } from './types';
 import {
   ANALYTICS_FLUSH_INTERVAL_MS,
@@ -27,7 +27,7 @@ const PLAYER_SOFTWARE_VERSION = '8.20.0';
 
 /** User-facing options only; ingest URL and batch defaults come from `./constants`. */
 export interface AnalyticsTrackerUserConfig {
-  user_id?: string;
+  userId?: string;
   customDimensions?: Record<string, string>;
   debug?: boolean;
   mapError?: (error: RawPlayerError) => MappedError | undefined | null;
@@ -40,6 +40,15 @@ export interface AnalyticsTrackerOptions {
   getCurrentSource: () => SourceOptions | null;
   cleanup: CleanupRegistry;
   pageLoadStartMonotonic?: number;
+}
+
+/** Public handle returned by `createAnalyticsTracker`. */
+export interface AnalyticsTrackerHandle {
+  /**
+   * Manually report an error into the analytics pipeline without changing
+   * player state. Goes through `mapError` like a native player error.
+   */
+  reportError(error: ReportableError): void;
 }
 
 /** Valid slot keys: `cd_` followed by digits. */
@@ -63,7 +72,7 @@ function sanitizeCustomDimensions(
   return count > 0 ? out : undefined;
 }
 
-export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
+export function createAnalyticsTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle {
   const {
     config: userConfig,
     imagekitId,
@@ -79,7 +88,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     maxBatchSize: ANALYTICS_MAX_BATCH_SIZE,
     timeupdateThrottleMs: ANALYTICS_TIMEUPDATE_THROTTLE_MS,
     debug: userConfig.debug,
-    user_id: userConfig.user_id,
+    userId: userConfig.userId,
     customDimensions: userConfig.customDimensions,
   };
 
@@ -102,7 +111,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     imagekit_id: imagekitId,
     session_id: session.session_id,
     player_instance_id: playerInstanceId,
-    user_id: config.user_id,
+    user_id: config.userId,
     page_url: typeof window !== 'undefined' ? window.location.href : '',
     device_display_width: typeof screen !== 'undefined' ? screen.width : 0,
     device_display_height: typeof screen !== 'undefined' ? screen.height : 0,
@@ -235,6 +244,36 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
       previousSessionId,
       videoSourceUrl: previousVideoSourceUrl ?? undefined,
     });
+  };
+
+  /**
+   * Run the user's `mapError` (if any), then dispatch into the state machine.
+   * Used by both the player adapter's native error signal and `reportError`.
+   */
+  const dispatchError = (
+    rawCode: string,
+    rawMessage: string | undefined,
+    rawContext: string | undefined,
+  ) => {
+    let code = rawCode;
+    let message = rawMessage;
+    let errCtx = rawContext;
+    if (typeof userConfig.mapError === 'function') {
+      try {
+        const mapped = userConfig.mapError({ code, message, context: errCtx });
+        if (mapped && typeof mapped === 'object') {
+          if (mapped.code !== undefined) code = String(mapped.code);
+          if (mapped.message !== undefined) message = mapped.message;
+          if (mapped.context !== undefined) errCtx = mapped.context;
+        }
+      } catch {
+        // Swallow customer code errors to protect analytics pipeline
+      }
+    }
+    stateMachine.dispatch(
+      { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
+      captureContext,
+    );
   };
 
   createPlayerAdapter(player, cleanup, getCurrentSource, {
@@ -432,25 +471,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
             message = e.message;
             errCtx = JSON.stringify(err);
           }
-
-          // Allow customer to remap/enrich the error before reporting
-          if (typeof userConfig.mapError === 'function') {
-            try {
-              const mapped = userConfig.mapError({ code, message, context: errCtx });
-              if (mapped && typeof mapped === 'object') {
-                if (mapped.code !== undefined) code = String(mapped.code);
-                if (mapped.message !== undefined) message = mapped.message;
-                if (mapped.context !== undefined) errCtx = mapped.context;
-              }
-            } catch {
-              // Swallow customer code errors to protect analytics pipeline
-            }
-          }
-
-          stateMachine.dispatch(
-            { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
-            captureContext
-          );
+          dispatchError(code, message, errCtx);
           break;
         }
         case 'source_changed':
@@ -474,4 +495,18 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): void {
     document.addEventListener('visibilitychange', onVisibilityChange);
     cleanup.register(() => document.removeEventListener('visibilitychange', onVisibilityChange));
   }
+
+  return {
+    reportError(error: ReportableError) {
+      if (!error || typeof error !== 'object') return;
+      const code = String(error.code ?? 'UNKNOWN');
+      const message = typeof error.message === 'string' ? error.message : undefined;
+      const context = typeof error.context === 'string' ? error.context : undefined;
+      try {
+        dispatchError(code, message, context);
+      } catch {
+        // Never let analytics throw into customer code
+      }
+    },
+  };
 }
