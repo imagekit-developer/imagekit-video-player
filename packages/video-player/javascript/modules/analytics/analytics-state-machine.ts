@@ -28,6 +28,7 @@ export type AnalyticsSignal =
   | { type: 'playing_after_waiting' }
   | { type: 'ended' }
   | { type: 'error'; errorCode: string; errorMessage?: string; errorContext?: string }
+  | { type: 'report_error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'dispose' }
   | { type: 'visibility_hidden' };
 
@@ -166,6 +167,7 @@ export class AnalyticsStateMachine {
         return;
 
       case 'load_start': {
+        if (this.phase_ === 'disposed') return;
         const oldPlaybackId = this.currentPlaybackId_;
         if (signal.isVideoChange && this.currentPlaybackId_) {
           if (this.phase_ !== 'ended' && this.phase_ !== 'errored') {
@@ -317,17 +319,38 @@ export class AnalyticsStateMachine {
         return;
 
       case 'error':
+        // Native player error from `player.error()`. By the time this signal
+        // reaches the state machine, VHS / Video.js have exhausted their own
+        // recovery paths and the player is in a fatal error state. Treat it
+        // as terminal: emit the error event, then close the view.
+        if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
         emit('error', {
           error_code: signal.errorCode,
           error_message: signal.errorMessage,
           error_context: signal.errorContext,
           ...ctx,
         });
-        if (this.phase_ !== 'ended' && this.phase_ !== 'disposed') {
-          this.phase_ = 'errored';
+        this.phase_ = 'errored';
+        if (this.currentPlaybackId_) {
           emit('viewend', { view_end_reason: 'error' });
           this.callbacks_.onViewEnd('error');
         }
+        return;
+
+      case 'report_error':
+        // Application-reported error via `reportError`. Non-terminal: the view
+        // stays open, allowing multiple manual reports per view (subtitle
+        // failures, sidecar load failures, business-exception reporting, etc.).
+        // Pre-source reports (phase === 'idle') are also recorded; they have
+        // no video_source_url and naturally fall into the "errors before
+        // video load" bucket in dashboards.
+        if (this.phase_ === 'disposed') return;
+        emit('error', {
+          error_code: signal.errorCode,
+          error_message: signal.errorMessage,
+          error_context: signal.errorContext,
+          ...ctx,
+        });
         return;
 
       case 'dispose':

@@ -249,11 +249,16 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
   /**
    * Run the user's `mapError` (if any), then dispatch into the state machine.
    * Used by both the player adapter's native error signal and `reportError`.
+   *
+   * `kind` controls whether the error is treated as terminal:
+   *   - 'native' (default): `player.error()` fired; view ends with reason 'error'.
+   *   - 'report': application-reported via `reportError`; view stays open.
    */
   const dispatchError = (
     rawCode: string,
     rawMessage: string | undefined,
     rawContext: string | undefined,
+    kind: 'native' | 'report' = 'native',
   ) => {
     let code = rawCode;
     let message = rawMessage;
@@ -271,7 +276,9 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
       }
     }
     stateMachine.dispatch(
-      { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
+      kind === 'report'
+        ? { type: 'report_error', errorCode: code, errorMessage: message, errorContext: errCtx }
+        : { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
       captureContext,
     );
   };
@@ -503,7 +510,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
       const message = typeof error.message === 'string' ? error.message : undefined;
       const context = typeof error.context === 'string' ? error.context : undefined;
       try {
-        dispatchError(code, message, context);
+        dispatchError(code, message, context, 'report');
       } catch {
         // Never let analytics throw into customer code
       }
