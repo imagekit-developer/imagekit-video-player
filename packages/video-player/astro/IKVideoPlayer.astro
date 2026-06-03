@@ -31,6 +31,19 @@
  *        or any signing flow that doesn't fit the simple POST contract.
  *        An imperatively-set `signerFn` always wins over `signerOptions`.
  *
+ * ERROR REMAPPING (ASTRO-SAFE PATTERN)
+ * ------------------------------------
+ * Similar to `signerFn`, function values can't be serialized through
+ * `data-config`. If you need error remapping, assign `mapError`
+ * imperatively from a sibling script:
+ *
+ * ```html
+ * <script>
+ *   const el = document.querySelector('#player');
+ *   el.mapError = (err) => ({ code: 'custom', message: err.message });
+ * </script>
+ * ```
+ *
  * STYLES
  * ------
  * This component does NOT auto-import the player stylesheet. Import it
@@ -329,22 +342,7 @@ const config = JSON.stringify({ ikOptions, videoJsOptions, source, playlist, sig
       return this._signerFn;
     }
 
-    /**
-     * Imperative error-remapping assignment.
-     *
-     * In Astro, functions cannot be serialized into `data-config`. Assign
-     * `mapError` imperatively from a sibling `<script>`:
-     *
-     * ```html
-     * <script>
-     *   const el = document.querySelector('#player');
-     *   el.mapError = (err) => ({ code: 'custom', message: err.message });
-     * </script>
-     * ```
-     *
-     * The tracker reads `mapError` lazily on each error, so a synchronous
-     * assignment is guaranteed to be in place before any network error fires.
-     */
+    // Assign mapError imperatively from a sibling script; tracker reads it lazily.
     set mapError(fn: ((error: { code: string; message?: string; context?: string }) => { code?: string; message?: string; context?: string } | null | undefined) | undefined) {
       // Patch the live analytics config object that the tracker closure
       // captured. Since we now pass `ikGlobalSettings_.analytics` directly
