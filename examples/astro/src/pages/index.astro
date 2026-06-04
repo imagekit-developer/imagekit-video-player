@@ -188,7 +188,7 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
           ...ikOptions,
           analytics: {
             enabled: true,
-            user_id: 'demo-user-001',
+            userId: 'demo-user-001',
             customDimensions: { cd_1: '1.0.0', cd_2: 'astro-example' },
           },
         }}
@@ -259,18 +259,31 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
 
   if (analyticsEl) {
     analyticsEl.mapError = (err) => {
-      // Remap every Video.js MediaError code (1-4) to a readable label so the
-      // before/after diff is unmistakable in the log box.
-      const labels: Record<string, string> = {
-        '1': 'aborted',
-        '2': 'network-or-geo',
-        '3': 'decode-error',
-        '4': 'src-unsupported-or-404',
-      };
+      // Now we have err.httpStatus! Use it to classify precisely.
+      let resultCode: string;
+
+      if (err.httpStatus === 404) {
+        resultCode = 'video-not-found';
+      } else if (err.httpStatus === 403) {
+        resultCode = 'forbidden-or-geo-blocked';
+      } else if (err.httpStatus === 410) {
+        resultCode = 'expired-url';
+      } else if (err.httpStatus && err.httpStatus >= 500) {
+        resultCode = 'server-error';
+      } else {
+        // Fall back to label-based mapping when no httpStatus
+        const labels: Record<string, string> = {
+          '1': 'aborted',
+          '2': 'network-or-geo',
+          '3': 'decode-error',
+          '4': 'src-unsupported',
+        };
+        resultCode = labels[String(err.code)] ?? `unknown-${err.code}`;
+      }
+
       const result = {
-        code: labels[String(err.code)] ?? `unknown-${err.code}`,
+        code: resultCode,
         message: err.message,
-        // Drop verbose context to keep payload small
         context: undefined,
       };
       console.log('[mapError] IN:', err, '→ OUT:', result);

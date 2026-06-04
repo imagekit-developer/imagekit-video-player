@@ -23,7 +23,7 @@ export default function App() {
         },
         analytics: {
             enabled: true,
-            user_id: 'test_user_id',
+            userId: 'test_user_id',
         },
     };
 

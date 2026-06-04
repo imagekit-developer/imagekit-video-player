@@ -24,7 +24,7 @@ const ikOptions: IKPlayerOptions = {
   seekThumbnails: true,
   analytics: {
     enabled: true,
-    user_id: 'test_user_id',
+    userId: 'test_user_id',
   },
 };
 
