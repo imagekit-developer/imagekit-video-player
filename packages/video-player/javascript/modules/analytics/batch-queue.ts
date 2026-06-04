@@ -1,13 +1,28 @@
 /**
  * Batches analytics events and flushes to ingest server.
- * v1 transport: every flush is a `GET ingestUrl?d=<base64url(gzip(json))>` with `keepalive: true`.
- * Size-based flush trigger guarantees URL stays under ANALYTICS_URL_SAFE_LIMIT_BYTES.
+ * v1 transport: flushes as `GET ingestUrl?d=<base64url(gzip(json))>&z=g`.
+ * `keepalive` is only set for unload-time flushes (pagehide / visibility_hidden / dispose).
+ * Size-based flush trigger is a heuristic to keep URLs under typical browser/server limits;
+ * it does not strictly guarantee compliance, especially without CompressionStream support.
  */
 import type { IKAnalyticsIngestRequest, IKAnalyticsEvent, IKAnalyticsClientContext } from './types';
 import { toSlimEvent } from './event-row-encoder';
 import { buildIngestRequestV1 } from './wire-format-v1';
 import { sendBatchV1 } from './transport';
-import { ANALYTICS_RAW_JSON_FLUSH_THRESHOLD } from './constants';
+import { ANALYTICS_RAW_JSON_FLUSH_THRESHOLD, ANALYTICS_URL_SAFE_LIMIT_BYTES } from './constants';
+
+/** Whether the browser supports CompressionStream (checked once at module load). */
+const HAS_COMPRESSION_STREAM = typeof globalThis.CompressionStream !== 'undefined';
+
+/**
+ * Effective raw-JSON size threshold for triggering a flush.
+ * With compression: use the configured threshold (gzip shrinks well below URL limit).
+ * Without compression: base64url expands by ~4/3; apply a tighter ceiling so the final
+ * URL stays under the safe byte limit even without gzip.
+ */
+const EFFECTIVE_RAW_FLUSH_THRESHOLD = HAS_COMPRESSION_STREAM
+  ? ANALYTICS_RAW_JSON_FLUSH_THRESHOLD
+  : Math.floor(ANALYTICS_URL_SAFE_LIMIT_BYTES / 1.37);
 
 export type FlushReason = IKAnalyticsIngestRequest['flush_reason'];
 
@@ -65,7 +80,7 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
     }
 
     // Size-based trigger: keep URL safely under the limit.
-    if (projectedBatchJsonLength() >= ANALYTICS_RAW_JSON_FLUSH_THRESHOLD) {
+    if (projectedBatchJsonLength() >= EFFECTIVE_RAW_FLUSH_THRESHOLD) {
       doFlush('size_limit');
     }
   }

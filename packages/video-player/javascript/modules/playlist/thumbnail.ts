@@ -52,7 +52,7 @@ class Thumbnail extends ClickableComponent {
     if (!item) {
       throw new Error('No item provided for thumbnail');
     }
-    if (item.prepared.playlistThumbnail) {
+    if (item.prepared?.playlistThumbnail) {
       return item.prepared.playlistThumbnail;
     }
     
@@ -75,6 +75,7 @@ class Thumbnail extends ClickableComponent {
     const preparedUrl = await preparePosterSrc(itemCopy, this.options_.playerOptions)
     
     // Cache the result on the original item for performance
+    if (!item.prepared) item.prepared = {};
     item.prepared.playlistThumbnail = preparedUrl;
     return preparedUrl;
   }

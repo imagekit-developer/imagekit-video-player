@@ -157,6 +157,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
     maxBatchSize: config.maxBatchSize,
     debug: config.debug,
   });
+  cleanup.register(() => batchQueue.dispose());
 
   const pushEvent = (internal: InternalAnalyticsEvent): void => {
     const eventOrder = stateMachine.getEventOrder();
@@ -486,22 +487,11 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
           break;
         case 'dispose':
           stateMachine.dispatch({ type: 'dispose' }, captureContext);
-          batchQueue.flush('dispose');
+          batchQueue.dispose();
           break;
       }
     },
   });
-
-  // Flush when page goes hidden (e.g. tab switch, navigation away).
-  if (typeof document !== 'undefined') {
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        batchQueue.flush('visibility_hidden');
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    cleanup.register(() => document.removeEventListener('visibilitychange', onVisibilityChange));
-  }
 
   return {
     reportError(error: ReportableError) {
