@@ -31,6 +31,12 @@ export interface BatchQueueOptions {
   flushIntervalMs: number;
   maxBatchSize: number;
   debug?: boolean;
+  /**
+   * Invoked synchronously on `pagehide` (tab close / navigation) BEFORE the final
+   * flush, so the caller can enqueue a closing event (e.g. a navigation viewend)
+   * that then ships in the same keepalive flush.
+   */
+  onBeforeUnloadFlush?: () => void;
 }
 
 export interface BatchQueue {
@@ -40,7 +46,7 @@ export interface BatchQueue {
 }
 
 export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
-  const { ingestUrl, flushIntervalMs, maxBatchSize, debug } = opts;
+  const { ingestUrl, flushIntervalMs, maxBatchSize, debug, onBeforeUnloadFlush } = opts;
   const events: IKAnalyticsEvent[] = [];
   let lastContext: IKAnalyticsClientContext | null = null;
   let intervalId: ReturnType<typeof setInterval> | null = null;
@@ -113,7 +119,10 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
     document.addEventListener('visibilitychange', onVisibilityChange);
     visibilityCleanup = () => document.removeEventListener('visibilitychange', onVisibilityChange);
 
-    const onPageHide = () => flush('pagehide');
+    const onPageHide = () => {
+      onBeforeUnloadFlush?.();
+      flush('pagehide');
+    };
     window.addEventListener('pagehide', onPageHide);
     pagehideCleanup = () => window.removeEventListener('pagehide', onPageHide);
   }

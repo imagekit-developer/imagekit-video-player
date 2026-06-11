@@ -30,6 +30,7 @@ export type AnalyticsSignal =
   | { type: 'error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'report_error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'dispose' }
+  | { type: 'page_hide' }
   | { type: 'visibility_hidden' };
 
 type PlaybackPhase =
@@ -61,6 +62,8 @@ export class AnalyticsStateMachine {
   private phase_: PlaybackPhase = 'idle';
   private currentPlaybackId_: string | null = null;
   private hasEmittedViewStarted_ = false;
+  // Guards against a duplicate viewend for the same view (e.g. page_hide then dispose).
+  private viewEndEmitted_ = false;
   private rebufferOpen_ = false;
   private rebufferStartMonotonic_ = 0;
   private seekOpen_ = false;
@@ -128,14 +131,16 @@ export class AnalyticsStateMachine {
         return;
 
       case 'session_rotated': {
-        // Inactivity timeout elapsed; the tracker has already updated context with
-        // the new session_id / session_start_*. We close the prior view, re-emit
-        // sessioninit, and open a fresh warm-resume view. `playerready` is NOT
-        // re-emitted (player instance is still alive).
+        // Inactivity timeout elapsed. We close the prior view, re-emit sessioninit,
+        // and open a fresh warm-resume view. The tracker defers flipping to the new
+        // session_id / playback_id until onSessionInit (below), so the closing
+        // viewend keeps the OLD view's identity. `playerready` is NOT re-emitted
+        // (player instance is still alive).
         const oldPlaybackId = this.currentPlaybackId_;
-        if (this.currentPlaybackId_ && this.phase_ !== 'ended' && this.phase_ !== 'errored' && this.phase_ !== 'disposed') {
+        if (this.currentPlaybackId_ && this.phase_ !== 'errored' && this.phase_ !== 'disposed') {
           // Emit a viewend on the OLD view BEFORE flipping predecessor links. We
           // do not want this viewend to carry the new view's predecessor stamps.
+          // It keeps the live ctx (playhead/playing_time) captured for the old view.
           emit('viewend', { view_end_reason: 'sessionrotate' });
           this.callbacks_.onViewEnd('sessionrotate');
         }
@@ -143,16 +148,21 @@ export class AnalyticsStateMachine {
         this.sessionInitialized_ = false;
         this.sessionInitialized_ = true; // mark immediately so re-entrant session_init no-ops.
         this.callbacks_.onSessionInit();
-        // sessioninit belongs to the NEW session; do not stamp predecessor links
-        // on it (links are a property of the VIEW, not the session).
-        emit('sessioninit');
-        // Open the new warm-resume view and stamp the predecessor links.
+        // Open the new view BEFORE emitting sessioninit so that eventOrder_ is reset to 0
+        // first — giving sessioninit order=1, viewinit order=2, etc.
         this.callbacks_.onViewInit?.(signal.newPlaybackId);
         this.openView(signal.newPlaybackId);
+        // New view starts fresh: override the captured ctx playhead with 0 so these
+        // events don't inherit the old view's position.
+        emit('sessioninit', { playback_time_instant_ms: 0, playing_time_ms: 0 });
         this.previousPlaybackId_ = oldPlaybackId ?? undefined;
         this.previousSessionId_ = signal.previousSessionId || undefined;
         const url = signal.videoSourceUrl ?? this.lastVideoSourceUrl_;
-        emit('viewinit', url ? { video_source_url: url } : {});
+        emit('viewinit', {
+          playback_time_instant_ms: 0,
+          playing_time_ms: 0,
+          ...(url ? { video_source_url: url } : {}),
+        });
         return;
       }
 
@@ -170,7 +180,7 @@ export class AnalyticsStateMachine {
         if (this.phase_ === 'disposed') return;
         const oldPlaybackId = this.currentPlaybackId_;
         if (signal.isVideoChange && this.currentPlaybackId_) {
-          if (this.phase_ !== 'ended' && this.phase_ !== 'errored') {
+          if (this.phase_ !== 'errored') {
             emit('viewend', { view_end_reason: 'videochange', video_source_url: signal.previousVideoSourceUrl });
             this.callbacks_.onViewEnd('videochange');
           }
@@ -199,8 +209,9 @@ export class AnalyticsStateMachine {
         return;
       }
       case 'play':
-        if (this.phase_ === 'ended' || this.phase_ === 'disposed' || this.phase_ === 'errored') return;
+        if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
         if (this.phase_ === 'idle') return; // must have viewopen first
+        // Replay/loop after 'ended'; same view, no duplicate viewstarted.
         this.playStartMonotonic_ = now;
         emit('play', {});
         this.phase_ = 'play_requested';
@@ -215,13 +226,7 @@ export class AnalyticsStateMachine {
         if (!this.hasEmittedViewStarted_) {
           this.hasEmittedViewStarted_ = true;
           if (this.previousSessionId_) {
-            // Warm resume (session rotated): emit `viewstarted` so engagement
-            // (has_viewstarted / exited_before_video_start) counts the view, but
-            // do NOT report a startup time — the server-side MV gates
-            // `video_startup_time_ms` on `previous_session_id = ''`. We
-            // deliberately omit the field. Video-change continuations
-            // (previousPlaybackId_ set, previousSessionId_ unset) DO report
-            // startup time — the new source genuinely had to load.
+            // Warm resume: omit video_startup_time_ms (server MV gates it on previous_session_id = '').
             this.callbacks_.onViewStarted?.(0);
             emit('viewstarted', {});
           } else {
@@ -242,10 +247,8 @@ export class AnalyticsStateMachine {
 
       case 'pause':
         if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
-        // Defense-in-depth against seek-induced pause events that slip past the adapter
-        // (e.g. race between the browser's internal pause and the `seeking` event).
         if (this.phase_ === 'seeking') return;
-        if (this.phase_ === 'paused') return; // de-dupe consecutive pause events
+        if (this.phase_ === 'paused') return;
         emit('pause', ctx);
         this.phase_ = 'paused';
         return;
@@ -262,12 +265,8 @@ export class AnalyticsStateMachine {
         return;
 
       case 'seeking':
-        if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
-        // Dedupe: HTML5/Video.js can fire `seeking` many times per drag as currentTime
-        // updates. Collapse a continuous seek into one row; only the first opens it.
-        if (this.phase_ === 'seeking') return;
-        // Remember whether the user was playing or paused before the seek so we can
-        // restore it on `seeked` rather than always assuming `playing`.
+        if (this.phase_ === 'disposed') return;
+        if (this.phase_ === 'seeking') return; // dedupe continuous drag
         this.phaseBeforeSeek_ = this.phase_;
         this.seekOpen_ = true;
         this.seekStartMonotonic_ = now;
@@ -285,8 +284,6 @@ export class AnalyticsStateMachine {
           seek_time_ms: seekTimeMs,
           ...ctx,
         });
-        // Restore the pre-seek phase. If the user was paused before scrubbing, stay paused;
-        // a subsequent `playing` will move us forward when playback actually resumes.
         const prior = this.phaseBeforeSeek_;
         this.phaseBeforeSeek_ = null;
         this.phase_ = prior === 'paused' ? 'paused' : 'playing';
@@ -312,17 +309,12 @@ export class AnalyticsStateMachine {
 
       case 'ended':
         if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
+        // 'ended' does not close the view; looping/seeking back replays on the same view.
         emit('ended', ctx);
         this.phase_ = 'ended';
-        emit('viewend', { view_end_reason: 'ended' });
-        this.callbacks_.onViewEnd('ended');
         return;
 
       case 'error':
-        // Native player error from `player.error()`. By the time this signal
-        // reaches the state machine, VHS / Video.js have exhausted their own
-        // recovery paths and the player is in a fatal error state. Treat it
-        // as terminal: emit the error event, then close the view.
         if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
         emit('error', {
           error_code: signal.errorCode,
@@ -333,17 +325,13 @@ export class AnalyticsStateMachine {
         this.phase_ = 'errored';
         if (this.currentPlaybackId_) {
           emit('viewend', { view_end_reason: 'error' });
+          this.viewEndEmitted_ = true;
           this.callbacks_.onViewEnd('error');
         }
         return;
 
       case 'report_error':
-        // Application-reported error via `reportError`. Non-terminal: the view
-        // stays open, allowing multiple manual reports per view (subtitle
-        // failures, sidecar load failures, business-exception reporting, etc.).
-        // Pre-source reports (phase === 'idle') are also recorded; they have
-        // no video_source_url and naturally fall into the "errors before
-        // video load" bucket in dashboards.
+        // Non-terminal: view stays open. Pre-source (idle) reports are allowed.
         if (this.phase_ === 'disposed') return;
         emit('error', {
           error_code: signal.errorCode,
@@ -355,11 +343,23 @@ export class AnalyticsStateMachine {
 
       case 'dispose':
         if (this.phase_ === 'disposed') return;
-        if (this.phase_ !== 'ended' && this.phase_ !== 'errored' && this.currentPlaybackId_) {
+        if (this.phase_ !== 'errored' && !this.viewEndEmitted_ && this.currentPlaybackId_) {
           emit('viewend', { view_end_reason: 'dispose' });
+          this.viewEndEmitted_ = true;
           this.callbacks_.onViewEnd('dispose');
         }
         this.phase_ = 'disposed';
+        return;
+
+      case 'page_hide':
+        // Tab close / navigation away. pagehide is the last reliable point to emit a
+        // viewend; video.js 'dispose' does not fire before the page is torn down.
+        if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
+        if (!this.viewEndEmitted_ && this.currentPlaybackId_) {
+          emit('viewend', { view_end_reason: 'navigation' });
+          this.viewEndEmitted_ = true;
+          this.callbacks_.onViewEnd('navigation');
+        }
         return;
 
       case 'visibility_hidden':
@@ -372,6 +372,7 @@ export class AnalyticsStateMachine {
     this.currentPlaybackId_ = playbackId;
     this.phase_ = 'view_open';
     this.hasEmittedViewStarted_ = false;
+    this.viewEndEmitted_ = false;
     this.rebufferOpen_ = false;
     this.seekOpen_ = false;
     this.eventOrder_ = 0;
@@ -383,6 +384,7 @@ export class AnalyticsStateMachine {
     this.currentPlaybackId_ = playbackId;
     this.phase_ = 'view_open';
     this.hasEmittedViewStarted_ = false;
+    this.viewEndEmitted_ = false;
     this.rebufferOpen_ = false;
     this.seekOpen_ = false;
     this.eventOrder_ = 0;

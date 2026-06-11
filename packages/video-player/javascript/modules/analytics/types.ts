@@ -25,7 +25,7 @@ export type VideoSourceType = 'hls' | 'dash' | 'mp4' | 'webm' | 'other';
 
 export type Orientation = 'landscape' | 'portrait' | 'square' | 'unknown';
 
-export type ViewEndReason = 'ended' | 'videochange' | 'error' | 'dispose' | 'navigation' | 'sessionrotate';
+export type ViewEndReason = 'videochange' | 'error' | 'dispose' | 'navigation' | 'sessionrotate';
 
 export interface IKAnalyticsClientContext {
   imagekit_id: string;

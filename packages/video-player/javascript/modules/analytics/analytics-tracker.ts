@@ -98,6 +98,12 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
   const playerInstanceId = createPlayerInstanceId();
   let currentPlaybackId: string | null = createPlaybackId();
   let hasLoadedFirstView = false;
+  // Holds the new session identity + playback id during a rotation. Applied only
+  // once the state machine has emitted the OLD view's closing viewend (via the
+  // onSessionInit callback), so that viewend keeps the old session_id/playback_id.
+  let pendingRotation:
+    | { session_id: string; session_start_date: string; session_start_time_iso: string; newPlaybackId: string }
+    | null = null;
   let previousVideoSourceUrl: string | null = null;
   let playerReadyMonotonic = 0;
   let playingTimeAccumulatedMs = 0;
@@ -156,6 +162,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
     flushIntervalMs: config.flushIntervalMs,
     maxBatchSize: config.maxBatchSize,
     debug: config.debug,
+    // On tab close, emit a navigation viewend so it ships in the keepalive flush.
+    onBeforeUnloadFlush: () => stateMachine.dispatch({ type: 'page_hide' }, captureContext),
   });
   cleanup.register(() => batchQueue.dispose());
 
@@ -169,7 +177,17 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
 
   const stateMachine = new AnalyticsStateMachine(
     {
-      onSessionInit: () => {},
+      onSessionInit: () => {
+        // On a rotation, flip to the new session + playback id here — after the old
+        // view's viewend(sessionrotate) has been emitted, before sessioninit.
+        if (pendingRotation) {
+          context.session_id = pendingRotation.session_id;
+          context.session_start_date = pendingRotation.session_start_date;
+          context.session_start_time_iso = pendingRotation.session_start_time_iso;
+          currentPlaybackId = pendingRotation.newPlaybackId;
+          pendingRotation = null;
+        }
+      },
       onPlayerReady: () => {},
       onViewInit: (newId) => { currentPlaybackId = newId; },
       onViewStarted: () => {},
@@ -231,20 +249,26 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
       // resolveSession already touched activity for the live path.
       return;
     }
-    // Update tracker context with the new session identity. Subsequent encoded
-    // event rows (and the batch envelope context) carry the new session_id.
-    context.session_id = identity.session_id;
-    context.session_start_date = identity.session_start_date;
-    context.session_start_time_iso = new Date(identity.session_start_time_ms).toISOString();
-    // Mint a new playback_id for the rotated view; tracker is the owner of playback ids.
+    // Defer applying the new session identity + playback id until the state machine
+    // has emitted the OLD view's closing viewend(sessionrotate) — see onSessionInit.
+    // Mutating context/currentPlaybackId here would mis-stamp that viewend with the
+    // new session_id/playback_id, attributing it to the new view.
     const newPlaybackId = createPlaybackId();
-    currentPlaybackId = newPlaybackId;
-    stateMachine.dispatch({
-      type: 'session_rotated',
+    pendingRotation = {
+      session_id: identity.session_id,
+      session_start_date: identity.session_start_date,
+      session_start_time_iso: new Date(identity.session_start_time_ms).toISOString(),
       newPlaybackId,
-      previousSessionId,
-      videoSourceUrl: previousVideoSourceUrl ?? undefined,
-    });
+    };
+    stateMachine.dispatch(
+      {
+        type: 'session_rotated',
+        newPlaybackId,
+        previousSessionId,
+        videoSourceUrl: previousVideoSourceUrl ?? undefined,
+      },
+      captureContext,
+    );
   };
 
   /**
