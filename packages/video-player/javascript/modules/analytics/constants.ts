@@ -1,5 +1,5 @@
 /** Analytics ingest endpoint. */
-export const ANALYTICS_INGEST_URL = 'https://stage-ikedge.imagekit.io/b';
+export const ANALYTICS_INGEST_URL = 'https://edge.vexio.io/b';
 
 export const ANALYTICS_FLUSH_INTERVAL_MS = 5000;
 
