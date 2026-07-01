@@ -179,8 +179,7 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
       <p>
         Uses a <strong>deliberately broken URL</strong> to trigger error code
         <code>2</code> (MEDIA_ERR_NETWORK). The <code>mapError</code> callback
-        remaps it to <code>network-or-geo</code>. Watch the box below and the
-        browser console for confirmation.
+        enriches the reported context with extra metadata and logs the input/output
       </p>
       <IKVideoPlayer
         id="player-analytics"

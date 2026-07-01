@@ -112,6 +112,9 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
   let progressiveBitrateBps: number | undefined;
   let detectedVideoCodec: string | undefined;
   let detectedAudioCodec: string | undefined;
+  // Incremented on every load_start so stale one-time media listeners from a previous
+  // source can detect they've been superseded and skip writing their (now wrong) data.
+  let loadGeneration = 0;
 
   const context: IKAnalyticsClientContext = {
     imagekit_id: imagekitId,
@@ -351,15 +354,22 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
           detectedVideoCodec = undefined;
           detectedAudioCodec = undefined;
 
+          // Snapshot the generation for this load so late-resolving media listeners from a
+          // previous source don't overwrite state that a newer load_start has already reset.
+          loadGeneration += 1;
+          const generation = loadGeneration;
+
           // For progressive sources (no ABR), estimate bitrate from Content-Length + duration.
           const isABR = !!source?.abs;
           if (!isABR && videoSourceUrl) {
             const srcUrl = videoSourceUrl;
             player.one('loadedmetadata', () => {
+              if (generation !== loadGeneration) return; // superseded by a newer load_start
               const dur = player.duration();
               if (typeof dur !== 'number' || !isFinite(dur) || dur <= 0) return;
               fetch(srcUrl, { method: 'HEAD' })
                 .then(res => {
+                  if (generation !== loadGeneration) return; // superseded while HEAD was in flight
                   const cl = res.headers.get('content-length');
                   if (cl) {
                     const bytes = parseInt(cl, 10);
@@ -372,6 +382,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
 
           // Extract codec info from HLS/DASH — available after first segment is parsed
           player.one('canplay', () => {
+            if (generation !== loadGeneration) return; // superseded by a newer load_start
             try {
               const tech = (player as any).tech?.(true);
               const vhs = tech?.vhs ?? tech?.hls;

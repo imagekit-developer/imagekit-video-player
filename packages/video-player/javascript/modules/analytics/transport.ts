@@ -10,7 +10,10 @@ function base64urlEncode(bytes: Uint8Array): string {
   for (let i = 0; i < bytes.length; i++) {
     bin += String.fromCharCode(bytes[i]);
   }
-  const b64 = typeof btoa !== 'undefined' ? btoa(bin) : '';
+  if (typeof btoa === 'undefined') {
+    throw new Error('[IK Analytics] base64 encoder (btoa) unavailable');
+  }
+  const b64 = btoa(bin);
   return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -62,21 +65,21 @@ export async function sendBatchV1(
     }
   }
 
-  const b64url = base64urlEncode(payload);
-  const sep = ingestUrl.includes('?') ? '&' : '?';
-  const url = `${ingestUrl}${sep}d=${b64url}&z=${encodingTag}`;
-
-  if (debug) {
-    console.log(
-      '[IK Analytics] GET batch',
-      req.r,
-      req.e.length,
-      'events',
-      'urlBytes:', url.length
-    );
-  }
-
   try {
+    const b64url = base64urlEncode(payload);
+    const sep = ingestUrl.includes('?') ? '&' : '?';
+    const url = `${ingestUrl}${sep}d=${b64url}&z=${encodingTag}`;
+
+    if (debug) {
+      console.log(
+        '[IK Analytics] GET batch',
+        req.r,
+        req.e.length,
+        'events',
+        'urlBytes:', url.length
+      );
+    }
+
     // `keepalive` is only needed for unload-time flushes so the request survives
     // the page tearing down. Using it for routine flushes counts against Chrome's
     // 64 KB per-origin keepalive quota and can cause silent failures (which Chrome

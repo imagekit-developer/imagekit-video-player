@@ -56,13 +56,13 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
 
   function doFlush(reason: FlushReason) {
     if (events.length === 0 || !lastContext) return;
+    if (disposed && reason !== 'dispose' && reason !== 'pagehide' && reason !== 'visibility_hidden') return;
     const batch = events.splice(0, events.length);
     const slim = batch.map(toSlimEvent);
     const req = buildIngestRequestV1(lastContext, slim, reason ?? '');
     if (debug) {
       console.log('[IK Analytics] Sending batch', req.r, req.e.length, 'events');
     }
-    if (disposed && reason !== 'dispose' && reason !== 'pagehide' && reason !== 'visibility_hidden') return;
     void sendBatchV1(req, { ingestUrl, debug });
   }
 
@@ -110,7 +110,7 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
   }
 
   function setupLifecycleListeners() {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         flush('visibility_hidden');

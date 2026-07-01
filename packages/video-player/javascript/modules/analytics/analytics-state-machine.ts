@@ -380,18 +380,6 @@ export class AnalyticsStateMachine {
     this.lastEventMonotonic_ = 0;
   }
 
-  openViewAfterVideoChange(playbackId: string): void {
-    this.currentPlaybackId_ = playbackId;
-    this.phase_ = 'view_open';
-    this.hasEmittedViewStarted_ = false;
-    this.viewEndEmitted_ = false;
-    this.rebufferOpen_ = false;
-    this.seekOpen_ = false;
-    this.eventOrder_ = 0;
-    this.lastEventName_ = null;
-    this.lastEventMonotonic_ = typeof performance !== 'undefined' ? performance.now() : Date.now();
-  }
-
   getCurrentPlaybackId(): string | null {
     return this.currentPlaybackId_;
   }
