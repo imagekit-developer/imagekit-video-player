@@ -60,7 +60,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
       this.overrideSrc();
 
       const analyticsOpts = this.ikGlobalSettings_.analytics;
-      if (analyticsOpts?.enabled) {
+      if (analyticsOpts && typeof analyticsOpts === 'object' && analyticsOpts.enabled === true) {
         this.analyticsHandle_ = createAnalyticsTracker({
           config: analyticsOpts,
           imagekitId: this.ikGlobalSettings_.imagekitId,
