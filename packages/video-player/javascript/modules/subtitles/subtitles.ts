@@ -305,12 +305,6 @@ export function validateRemoteTextTrackOptions(opts: RemoteTextTrackOptions): vo
             );
         }
 
-        if (opts.maxChars || opts.highlightWords) {
-            throw new Error(
-                '`translations` cannot be used with `maxChars` or `highlightWords`.'
-            );
-        }
-
         if (!Array.isArray(opts.translations)) {
             throw new Error('`translations` must be an array.');
         }

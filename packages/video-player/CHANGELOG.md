@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.0-beta.5]
+
+- Added playback analytics (QoE) tracking: enable via `analytics.enabled`
+
 ## [1.0.0-beta.4]
 
 - Added support for Astro, by exporting component from `@imagekit/video-player/astro`

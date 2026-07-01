@@ -22,6 +22,10 @@ const playerRef = ref<IKVideoPlayerRef | null>(null);
 const ikOptions: IKPlayerOptions = {
   imagekitId: 'YOUR_IMAGEKIT_ID', // Remember to replace this
   seekThumbnails: true,
+  analytics: {
+    enabled: true,
+    userId: 'test_user_id',
+  },
 };
 
 const playlist: {

@@ -2,7 +2,7 @@ import videojs, { type Player as VideoJsPlayer } from 'video.js';
 import PluginType from 'video.js/dist/types/plugin';
 import './modules/http-source-selector/plugin';
 import './modules/context-menu/plugin';
-import type { IKPlayerOptions, Player } from './interfaces';
+import type { IKPlayerOptions, Player, ReportableError } from './interfaces';
 import type { SourceOptions } from './interfaces';
 import type { AugmentedSourceOptions } from './interfaces/AugementedSourceOptions';
 
@@ -19,6 +19,7 @@ import { setupKeyboardShortcuts } from './modules/keyboard-shortcuts';
 import { setupContextMenu } from './modules/context-menu/setup';
 import { createSourceOverride } from './modules/source-handler';
 import { extendTrackSettings } from './modules/subtitles/track-settings-extension';
+import { createAnalyticsTracker, type AnalyticsTrackerHandle } from './modules/analytics/analytics-tracker';
 
 const defaults: IKPlayerOptions = {
   imagekitId: '',
@@ -42,17 +43,33 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   private playlistManager_?: PlaylistManager;
   private seekThumbnailsManager_?: SeekThumbnailsManager;
   private shoppableManager_?: ShoppableManager;
+  private analyticsHandle_?: AnalyticsTrackerHandle;
   private cleanup_ = new CleanupRegistry();
 
 
   constructor(player: Player, options: IKPlayerOptions) {
     super(player);
 
+    const pageLoadStartMonotonic =
+      typeof performance !== 'undefined' ? performance.now() : 0;
+
     this.ikGlobalSettings_ = videojs.mergeOptions(defaults, options);
     try {
       validateIKPlayerOptions(this.ikGlobalSettings_);
 
       this.overrideSrc();
+
+      const analyticsOpts = this.ikGlobalSettings_.analytics;
+      if (analyticsOpts && typeof analyticsOpts === 'object' && analyticsOpts.enabled === true) {
+        this.analyticsHandle_ = createAnalyticsTracker({
+          config: analyticsOpts,
+          imagekitId: this.ikGlobalSettings_.imagekitId,
+          player: this.player,
+          getCurrentSource: () => this.getOriginalCurrentSource(),
+          cleanup: this.cleanup_,
+          pageLoadStartMonotonic,
+        });
+      }
 
       this.playlistManager_ = new PlaylistManager(this.player, this.ikGlobalSettings_);
 
@@ -204,6 +221,15 @@ class ImageKitVideoPlayerPlugin extends Plugin {
    */
   public getPlayerOptions = (): IKPlayerOptions => {
     return this.ikGlobalSettings_;
+  }
+
+  /**
+   * Manually report an application-level error to analytics without affecting
+   * playback. Routed through the configured `mapError` callback. Severity is
+   * classified server-side from the `code`. No-op if analytics is disabled.
+   */
+  public reportError = (error: ReportableError): void => {
+    this.analyticsHandle_?.reportError(error);
   }
 
   /**
