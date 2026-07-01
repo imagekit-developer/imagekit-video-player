@@ -78,27 +78,15 @@ export class PlaylistMenuItem extends Component {
     if (item?.prepared?.playlistThumbnail) {
       return item.prepared.playlistThumbnail;
     }
-    
-    // Clone item to avoid mutating the shared object
-    const itemCopy: AugmentedSourceOptions = {
-      ...item,
-      poster: item.poster ? { ...item.poster } : {}
-    };
-    
-    // Ensure poster is defined (TypeScript narrowing)
-    if (!itemCopy.poster) {
-      itemCopy.poster = {};
+    if (!item.poster?.transformation) {
+      if (!item.poster) {
+        item.poster = {};
+      }
+      item.poster.transformation = [DEFAULT_TRANSFORMATION]
+
     }
-    
-    // Apply default transformation if not provided
-    if (!itemCopy.poster.transformation) {
-      itemCopy.poster.transformation = [DEFAULT_TRANSFORMATION];
-    }
-    
     const player = this.player_ as Player;
-    const preparedUrl = await preparePosterSrc(itemCopy, player.imagekitVideoPlayer().getPlayerOptions())
-    
-    // Cache the result on the original item for performance
+    const preparedUrl = await preparePosterSrc(item, player.imagekitVideoPlayer().getPlayerOptions())
     if(!this.item.prepared) {
       this.item.prepared = {};
     }

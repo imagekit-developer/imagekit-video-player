@@ -52,31 +52,18 @@ class Thumbnail extends ClickableComponent {
     if (!item) {
       throw new Error('No item provided for thumbnail');
     }
-    if (item.prepared?.playlistThumbnail) {
+    if (item.prepared.playlistThumbnail) {
       return item.prepared.playlistThumbnail;
     }
-    
-    // Clone item to avoid mutating the shared object
-    const itemCopy: AugmentedSourceOptions = {
-      ...item,
-      poster: item.poster ? { ...item.poster } : {}
-    };
-    
-    // Ensure poster is defined (TypeScript narrowing)
-    if (!itemCopy.poster) {
-      itemCopy.poster = {};
+    if (!item.poster?.transformation) {
+      if (!item.poster) {
+        item.poster = {};
+      }
+      item.poster.transformation = [DEFAULT_TRANSFORMATION]
+
     }
-    
-    // Apply default transformation if not provided
-    if (!itemCopy.poster.transformation) {
-      itemCopy.poster.transformation = [DEFAULT_TRANSFORMATION];
-    }
-    
-    const preparedUrl = await preparePosterSrc(itemCopy, this.options_.playerOptions)
-    
-    // Cache the result on the original item for performance
-    if (!item.prepared) item.prepared = {};
-    item.prepared.playlistThumbnail = preparedUrl;
+    const preparedUrl = await preparePosterSrc(item, this.options_.playerOptions)
+    item.prepared.playlistThumbnail = preparedUrl; // Store the prepared URL in the item
     return preparedUrl;
   }
 
