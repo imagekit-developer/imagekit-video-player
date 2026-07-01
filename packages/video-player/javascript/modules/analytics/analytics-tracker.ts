@@ -19,11 +19,11 @@ import { encodeEvent } from './event-row-encoder';
 import { createBatchQueue } from './batch-queue';
 import { createPlayerAdapter } from './player-adapter';
 import { computeVideoUpDownScalePercentages } from './video-scale-percentage';
+import { version as PLUGIN_VERSION } from '../../../package.json';
+import { version as PLAYER_SOFTWARE_VERSION } from 'video.js/package.json';
 
 const PLUGIN_NAME = 'imagekit-video-player';
-const PLUGIN_VERSION = '1.0.0-beta.1';
 const PLAYER_SOFTWARE = 'video.js';
-const PLAYER_SOFTWARE_VERSION = '8.20.0';
 
 /** User-facing options only; ingest URL and batch defaults come from `./constants`. */
 export interface AnalyticsTrackerUserConfig {

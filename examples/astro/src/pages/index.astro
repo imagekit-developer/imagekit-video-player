@@ -240,8 +240,8 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
     el.signerFn = makeSigner();
   }
 
-  // Imperative mapError wiring for section §5.
-  // Remaps Video.js error code 2 (network) to a custom label.
+  // Imperative mapError wiring for section 5.
+  // Enriches the reported context with a bit of extra metadata.
   type MapErrorFn = (error: { code: string; message?: string; context?: string }) =>
     { code?: string; message?: string; context?: string } | null | undefined;
   type IKAnalyticsEl = HTMLElement & { mapError?: MapErrorFn };
@@ -259,32 +259,13 @@ const playlist: { sources: SourceOptions[]; options?: PlaylistOptions } = {
 
   if (analyticsEl) {
     analyticsEl.mapError = (err) => {
-      // Now we have err.httpStatus! Use it to classify precisely.
-      let resultCode: string;
-
-      if (err.httpStatus === 404) {
-        resultCode = 'video-not-found';
-      } else if (err.httpStatus === 403) {
-        resultCode = 'forbidden-or-geo-blocked';
-      } else if (err.httpStatus === 410) {
-        resultCode = 'expired-url';
-      } else if (err.httpStatus && err.httpStatus >= 500) {
-        resultCode = 'server-error';
-      } else {
-        // Fall back to label-based mapping when no httpStatus
-        const labels: Record<string, string> = {
-          '1': 'aborted',
-          '2': 'network-or-geo',
-          '3': 'decode-error',
-          '4': 'src-unsupported',
-        };
-        resultCode = labels[String(err.code)] ?? `unknown-${err.code}`;
-      }
-
+      // Keep the original error, just attach some extra context metadata.
       const result = {
-        code: resultCode,
-        message: err.message,
-        context: undefined,
+        context: JSON.stringify({
+          original: err.context,
+          page: 'astro-example',
+          url: location.href,
+        }),
       };
       console.log('[mapError] IN:', err, '→ OUT:', result);
       showLog(err, result);
