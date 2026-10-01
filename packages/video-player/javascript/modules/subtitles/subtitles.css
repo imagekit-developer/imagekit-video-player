@@ -7,3 +7,10 @@
     flex-direction: column;
     gap: 0.5em;
 }
+
+/* Host-page resets (e.g. Tailwind preflight) set `select { color: inherit }`,
+   which picks up the player's white text on the browser's white select box. */
+.video-js .vjs-text-track-settings select {
+    color: #000;
+    background-color: #fff;
+}
