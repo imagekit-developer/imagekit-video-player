@@ -135,3 +135,40 @@
     transform: rotate(360deg);
   }
 }
+
+/* --- Accessibility --- */
+
+.vjs-recommendations-overlay:focus {
+  outline: none;
+}
+
+/* Two-tone focus ring stays visible over any thumbnail. */
+.vjs-rec-close:focus-visible,
+.vjs-rec-item:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+/* Keyboard users get the same highlight as mouse users. */
+.vjs-rec-item:focus-visible {
+  border: 1px solid rgba(255, 255, 255, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vjs-rec-close,
+  .vjs-rec-item {
+    transition: none;
+  }
+
+  .vjs-rec-close:hover,
+  .vjs-rec-item:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .vjs-rec-close {
+    border: 1px solid ButtonText;
+  }
+}

@@ -322,8 +322,11 @@ export class ShoppableManager {
    */
   private setPlayerBackgroundInert(inert: boolean) {
     if (inert) {
-      this.inertedEls_ = Array.from(this.player_.el().children).filter(
-        el => el !== this.postPlayOverlay_ && !el.hasAttribute('inert')
+      // Other visible dialogs (e.g. the recommendations overlay) are left alone.
+      this.inertedEls_ = Array.from(this.player_.el().children).filter(el =>
+        el !== this.postPlayOverlay_ &&
+        !el.hasAttribute('inert') &&
+        !(el.getAttribute('role') === 'dialog' && !el.classList.contains('vjs-hidden'))
       );
       this.inertedEls_.forEach(el => el.setAttribute('inert', ''));
     } else {
