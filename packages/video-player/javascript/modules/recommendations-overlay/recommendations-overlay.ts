@@ -2,6 +2,7 @@ import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
+import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
 
 const Component = videojs.getComponent('Component');
 
@@ -21,6 +22,11 @@ export class RecommendationsOverlay extends Component {
   private closeBtn!: HTMLButtonElement;
   // Player children made inert while the overlay is shown.
   private inertedEls_: Element[] = [];
+  // A playlist "Up next" countdown is running; wait for it instead of covering it.
+  private upNextActive_ = false;
+  // Video ended during a countdown: show the recommendations if the viewer cancels it.
+  private pendingShow_ = false;
+  private endedTimer_: number | null = null;
   private cleanup_ = new CleanupRegistry();
 
   constructor(player: Player, options: RecommendationsOverlayOptions) {
@@ -49,6 +55,20 @@ export class RecommendationsOverlay extends Component {
 
     // Listeners
     this.cleanup_.registerVideoJsListener(player, 'ended', this.onEnded);
+    this.cleanup_.registerVideoJsListener(player, UP_NEXT_EVENTS.START, () => { this.upNextActive_ = true; });
+    this.cleanup_.registerVideoJsListener(player, UP_NEXT_EVENTS.END, () => { this.upNextActive_ = false; });
+    this.cleanup_.registerVideoJsListener(player, UP_NEXT_EVENTS.CANCEL, () => {
+      if (!this.pendingShow_) return;
+      this.pendingShow_ = false;
+      this.openOverlay_(this.player_.el().contains(document.activeElement));
+    });
+    this.cleanup_.registerVideoJsListener(player, 'play', () => { this.pendingShow_ = false; });
+    // A new source makes these recommendations stale: close them (and un-inert the player).
+    this.cleanup_.registerVideoJsListener(player, 'loadstart', () => {
+      this.pendingShow_ = false;
+      this.upNextActive_ = false;
+      if (!this.hasClass('vjs-hidden')) this.closeOverlay(true);
+    });
     this.cleanup_.registerEventListener(this.closeBtn, 'click', () => this.closeOverlay());
     this.cleanup_.registerEventListener(this.closeBtn, 'keydown', (e: Event) => {
       if (!isActivationKey(e as KeyboardEvent)) return;
@@ -73,14 +93,27 @@ export class RecommendationsOverlay extends Component {
   private onEnded = () => {
     // Only pull focus into the overlay if the user was already working inside the player.
     const focusWasInPlayer = this.player_.el().contains(document.activeElement);
+    // Let a playlist auto-advance (also on 'ended') start its countdown first.
+    if (this.endedTimer_ != null) clearTimeout(this.endedTimer_);
+    this.endedTimer_ = window.setTimeout(() => {
+      this.endedTimer_ = null;
+      if (this.upNextActive_) {
+        this.pendingShow_ = true;
+        return;
+      }
+      this.openOverlay_(focusWasInPlayer);
+    }, 0);
+  };
+
+  private openOverlay_(moveFocus: boolean) {
     this.renderRecommendations();
     this.show();
     this.setPlayerBackgroundInert(true);
-    if (focusWasInPlayer) {
+    if (moveFocus) {
       const firstCard = this.gridEl.querySelector<HTMLElement>('.vjs-rec-item');
       (firstCard || this.el() as HTMLElement).focus();
     }
-  };
+  }
 
   /**
    * Hides the overlay. If focus was inside it, focus moves to the play control
@@ -187,6 +220,7 @@ export class RecommendationsOverlay extends Component {
   }
 
   dispose(): void {
+    if (this.endedTimer_ != null) clearTimeout(this.endedTimer_);
     this.setPlayerBackgroundInert(false);
     this.cleanup_.dispose();
     super.dispose();

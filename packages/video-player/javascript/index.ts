@@ -184,10 +184,12 @@ class ImageKitVideoPlayerPlugin extends Plugin {
    * Initializes the recommendations overlay if recommendations are provided in the source.
    */
   private async initRecommendationsOverlay() {
-    if (!this.currentSource_ || !this.currentSource_.recommendations) return;
-
+    // Always drop the previous source's overlay, so its recommendations can't show
+    // at the end of a later video that has none of its own.
     const overlay = this.player.getChild('RecommendationsOverlay');
     if (overlay) overlay.dispose();
+
+    if (!this.currentSource_ || !this.currentSource_.recommendations) return;
     this.player.addChild('RecommendationsOverlay', { recommendations: this.currentSource_.recommendations, playerOptions: this.ikGlobalSettings_ });
   }
 

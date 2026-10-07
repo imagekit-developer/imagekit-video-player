@@ -4,13 +4,16 @@ import type ComponentType from 'video.js/dist/types/component';
 import { isEqual, pick } from 'lodash'
 
 import { Playlist } from './playlist';
-import { AutoAdvance } from './auto-advance';
+import { AutoAdvance, type AutoAdvanceCountdownHooks } from './auto-advance';
 import { PlaylistMenu } from './playlist-menu';
 import type { SourceOptions, PlaylistOptions, IKPlayerOptions } from '../../interfaces';
 import type { Player as ImageKitPlayer } from '../../interfaces/Player';
 import { isIndexInBounds, SOURCE_OPTION_KEYS } from './utils';
 import './present-upcoming';
 import { PresentUpcoming } from './present-upcoming';
+import './up-next-overlay';
+import { UpNextOverlay } from './up-next-overlay';
+import { UP_NEXT_EVENTS } from './up-next-events';
 import './components/playlist-next-button';
 import './components/playlist-previous-button';
 
@@ -26,8 +29,35 @@ export class PlaylistManager {
   private playerContainer_?: HTMLElement;
   private playlistOptions_: PlaylistOptions;
   private presentUpcomingComponent_?: PresentUpcoming;
+  private upNextOverlay_?: UpNextOverlay;
   private presentUpcomingThreshold_: number | null = null;
   private isUpcomingDismissed_ = false;
+
+  // Makes the auto-advance countdown visible, announced and cancellable with the
+  // "Up next in N" overlay (WCAG 2.2.1 Timing Adjustable, 4.1.3 Status Messages).
+  private autoAdvanceHooks_: AutoAdvanceCountdownHooks = {
+    onStart: (seconds) => {
+      const nextIndex = this.playlist_.getNextIndex();
+      if (nextIndex < 0) return;
+      const nextItem = this.playlist_.getItems()[nextIndex];
+      this.presentUpcomingComponent_?.hide();
+      if (!this.upNextOverlay_) {
+        this.upNextOverlay_ = this.player_.addChild('UpNextOverlay', this.playerOptions_) as UpNextOverlay;
+        this.upNextOverlay_.on('cancel', this.handleUpcomingCancel_);
+        this.upNextOverlay_.on('playnow', () => this.playNext());
+      }
+      this.upNextOverlay_.start(nextItem, seconds);
+      // Recommendations / shoppable post-play wait for this instead of covering it.
+      this.player_.trigger(UP_NEXT_EVENTS.START);
+    },
+    onTick: (secondsLeft) => this.upNextOverlay_?.setSeconds(secondsLeft),
+    onStop: () => {
+      if (this.upNextOverlay_ && !this.upNextOverlay_.hasClass('vjs-hidden')) {
+        this.upNextOverlay_.hide();
+        this.player_.trigger(UP_NEXT_EVENTS.END);
+      }
+    },
+  };
 
 
   constructor(player: Player, playerOptions: IKPlayerOptions) {
@@ -38,7 +68,7 @@ export class PlaylistManager {
       onError: msg => player.error(msg),
       onWarn: msg => player.log.warn(msg)
     });
-    this.autoAdvance_ = new AutoAdvance(this.player_, this.playNext_);
+    this.autoAdvance_ = new AutoAdvance(this.player_, this.playNext_, this.autoAdvanceHooks_);
 
 
     /**
@@ -250,6 +280,8 @@ export class PlaylistManager {
    * @param index - The index of the item to play
    */
   public playAtIndex(index: number): void {
+    // A user-chosen item replaces any pending auto-advance, so it can't skip ahead afterwards.
+    this.autoAdvance_?.cancel();
     this.playlist_.setCurrentIndex(index);
     this.player_.src(this.playlist_.getCurrentItem());
 
@@ -266,10 +298,11 @@ export class PlaylistManager {
     this.unloadPlaylist();
 
     this.playlist_ = playlist;
-    this.autoAdvance_ = new AutoAdvance(this.player_, this.playNext_);
+    this.autoAdvance_ = new AutoAdvance(this.player_, this.playNext_, this.autoAdvanceHooks_);
 
     this.setupEventForwarding_();
     this.player_.on('loadstart', this.handleSourceChange_);
+    this.player_.el().addEventListener('keydown', this.handleCountdownEscape_ as EventListener, true);
   }
 
   /**
@@ -286,8 +319,11 @@ export class PlaylistManager {
     }
 
     this.presentUpcomingComponent_?.dispose();
+    this.upNextOverlay_?.dispose();
+    this.upNextOverlay_ = undefined;
     this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
     this.player_.off('loadstart', this.handleSourceChange_);
+    this.player_.el()?.removeEventListener('keydown', this.handleCountdownEscape_ as EventListener, true);
   }
 
   /**
@@ -507,6 +543,24 @@ export class PlaylistManager {
     this.presentUpcomingComponent_?.hide();
   };
 
+  /**
+   * Cancels a running auto-advance countdown (Cancel button, or Escape anywhere in
+   * the player). Only this countdown: if the video is replayed, it comes back.
+   */
+  private handleUpcomingCancel_ = () => {
+    this.autoAdvance_.cancel();
+    // Lets a waiting recommendations / shoppable post-play overlay show now.
+    this.player_.trigger(UP_NEXT_EVENTS.CANCEL);
+  };
+
+  // Capture phase: Video.js controls stop Escape before it would bubble to the player.
+  private handleCountdownEscape_ = (e: KeyboardEvent) => {
+    if (e.key !== 'Escape' || !this.autoAdvance_?.isCountingDown()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    this.handleUpcomingCancel_();
+  };
+
   private setupPresentUpcoming_() {
     this.presentUpcomingComponent_?.dispose();
     this.player_.off('timeupdate', this.handleTimeUpdateForUpcoming_);
@@ -530,6 +584,10 @@ export class PlaylistManager {
     if (!this.presentUpcomingComponent_ || this.presentUpcomingThreshold_ === null) {
       return;
     }
+    // The auto-advance countdown owns the card once the video has ended.
+    if (this.autoAdvance_.isCountingDown()) {
+      return;
+    }
   
     const currentTime = this.player_.currentTime();
     const duration = this.player_.duration();
@@ -547,8 +605,7 @@ export class PlaylistManager {
   
         if (nextIndex !== -1) {
           const nextItem = this.playlist_.getItems()[nextIndex];
-          this.presentUpcomingComponent_.update(nextItem);
-          this.presentUpcomingComponent_.show();
+          this.presentUpcomingComponent_.present(nextItem);
         }
       }
     } else {

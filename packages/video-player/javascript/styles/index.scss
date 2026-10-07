@@ -8,6 +8,8 @@
 
 @use "../modules/playlist/styles/present-upcoming.scss";
 
+@use "../modules/playlist/styles/up-next-overlay.scss";
+
 @use "../modules/chapters/chapter.scss";
 
 @use "../modules/recommendations-overlay/recommendation-overlay.css";
@@ -23,5 +25,7 @@
 @use "../modules/context-menu/context-menu.css";
 
 @use "../modules/logo-button/logo-button.scss";
+
+@use "../modules/a11y/announcer.css";
 
 @use "./main.scss"

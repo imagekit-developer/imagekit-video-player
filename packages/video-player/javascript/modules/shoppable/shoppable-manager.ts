@@ -8,6 +8,7 @@ import type {
 import { AugmentedSourceOptions } from 'javascript/interfaces/AugementedSourceOptions';
 import { CleanupRegistry } from '../../utils';
 import ShoppablePanelItem, { getProductRole } from './shoppable-item';
+import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
 
 const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
 
@@ -31,6 +32,10 @@ export class ShoppableManager {
   private currentActiveProductId_: string | number | null = null;
   // Player children made inert while the post-play overlay is shown.
   private inertedEls_: Element[] = [];
+  // A playlist "Up next" countdown is running; wait for it instead of covering it.
+  private upNextActive_ = false;
+  // Video ended during a countdown: show the post-play overlay if the viewer cancels it.
+  private pendingPostPlay_ = false;
   private cleanup_ = new CleanupRegistry();
 
   constructor(player: Player, src: AugmentedSourceOptions) {
@@ -50,6 +55,14 @@ export class ShoppableManager {
         this.buildPostPlayOverlay();
         this.endedHandler_ = this.onEnded.bind(this);
         this.cleanup_.registerVideoJsListener(this.player_, 'ended', this.endedHandler_);
+        this.cleanup_.registerVideoJsListener(this.player_, UP_NEXT_EVENTS.START, () => { this.upNextActive_ = true; });
+        this.cleanup_.registerVideoJsListener(this.player_, UP_NEXT_EVENTS.END, () => { this.upNextActive_ = false; });
+        this.cleanup_.registerVideoJsListener(this.player_, UP_NEXT_EVENTS.CANCEL, () => {
+          if (!this.pendingPostPlay_) return;
+          this.pendingPostPlay_ = false;
+          this.showPostPlayOverlay_(this.player_.el().contains(document.activeElement));
+        });
+        this.cleanup_.registerVideoJsListener(this.player_, 'play', () => { this.pendingPostPlay_ = false; });
       }
 
       const startState = this.shoppable_.startState || 'openOnPlay';
@@ -291,6 +304,17 @@ export class ShoppableManager {
     if (this.closeBar) {
       this.closeBar(true);
     }
+    // Let a playlist auto-advance (also on 'ended') start its countdown first.
+    this.cleanup_.registerTimeout(() => {
+      if (this.upNextActive_) {
+        this.pendingPostPlay_ = true;
+        return;
+      }
+      this.showPostPlayOverlay_(focusWasInPlayer);
+    }, 0);
+  }
+
+  private showPostPlayOverlay_(focusWasInPlayer: boolean) {
     if (this.postPlayOverlay_) {
       this.postPlayOverlay_.classList.remove('vjs-hidden');
       if (this.toggleButton_) this.toggleButton_.classList.add('vjs-hidden');
