@@ -10,6 +10,20 @@ export interface KeyboardShortcutsOptions {
   skipTime?: number;
 }
 
+const INTERACTIVE_SELECTOR = [
+  'a[href]',
+  'button',
+  'input',
+  'select',
+  'textarea',
+  '[contenteditable]',
+  '[role="button"]',
+  '[role="link"]',
+  '[role="slider"]',
+  '[role^="menuitem"]',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
+
 /**
  * Sets up keyboard shortcuts for the video player.
  * Supports:
@@ -30,6 +44,20 @@ export function setupKeyboardShortcuts(
   const seekFeedback = new SeekFeedback(player, cleanup);
 
   const keydownHandler = (event: KeyboardEvent) => {
+    // Leave browser and OS shortcuts (Ctrl+F, Cmd+F, Alt+Arrow, ...) untouched.
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+
+    // Keys pressed on our own interactive elements inside the player (shoppable
+    // items, hotspots, playlist items, ...) belong to that element, not to the
+    // player-wide shortcuts. Video.js controls already stop propagation themselves.
+    const target = event.target as HTMLElement | null;
+    const interactiveTarget = target?.closest?.(INTERACTIVE_SELECTOR);
+    if (interactiveTarget && interactiveTarget !== player.el()) {
+      return;
+    }
+
     switch (event.key) {
       case ' ':
         event.preventDefault();
