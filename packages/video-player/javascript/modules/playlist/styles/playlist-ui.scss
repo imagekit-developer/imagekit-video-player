@@ -223,6 +223,9 @@
 
   &::before {
     content: '▶';
+    // Same marker, but not read out: "selected" already says it is playing (WCAG 1.3.1).
+    // Browsers without the alt-text syntax ignore this line and keep the one above.
+    content: '▶' / '';
     color: var(--text-secondary, #666);
     font-size: 2rem;
     opacity: 0.4;
@@ -273,6 +276,9 @@
 
   &::before {
     content: '▶';
+    // Same marker, but not read out: "selected" already says it is playing (WCAG 1.3.1).
+    // Browsers without the alt-text syntax ignore this line and keep the one above.
+    content: '▶' / '';
     position: absolute;
     left: calc(var(--playlist-item-padding-left) / 3);
     top: 50%;
@@ -330,3 +336,29 @@
     transform: rotate(360deg);
   }
 }
+
+// --- Accessibility ---
+
+// Keyboard focus on playlist items; inset so the scroll container doesn't clip it (WCAG 2.4.7).
+.vjs-playlist-item:focus {
+  outline: none;
+}
+
+.vjs-playlist-item:focus-visible {
+  outline: 2px solid var(--text-primary, currentColor);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vjs-playlist-item {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .vjs-playlist-item.vjs-selected {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}
+

@@ -23,6 +23,8 @@ const removeSelectedClass = (el: any) => el.removeClass('vjs-selected');
 
 export class PlaylistMenu extends Component {
   private items: PlaylistMenuItem[] = [];
+  // Index of the item that is the playlist's single Tab stop (roving tabindex).
+  private tabStopIndex_ = -1;
   private playlist: Playlist;
   private playerOptions: IKPlayerOptions;
   private cleanup_ = new CleanupRegistry();
@@ -68,6 +70,15 @@ export class PlaylistMenu extends Component {
 
     this.on('dispose', () => this.empty_());
 
+    // Listbox keyboard model: the list is one Tab stop; arrows / Home / End move
+    // between items (WCAG 2.1.1). Enter / Space are handled by each item.
+    this.cleanup_.registerEventListener(this.el(), 'keydown', (e: Event) => this.handleListKeyDown_(e as KeyboardEvent));
+    // Clicking or tabbing to an item makes it the Tab stop.
+    this.cleanup_.registerEventListener(this.el(), 'focusin', (e: Event) => {
+      const index = this.indexOfItemEl_(e.target);
+      if (index > -1) this.setTabStop_(index);
+    });
+
     // 4) Initial render
     this.update();
   }
@@ -84,6 +95,8 @@ export class PlaylistMenu extends Component {
 
     const items = this.playlist.getItems();
     const currentIndex = this.playlist.getCurrentIndex?.() ?? 0;
+    // Re-rendering replaces the items; remember which one had focus to restore it.
+    const focusedIndex = this.indexOfItemEl_(document.activeElement);
 
     const contentChanged =
       this.items.length !== items.length ||
@@ -101,6 +114,9 @@ export class PlaylistMenu extends Component {
 
       const listEl = document.createElement('ol');
       listEl.className = 'vjs-playlist-item-list';
+      listEl.setAttribute('role', 'listbox');
+      listEl.setAttribute('aria-label', this.localize('Playlist'));
+      listEl.setAttribute('aria-orientation', this.hasClass('vjs-playlist-horizontal') ? 'horizontal' : 'vertical');
       this.el_.appendChild(listEl);
 
       this.items = items.map((item, index) => {
@@ -121,6 +137,8 @@ export class PlaylistMenu extends Component {
 
     this.items.forEach((mi, i) => {
       const thumbnail = mi.el_.querySelector('.vjs-playlist-thumbnail');
+      // Announced as "selected": the video that is playing now.
+      mi.el_.setAttribute('aria-selected', String(i === currentIndex));
       if (i === currentIndex) {
         addSelectedClass(mi);
         if (thumbnail) {
@@ -133,6 +151,54 @@ export class PlaylistMenu extends Component {
         }
       }
     });
+
+    if (focusedIndex > -1) {
+      this.setTabStop_(focusedIndex);
+      if (contentChanged) (this.items[focusedIndex]?.el_ as HTMLElement | undefined)?.focus();
+    } else if (contentChanged || this.tabStopIndex_ < 0 || this.tabStopIndex_ >= this.items.length) {
+      this.setTabStop_(currentIndex);
+    }
+  }
+
+  private indexOfItemEl_(target: EventTarget | null): number {
+    if (!(target instanceof Element)) return -1;
+    const li = target.closest('.vjs-playlist-item');
+    return li ? this.items.findIndex(mi => mi.el_ === li) : -1;
+  }
+
+  /** Makes item `index` the one Tab stop of the list. */
+  private setTabStop_(index: number): void {
+    if (!this.items.length) return;
+    const clamped = Math.max(0, Math.min(index, this.items.length - 1));
+    this.tabStopIndex_ = clamped;
+    this.items.forEach((mi, i) => { (mi.el_ as HTMLElement).tabIndex = i === clamped ? 0 : -1; });
+  }
+
+  private handleListKeyDown_(e: KeyboardEvent): void {
+    const index = this.indexOfItemEl_(e.target);
+    if (index < 0) return;
+    let next = -1;
+    switch (e.key) {
+      case 'ArrowDown':
+      case 'ArrowRight':
+        next = Math.min(index + 1, this.items.length - 1);
+        break;
+      case 'ArrowUp':
+      case 'ArrowLeft':
+        next = Math.max(index - 1, 0);
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = this.items.length - 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    this.setTabStop_(next);
+    (this.items[next].el_ as HTMLElement).focus();
   }
 
   /** Remove all menu items */

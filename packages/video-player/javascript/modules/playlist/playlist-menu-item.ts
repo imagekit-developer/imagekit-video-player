@@ -46,7 +46,10 @@ export class PlaylistMenuItem extends Component {
   }
 
   private handleKeyDown_(event: KeyboardEvent): void {
-    if (event.which === 13 || event.which === 32) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      // Space would otherwise also scroll the playlist.
+      event.preventDefault();
+      event.stopPropagation();
       this.switchPlaylistItem_();
     }
   }
@@ -97,7 +100,10 @@ export class PlaylistMenuItem extends Component {
   createEl(): HTMLElement {
     const li = document.createElement('li');
     li.className = 'vjs-playlist-item';
-    li.tabIndex = 0;
+    // An option in the playlist listbox; the menu manages which item is the Tab stop
+    // and marks the playing one with aria-selected (WCAG 4.1.2, 1.3.1).
+    li.setAttribute('role', 'option');
+    li.tabIndex = -1;
 
     this.thumbnail = document.createElement('div');
     this.thumbnail.className = 'vjs-playlist-thumbnail';
@@ -115,7 +121,8 @@ export class PlaylistMenuItem extends Component {
       this.imgEl = document.createElement('img');
       this.imgEl.className = 'vjs-playlist-thumbnail-img';
       this.imgEl.loading = 'lazy';
-      this.imgEl.alt = this.options_.item.info?.title || '';
+      // Decorative: the title next to it already names the item.
+      this.imgEl.alt = '';
       this.imgEl.onerror = () => {
         if (!this.el_) return;
         if (this.imgEl) {
@@ -143,6 +150,8 @@ export class PlaylistMenuItem extends Component {
     titleEl.textContent = title;
     titleEl.title = title;
     detailsEl.appendChild(titleEl);
+    // The option is named by its content: full title and description, even where
+    // they're visually truncated (WCAG 4.1.2, 2.5.3).
 
     if (this.options_.item.info?.description) {
       const descEl = document.createElement('div');
