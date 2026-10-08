@@ -32,6 +32,9 @@ class ChapterMarkersProgressBarControl extends Component {
     player.ready(() => {
       this.addMarkers(this.chapters, player);
       this.attachHoverHandlers(player);
+      // After addMarkers: it "clears previous markers" by calling this.dispose(),
+      // which would also undo this hookup.
+      this.addChapterToSeekBarValueText_(player);
     });
   }
 
@@ -146,6 +149,38 @@ class ChapterMarkersProgressBarControl extends Component {
 
     this.cleanup_.registerVideoJsListener(progressControl, 'mousemove', mousemoveHandler);
     this.cleanup_.registerVideoJsListener(progressControl, 'mouseleave', mouseleaveHandler);
+  }
+
+  /**
+   * Appends the current chapter to the seek bar's aria-valuetext ("0:05 of 1:00,
+   * Chapter: Intro"), so keyboard and screen-reader users get the chapter name that
+   * mouse users see in the hover tooltip (WCAG 1.3.1, 2.1.1). Video.js rewrites the
+   * attribute as time moves, so we re-append whenever it changes.
+   */
+  private addChapterToSeekBarValueText_(player: Player) {
+    const seekBarEl = (player as any).getChild('ControlBar')?.getChild('ProgressControl')?.getChild('SeekBar')?.el() as HTMLElement | undefined;
+    if (!seekBarEl || typeof MutationObserver === 'undefined') return;
+
+    let suffix = '';
+    const apply = () => {
+      const current = seekBarEl.getAttribute('aria-valuetext') || '';
+      const base = suffix && current.endsWith(suffix) ? current.slice(0, -suffix.length) : current;
+      const time = player.currentTime() ?? 0;
+      const chapter = this.chapters.find(c => time >= c.startTime && time < c.endTime);
+      suffix = chapter ? `, ${player.localize('Chapter: {1}', [chapter.label])}` : '';
+      const next = base + suffix;
+      if (next !== current) seekBarEl.setAttribute('aria-valuetext', next);
+    };
+
+    const observer = new MutationObserver(apply);
+    observer.observe(seekBarEl, { attributes: true, attributeFilter: ['aria-valuetext'] });
+    this.cleanup_.register(() => {
+      observer.disconnect();
+      // Leave Video.js's own text behind.
+      const current = seekBarEl.getAttribute('aria-valuetext') || '';
+      if (suffix && current.endsWith(suffix)) seekBarEl.setAttribute('aria-valuetext', current.slice(0, -suffix.length));
+    });
+    apply();
   }
 
   /**

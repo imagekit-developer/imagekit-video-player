@@ -1,6 +1,7 @@
 import type { CleanupRegistry } from '../../utils';
 import type Player from 'video.js/dist/types/player';
 import { SeekFeedback } from './seek-feedback';
+import { announce } from '../a11y/announcer';
 
 /**
  * Configuration options for keyboard shortcuts.
@@ -72,12 +73,15 @@ export function setupKeyboardShortcuts(
         event.preventDefault();
         player.currentTime((player.currentTime() ?? 0) + skipTime);
         seekFeedback.show('forward');
+        // The visual "+10s" feedback is a status message; say it too (WCAG 4.1.3).
+        announce(player, player.localize('Forward {1} seconds', [String(skipTime)]));
         break;
 
       case 'ArrowLeft':
         event.preventDefault();
         player.currentTime((player.currentTime() ?? 0) - skipTime);
         seekFeedback.show('backward');
+        announce(player, player.localize('Back {1} seconds', [String(skipTime)]));
         break;
 
       case 'f':
