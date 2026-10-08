@@ -8,6 +8,15 @@ import type Player from 'video.js/dist/types/player';
 const ClickableComponent = videojs.getComponent('ClickableComponent');
 const dom = videojs.dom || videojs;
 
+/**
+ * Role a product element should expose to assistive technology: products whose
+ * click opens a URL behave like links, everything else (seek, no action) like buttons.
+ */
+export function getProductRole(product: ProductProps): 'link' | 'button' {
+    const onClick = product.onClick;
+    return onClick?.action === 'goto' && onClick.args?.url ? 'link' : 'button';
+}
+
 const DEFAULT_TRANSFORMATION: Transformation = {
     width: 400,
     height: 400,
@@ -113,6 +122,10 @@ class ShoppablePanelItem extends ClickableComponent {
         const el = document.createElement('a');
         el.className = 'vjs-shoppable-item';
         el.setAttribute('data-product-id', String(this.getItem().productId));
+        // createEl is overridden, so ClickableComponent's own createEl never sets the
+        // role and tab stop. Without them the item can't be reached by keyboard.
+        el.setAttribute('role', getProductRole(prod));
+        (this as any).tabIndex_ = 0;
 
         const imageContainer = document.createElement('div');
         imageContainer.className = 'vjs-shoppable-image-container';
@@ -139,7 +152,8 @@ class ShoppablePanelItem extends ClickableComponent {
                 this.imgEl.className = 'vjs-shoppable-item-img';
                 this.imgEl.loading = 'lazy';
                 this.imgEl.src = url;
-                this.imgEl.alt = this.getItem().productName || '';
+                // Decorative: the product name is already the item's visible text.
+                this.imgEl.alt = '';
                 imageContainer.appendChild(this.imgEl);
 
                 if (prod.onHover?.action === 'switch' && prod.onHover.args?.url) {
@@ -148,7 +162,7 @@ class ShoppablePanelItem extends ClickableComponent {
                             this.altImgEl = document.createElement('img');
                             this.altImgEl.className = 'vjs-shoppable-item-img vjs-shoppable-item-img-alt';
                             this.altImgEl.src = altUrl; // Use the prepared URL
-                            this.altImgEl.alt = prod.productName || '';
+                            this.altImgEl.alt = '';
                             this.altImgEl.loading = 'lazy';
                             this.altImgEl.setAttribute('aria-hidden', 'true');
                             imageContainer.appendChild(this.altImgEl);

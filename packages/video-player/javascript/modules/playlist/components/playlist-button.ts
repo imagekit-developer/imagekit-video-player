@@ -35,7 +35,9 @@ class PlaylistButton extends ClickableComponent {
       // Prefixing classes of elements within a player with "vjs-"
       // is a convention used in Video.js.
       className: `vjs-control vjs-playlist-button vjs-button ${typeCssClass}`,
-      ariaLabel: `Playlist ${type} item`
+    }, {
+      // As an attribute (the ariaLabel property is ignored by older Firefox), localized.
+      'aria-label': this.localize(type === 'next' ? 'Next video' : 'Previous video')
     });
   }
 }

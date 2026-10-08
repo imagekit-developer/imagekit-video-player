@@ -25,9 +25,10 @@ class LogoButton extends ClickableComponent {
       });
     }
 
-    const { showLogo, logoImageUrl, logoOnclickUrl } = opts.logo;
+    const { showLogo, logoImageUrl, logoOnclickUrl, logoAltText } = opts.logo;
     const display = showLogo ? 'block' : 'none';
     const bgImage = logoImageUrl ? `background-image: url(${logoImageUrl})` : '';
+    const name = logoAltText || this.localize('Logo');
 
     return videojs.dom.createEl('a', {}, {
       class: 'vjs-control vjs-logo-button',
@@ -35,7 +36,8 @@ class LogoButton extends ClickableComponent {
       target: '_blank',
       rel: 'noopener noreferrer',
       style: `display: ${display}; ${bgImage}`,
-      'aria-label': 'Logo link'
+      // Names the destination and warns about the new tab (WCAG 2.4.4, 3.2.5 advisory).
+      'aria-label': this.localize('{1} (opens in a new tab)', [name])
     });
   }
 }

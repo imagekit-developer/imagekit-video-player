@@ -19,6 +19,12 @@ class ContextMenu extends VjsMenu {
   constructor(player: Player, options: ContextMenuOptions) {
     super(player, options);
 
+    this.contentEl().setAttribute('aria-label', this.localize('Player options'));
+
+    // Keyboard support on top of Video.js's Menu (which handles the arrow keys).
+    // Capture phase: Video.js menu items stop Home/End before they would bubble here.
+    (this.el() as HTMLElement).addEventListener('keydown', this.handleMenuKeys_, true);
+
     // Build menu items from content
     options.content.forEach(contentItem => {
       // Determine listener function
@@ -37,6 +43,30 @@ class ContextMenu extends VjsMenu {
         })
       );
     });
+  }
+
+  private handleMenuKeys_ = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape' || event.key === 'Tab') {
+      // Close; the plugin returns focus to where it was before the menu opened.
+      event.preventDefault();
+      event.stopPropagation();
+      this.dispose();
+    } else if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.focus(event.key === 'Home' ? 0 : this.children().length - 1);
+    }
+  };
+
+  /** Whether keyboard focus was inside the menu when it closed (read in 'dispose' handlers). */
+  focusWasInside = false;
+
+  dispose(): void {
+    const el = this.el() as HTMLElement | null;
+    // Record before removal: Chrome moves focus away as soon as the element is detached.
+    this.focusWasInside = !!el && el.contains(document.activeElement);
+    el?.removeEventListener('keydown', this.handleMenuKeys_, true);
+    super.dispose();
   }
 
   createEl(): HTMLElement {

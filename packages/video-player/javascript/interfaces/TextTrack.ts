@@ -4,9 +4,10 @@
  */
 export interface TextTrackOptions {
   /**
-   * The kind of text track: 'subtitles' or 'captions'
+   * The kind of text track: 'subtitles', 'captions', or 'descriptions'
+   * (text audio descriptions, shown through Video.js's audio-description button).
    */
-  kind?: 'subtitles' | 'captions';
+  kind?: 'subtitles' | 'captions' | 'descriptions';
   /**
    * The URL of the subtitle/caption file (VTT, SRT, etc.)
    * For transcript files, use a URL ending with '.transcript'

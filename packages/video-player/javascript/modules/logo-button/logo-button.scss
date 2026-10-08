@@ -18,8 +18,18 @@
 
   &:active,
   &:focus {
-    outline: none;
     opacity: 1;
+  }
+
+  // Keep the outline off for mouse clicks, but show it for keyboard focus: the logo
+  // is a background image, so Video.js's text-shadow focus glow has nothing to show (WCAG 2.4.7).
+  &:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -2px;
   }
 
   &:last-child {
