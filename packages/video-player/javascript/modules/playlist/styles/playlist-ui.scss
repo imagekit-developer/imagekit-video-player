@@ -24,7 +24,7 @@
     --item-hover-bg: #303030;
     --item-selected-bg: #424242;
     --text-primary: #ffffff;
-    --text-secondary: #aaaaaa;
+    --text-secondary: #bdbdbd;          // #aaaaaa was 4.33:1 on the selected row (WCAG 1.4.3)
     --icon-color: #ffffff;
     --spinner-track: rgba(255, 255, 255, 0.2);
     --spinner-head: #ffffff;
@@ -360,5 +360,16 @@
     outline: 2px solid Highlight;
     outline-offset: -2px;
   }
+}
+
+// "Now playing" bar on the selected row, at every width: when the ▶ marker is hidden on
+// narrow playlists, the background alone (1.19:1 light, 1.6:1 dark) was the only cue
+// (WCAG 1.4.1, 1.4.11).
+.vjs-playlist-item.vjs-selected {
+  box-shadow: inset 3px 0 0 var(--text-primary);
+}
+
+.vjs-playlist-horizontal .vjs-playlist-item.vjs-selected {
+  box-shadow: inset 0 -3px 0 var(--text-primary);
 }
 

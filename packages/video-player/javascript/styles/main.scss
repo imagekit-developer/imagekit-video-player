@@ -59,19 +59,15 @@ $spacing-progress-interactive-hover: -1.4rem;
         z-index: $z-index-controls;
     }
 
+    // Icons are dimmed until hover. Text (time divider, duration, playback-rate label)
+    // stays at full opacity: dimmed white text over a bright scene fell to 3.86:1 (WCAG 1.4.3).
     .vjs-control::before,
-    .vjs-icon-placeholder::before,
-    .vjs-time-divider,
-    .vjs-duration,
-    .vjs-playback-rate-value {
+    .vjs-icon-placeholder::before {
         opacity: $opacity-default;
     }
 
     .vjs-control:hover::before,
-    .vjs-icon-placeholder:hover::before,
-    .vjs-time-divider:hover,
-    .vjs-duration:hover,
-    .vjs-playback-rate:hover .vjs-playback-rate-value {
+    .vjs-icon-placeholder:hover::before {
         opacity: $opacity-hover;
         text-shadow: none;
     }

@@ -6,6 +6,9 @@
             height: 100%;
             width: 2px;
             background-color: black;
+            // Light edge so the divider stays visible on a dark track too: the black core
+            // alone fell to 2.1:1 over dark scenes (WCAG 1.4.11).
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.9);
             pointer-events: none;
             z-index: 3;
         }
