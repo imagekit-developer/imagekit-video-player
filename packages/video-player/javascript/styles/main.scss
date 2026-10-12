@@ -40,6 +40,7 @@ $spacing-progress-interactive-hover: -1.4rem;
     &.video-js-skin-light {
         --color-base: #FFFFFF;
         --color-text: #000000;
+        --color-seek-feedback-bg: rgba(255, 255, 255, 0.85);
     }
 
     overflow: hidden;
@@ -612,3 +613,68 @@ $spacing-progress-interactive-hover: -1.4rem;
         }
     }
 }
+
+// --- Light skin ---
+// Light control surfaces with dark text and icons (the default skin is the dark one from
+// Video.js). Before this, the light skin only changed the colour tokens and the gradient,
+// so its menus stayed dark and the selected item was black on dark (1.62:1, WCAG 1.4.3).
+// The light bar is more opaque than the dark one: it has to hide more of a dark video to
+// keep dark text readable.
+.video-js.video-js-skin-light {
+    .vjs-control-bar {
+        background-color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text);
+    }
+
+    .vjs-menu-button-popup .vjs-menu .vjs-menu-content {
+        background-color: rgba(255, 255, 255, 0.95);
+        color: var(--color-text);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    .vjs-menu li.vjs-menu-item:hover,
+    .vjs-menu li.vjs-menu-item:focus {
+        background-color: rgba(0, 0, 0, 0.08);
+        color: var(--color-text);
+    }
+
+    .vjs-menu .vjs-selected {
+        font-weight: 600;
+    }
+
+    // Progress and volume: dark played part on a dark translucent track.
+    .vjs-progress-control .vjs-slider {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .vjs-play-progress,
+    .vjs-volume-level {
+        background-color: var(--color-text);
+    }
+
+    .vjs-big-play-button {
+        background-color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text);
+    }
+
+    .vjs-big-play-button:hover,
+    .vjs-big-play-button:focus {
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    // Image icons are forced white with a filter in the dark skin; make them dark.
+    .vjs-skip-forward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-forward-10::before,
+    .vjs-icon-skip-forward-10::before,
+    .vjs-skip-backward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-replay-10::before,
+    .vjs-icon-skip-back-10::before,
+    .vjs-seek-feedback::before {
+        filter: brightness(0);
+    }
+
+    .vjs-seek-feedback {
+        color: var(--color-text);
+    }
+}
+
