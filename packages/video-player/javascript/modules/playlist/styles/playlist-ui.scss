@@ -344,10 +344,7 @@
   outline: none;
 }
 
-.vjs-playlist-item:focus-visible {
-  outline: 2px solid var(--text-primary, currentColor);
-  outline-offset: -2px;
-}
+// The keyboard focus ring is the player-wide one in styles/main.scss.
 
 @media (prefers-reduced-motion: reduce) {
   .vjs-playlist-item {

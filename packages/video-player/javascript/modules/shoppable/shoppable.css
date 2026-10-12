@@ -431,15 +431,7 @@
 
 /* --- Accessibility --- */
 
-/* Two-tone focus ring stays visible over any video or product image. */
-.vjs-shoppable-toggle:focus-visible,
-.vjs-shoppable-item:focus-visible,
-.vjs-shoppable-hotspot:focus-visible,
-.vjs-shoppable-replay-btn:focus-visible {
-  outline: 2px solid #000;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 2px #fff;
-}
+/* The keyboard focus ring itself is the player-wide one in styles/main.scss. */
 
 .vjs-shoppable-postplay-overlay:focus {
   outline: none;

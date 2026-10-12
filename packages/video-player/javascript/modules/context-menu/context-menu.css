@@ -52,11 +52,7 @@
 
 /* --- Accessibility --- */
 
-/* Visible keyboard focus in addition to the background change (WCAG 2.4.7). */
-.vjs-contextmenu-ui-menu .vjs-menu-item:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: -2px;
-}
+/* Keyboard focus: the player-wide ring from styles/main.scss, plus the background change. */
 
 @media (prefers-reduced-motion: reduce) {
   .vjs-contextmenu-ui-menu .vjs-menu-item {

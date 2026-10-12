@@ -125,13 +125,7 @@
   }
 }
 
-// Two-tone focus ring, visible on the dark overlay and on the light button.
-.vjs-up-next-overlay-cancel:focus-visible,
-.vjs-up-next-overlay-play:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px #000;
-}
+// The keyboard focus ring is the player-wide one in styles/main.scss.
 
 @media (prefers-reduced-motion: reduce) {
   .video-js .vjs-up-next-overlay-cancel,
