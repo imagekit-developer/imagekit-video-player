@@ -3,6 +3,7 @@
 ## [1.0.0-beta.6]
 
 - Fixed the quality menu showing two checkmarks after a rendition change: the selection now follows the user's choice (manual rendition or Auto) instead of the rendition currently playing
+- Fixed the quality menu keeping the previous source's renditions (and logging an error on click) after switching from an HLS/DASH source to a progressive one
 - Fixed manual rendition changes waiting for an already-downloaded segment to finish before switching to the new rendition
 - Fixed caption settings selects being unreadable under host CSS resets
 - Native Video.js `html5` options passed via `videoJsOptions` are now respected (`nativeTextTracks` is still forced to `false`)

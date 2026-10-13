@@ -119,6 +119,12 @@ class SourceMenuItem extends MenuItem {
       return;
     }
 
+    // The menu can outlive its levels for a moment after a source change.
+    const level = levels[selected.index];
+    if (!level) {
+      return;
+    }
+
     // VHS skips the switch when the picked level is the one already playing.
     if (levels.selectedIndex !== selected.index) {
       finishSwitch(this.player(), selected.index);
@@ -135,7 +141,6 @@ class SourceMenuItem extends MenuItem {
     // Auto the picked level is already enabled, so toggle it off and on;
     // otherwise the already-buffered segments play out at the old quality.
     // A seek alone doesn't flush anything: VHS ignores seeks into the buffer.
-    const level = levels[selected.index];
     if (level.enabled) {
       level.enabled = false;
     }
