@@ -100,8 +100,6 @@ export class PlaylistMenuItem extends Component {
   createEl(): HTMLElement {
     const li = document.createElement('li');
     li.className = 'vjs-playlist-item';
-    // An option in the playlist listbox; the menu manages which item is the Tab stop
-    // and marks the playing one with aria-selected (WCAG 4.1.2, 1.3.1).
     li.setAttribute('role', 'option');
     li.tabIndex = -1;
 

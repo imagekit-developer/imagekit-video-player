@@ -24,7 +24,7 @@
     --item-hover-bg: #303030;
     --item-selected-bg: #424242;
     --text-primary: #ffffff;
-    --text-secondary: #bdbdbd;          // #aaaaaa was 4.33:1 on the selected row (WCAG 1.4.3)
+    --text-secondary: #bdbdbd;
     --icon-color: #ffffff;
     --spinner-track: rgba(255, 255, 255, 0.2);
     --spinner-head: #ffffff;
@@ -337,14 +337,12 @@
   }
 }
 
-// --- Accessibility ---
 
 // Keyboard focus on playlist items; inset so the scroll container doesn't clip it (WCAG 2.4.7).
 .vjs-playlist-item:focus {
   outline: none;
 }
 
-// The keyboard focus ring is the player-wide one in styles/main.scss.
 
 @media (prefers-reduced-motion: reduce) {
   .vjs-playlist-item {
@@ -359,9 +357,8 @@
   }
 }
 
-// "Now playing" bar on the selected row, at every width: when the ▶ marker is hidden on
-// narrow playlists, the background alone (1.19:1 light, 1.6:1 dark) was the only cue
-// (WCAG 1.4.1, 1.4.11).
+// Shown at every width: when the ▶ marker is hidden on narrow playlists, the background
+// alone is too faint a cue for the playing row (WCAG 1.4.1, 1.4.11).
 .vjs-playlist-item.vjs-selected {
   box-shadow: inset 3px 0 0 var(--text-primary);
 }

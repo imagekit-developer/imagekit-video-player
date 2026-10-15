@@ -36,7 +36,6 @@ class LogoButton extends ClickableComponent {
       target: '_blank',
       rel: 'noopener noreferrer',
       style: `display: ${display}; ${bgImage}`,
-      // Names the destination and warns about the new tab (WCAG 2.4.4, 3.2.5 advisory).
       'aria-label': this.localize('{1} (opens in a new tab)', [name])
     });
   }

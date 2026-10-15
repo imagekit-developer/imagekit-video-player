@@ -176,7 +176,6 @@ class ChapterMarkersProgressBarControl extends Component {
     observer.observe(seekBarEl, { attributes: true, attributeFilter: ['aria-valuetext'] });
     this.cleanup_.register(() => {
       observer.disconnect();
-      // Leave Video.js's own text behind.
       const current = seekBarEl.getAttribute('aria-valuetext') || '';
       if (suffix && current.endsWith(suffix)) seekBarEl.setAttribute('aria-valuetext', current.slice(0, -suffix.length));
     });

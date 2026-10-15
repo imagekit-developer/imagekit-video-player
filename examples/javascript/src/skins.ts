@@ -21,7 +21,6 @@ const videoJsOptions = {
 const PLAYLIST = 'https://ik.imagekit.io/ikmedia/docs/video-player/playlist/';
 const SHOPPABLE = 'https://ik.imagekit.io/ikmedia/docs/video-player/shoppable/';
 
-// One playlist that exercises every feature, loaded into both players.
 const playlistConfig = {
   sources: [
     {
@@ -104,7 +103,6 @@ for (const id of ['player-dark', 'player-light']) {
   const playlistManager = player.playlist(playlistConfig);
   playlistManager.loadFirstItem();
   if (id === 'player-dark') {
-    // The playlist panel has its own light/dark theme, set with a class.
     player.el().closest('.ik-player-container')?.classList.add('theme-dark');
   }
 }

@@ -30,7 +30,6 @@ export class ShoppableManager {
   private pauseTimeout_: any = null;
   private sourceItem_: AugmentedSourceOptions;
   private currentActiveProductId_: string | number | null = null;
-  // Player children made inert while the post-play overlay is shown.
   private inertedEls_: Element[] = [];
   // A playlist "Up next" countdown is running; wait for it instead of covering it.
   private upNextActive_ = false;

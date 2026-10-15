@@ -4,8 +4,7 @@
 
 .ik-player-floating {
     position: fixed;
-    /* 360x202.5 as before, but never wider than the screen minus its 20px insets,
-       so it fits a 320px-wide viewport without horizontal scrolling (WCAG 1.4.10). */
+    /* Capped to the screen minus its 20px insets so it fits a 320px viewport (WCAG 1.4.10). */
     width: min(360px, calc(100vw - 40px));
     height: calc(min(360px, calc(100vw - 40px)) * 9 / 16);
     bottom: 20px;
@@ -64,9 +63,7 @@
     height: 14px;
 }
 
-/* --- Accessibility --- */
 
-/* The keyboard focus ring is the player-wide one in styles/main.scss. */
 
 @media (prefers-reduced-motion: reduce) {
     .ik-player-wrapper,

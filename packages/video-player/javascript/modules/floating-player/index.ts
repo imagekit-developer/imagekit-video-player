@@ -52,7 +52,6 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
         if (playerElement.querySelector('.ik-floating-close-button')) return;
         const closeButton = document.createElement('div');
         closeButton.className = 'ik-floating-close-button';
-        // A named button that also works from the keyboard (WCAG 2.1.1, 4.1.2).
         closeButton.setAttribute('role', 'button');
         closeButton.setAttribute('tabindex', '0');
         closeButton.setAttribute('aria-label', playerInstance.localize('Close floating video'));

@@ -1,4 +1,3 @@
-// src/modules/playlist/up-next-overlay.ts
 
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
@@ -100,7 +99,6 @@ export class UpNextOverlay extends Component {
     if (focusWasInPlayer) this.cancelButtonEl_.focus();
   }
 
-  /** Updates the visible "Up next in N" count. */
   public setSeconds(seconds: number): void {
     this.secondsEl_.textContent = String(seconds);
     this.labelEl_.textContent = `${this.localize('Up next in')} `;

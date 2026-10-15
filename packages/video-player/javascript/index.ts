@@ -133,11 +133,9 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           }
         );
 
-        // The class above is added without telling Video.js, which still thinks the user
-        // is active, so its own keyboard-activity handling never shows the controls again:
-        // the control bar stayed invisible while a keyboard user tabbed through it
-        // (WCAG 2.4.7). Clear the stale class on any key press in the player; Video.js's
-        // normal inactivity timeout hides the controls again afterwards.
+        // The class above is added without telling Video.js, which still thinks the user is
+        // active and so never re-shows the controls for keyboard users. Clear it on any key press;
+        // Video.js's inactivity timeout hides the controls again.
         this.cleanup_.registerEventListener(
           playerEl,
           'keydown',

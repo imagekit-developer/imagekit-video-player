@@ -50,9 +50,7 @@
   text-shadow: none;
 }
 
-/* --- Accessibility --- */
 
-/* Keyboard focus: the player-wide ring from styles/main.scss, plus the background change. */
 
 @media (prefers-reduced-motion: reduce) {
   .vjs-contextmenu-ui-menu .vjs-menu-item {

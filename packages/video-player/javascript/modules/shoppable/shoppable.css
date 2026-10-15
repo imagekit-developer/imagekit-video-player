@@ -110,11 +110,8 @@
 /* --- Item Layout --- */
 
 .vjs-shoppable-item {
-  /* Containing block for the absolutely positioned overlay/alt-image below. Previously this
-     only happened by accident on :hover, via the transform set there (a transformed element
-     becomes a containing block too) — so on keyboard focus, with no transform, the overlay
-     sized itself against a distant positioned ancestor (the panel or post-play dialog)
-     instead of the card. */
+  /* Containing block for the absolutely positioned overlay/alt-image below; without it the
+     overlay sizes against a distant ancestor on keyboard focus (no :hover transform). */
   position: relative;
   display: flex;
   flex-direction: column;
@@ -429,15 +426,12 @@
   height: 100%;
 }
 
-/* --- Accessibility --- */
 
-/* The keyboard focus ring itself is the player-wide one in styles/main.scss. */
 
 .vjs-shoppable-postplay-overlay:focus {
   outline: none;
 }
 
-/* Keyboard users get the same hover content as mouse users. */
 .vjs-shoppable-item:focus-visible .vjs-shoppable-item-img-alt,
 .vjs-shoppable-item:focus-visible .vjs-shoppable-item-overlay {
   opacity: 1;

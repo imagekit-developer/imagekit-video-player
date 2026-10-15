@@ -41,8 +41,6 @@ export class PresentUpcoming extends Component {
 
     this.closeButtonEl_.innerHTML = "&#10005;"
 
-    // The card is a group: the thumbnail is the "play next" button (named by the
-    // visible title it sits under) and the ✕ is a separate dismiss button.
     this.el().setAttribute('role', 'group');
     this.el().setAttribute('aria-label', this.localize('Up next'));
     this.thumbnailEl_.setAttribute('role', 'button');
@@ -68,7 +66,6 @@ export class PresentUpcoming extends Component {
       e.stopPropagation();
       this.playNext_();
     });
-    // Escape anywhere in the card dismisses it.
     this.cleanup_.registerEventListener(this.el(), 'keydown', (e: Event) => {
       if ((e as KeyboardEvent).key !== 'Escape') return;
       e.stopPropagation();

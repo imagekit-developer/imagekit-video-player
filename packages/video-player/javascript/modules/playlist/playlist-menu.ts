@@ -23,7 +23,6 @@ const removeSelectedClass = (el: any) => el.removeClass('vjs-selected');
 
 export class PlaylistMenu extends Component {
   private items: PlaylistMenuItem[] = [];
-  // Index of the item that is the playlist's single Tab stop (roving tabindex).
   private tabStopIndex_ = -1;
   private playlist: Playlist;
   private playerOptions: IKPlayerOptions;
@@ -70,10 +69,7 @@ export class PlaylistMenu extends Component {
 
     this.on('dispose', () => this.empty_());
 
-    // Listbox keyboard model: the list is one Tab stop; arrows / Home / End move
-    // between items (WCAG 2.1.1). Enter / Space are handled by each item.
     this.cleanup_.registerEventListener(this.el(), 'keydown', (e: Event) => this.handleListKeyDown_(e as KeyboardEvent));
-    // Clicking or tabbing to an item makes it the Tab stop.
     this.cleanup_.registerEventListener(this.el(), 'focusin', (e: Event) => {
       const index = this.indexOfItemEl_(e.target);
       if (index > -1) this.setTabStop_(index);
@@ -137,7 +133,6 @@ export class PlaylistMenu extends Component {
 
     this.items.forEach((mi, i) => {
       const thumbnail = mi.el_.querySelector('.vjs-playlist-thumbnail');
-      // Announced as "selected": the video that is playing now.
       mi.el_.setAttribute('aria-selected', String(i === currentIndex));
       if (i === currentIndex) {
         addSelectedClass(mi);
@@ -166,7 +161,6 @@ export class PlaylistMenu extends Component {
     return li ? this.items.findIndex(mi => mi.el_ === li) : -1;
   }
 
-  /** Makes item `index` the one Tab stop of the list. */
   private setTabStop_(index: number): void {
     if (!this.items.length) return;
     const clamped = Math.max(0, Math.min(index, this.items.length - 1));

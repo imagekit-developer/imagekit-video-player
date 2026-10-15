@@ -20,7 +20,6 @@ export class RecommendationsOverlay extends Component {
   private playerOptions: IKPlayerOptions;
   private gridEl!: HTMLDivElement;
   private closeBtn!: HTMLButtonElement;
-  // Player children made inert while the overlay is shown.
   private inertedEls_: Element[] = [];
   // A playlist "Up next" countdown is running; wait for it instead of covering it.
   private upNextActive_ = false;

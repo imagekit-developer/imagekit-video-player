@@ -1,4 +1,3 @@
-/* Screen-reader only live region used by announce() (WCAG 4.1.3). */
 .video-js > .vjs-ik-announcer {
   position: absolute;
   width: 1px;
