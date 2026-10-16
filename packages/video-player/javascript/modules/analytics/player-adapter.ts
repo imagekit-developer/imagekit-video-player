@@ -5,6 +5,7 @@
 import type Player from 'video.js/dist/types/player';
 import type { CleanupRegistry } from '../../utils';
 import type { SourceOptions } from '../../interfaces';
+import { consumeInternalSeek } from './internal-seek';
 
 export type AdapterSignal =
   | { type: 'player_ready' }
@@ -68,14 +69,25 @@ export function createPlayerAdapter(
 
   // Coalesce `seeking` bursts during a single scrub: emit only when not already inside
   // a seek window. Reset on `seeked`.
+  // A user seek arriving before an internal seek's `seeked` takes over its window.
   let seekOpenInAdapter = false;
+  let internalSeekOpen = false;
   cleanup.registerVideoJsListener(player, 'seeking', () => {
+    if (consumeInternalSeek(player)) {
+      if (!seekOpenInAdapter) internalSeekOpen = true;
+      return;
+    }
+    internalSeekOpen = false;
     if (seekOpenInAdapter) return;
     seekOpenInAdapter = true;
     onSignal({ type: 'seeking' });
   });
 
   cleanup.registerVideoJsListener(player, 'seeked', () => {
+    if (internalSeekOpen) {
+      internalSeekOpen = false;
+      return;
+    }
     seekOpenInAdapter = false;
     onSignal({ type: 'seeked' });
   });

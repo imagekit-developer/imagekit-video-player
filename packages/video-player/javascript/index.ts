@@ -258,7 +258,10 @@ export function videoPlayer(
 
   const player: VideoJsPlayer = videojs(element, {
     ...videoJsOptions,
-    html5: { nativeTextTracks: false },
+    html5: {
+      ...(videoJsOptions.html5 ?? {}),
+      nativeTextTracks: false,
+    },
     plugins: {
       ...(videoJsOptions.plugins ?? {}),
       httpSourceSelector: { default: 'auto' },
