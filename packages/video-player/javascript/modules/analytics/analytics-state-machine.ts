@@ -391,4 +391,8 @@ export class AnalyticsStateMachine {
   getLastEventName(): IKAnalyticsEventName | null {
     return this.lastEventName_;
   }
+
+  isPlaying(): boolean {
+    return this.phase_ === 'playing';
+  }
 }

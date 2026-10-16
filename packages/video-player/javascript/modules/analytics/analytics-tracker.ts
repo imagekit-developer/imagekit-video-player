@@ -110,6 +110,10 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
   let lastTimeupdateEmitMonotonic = 0;
   let lastEmittedPlaybackTimeMs = 0;
   let progressiveBitrateBps: number | undefined;
+  let renderedBitrate: number | undefined;
+  // Bitrate of the rendition shown before the last switch, until its played time is flushed
+  // in a timeupdate row. Kept while not playing (paused/buffering) and flushed on `playing`.
+  let preSwitchBitrate: number | undefined;
   let detectedVideoCodec: string | undefined;
   let detectedAudioCodec: string | undefined;
   // Incremented on every load_start so stale one-time media listeners from a previous
@@ -311,6 +315,74 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
     );
   };
 
+  const nowMonotonic = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+  // The selected quality level is what VHS downloads, which can run seconds ahead of the screen;
+  // match the decoded frame height to a level instead. Renditions are assumed to have unique heights.
+  const bitrateForFrameHeight = (height: number): number | undefined => {
+    try {
+      const ql = (player as any).qualityLevels?.();
+      for (let i = 0; ql && i < ql.length; i++) {
+        if (height && ql[i]?.height === height) return ql[i].bitrate;
+      }
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  };
+
+  const selectedLevelBitrate = (): number | undefined => {
+    try {
+      const ql = (player as any).qualityLevels?.();
+      const selected = ql && typeof ql.selectedIndex === 'number' ? ql[ql.selectedIndex] : undefined;
+      if (selected?.height) return selected.bitrate;
+    } catch {
+      /* ignore */
+    }
+    return undefined;
+  };
+
+  const emitTimeupdate = (now: number, bitrate: number | undefined) => {
+    const elapsed = lastTimeupdateEmitMonotonic ? now - lastTimeupdateEmitMonotonic : config.timeupdateThrottleMs;
+    const ct = player.currentTime();
+    const playbackTimeMs = typeof ct === 'number' && isFinite(ct) ? Math.round(ct * 1000) : 0;
+    const rawDelta = playbackTimeMs - lastEmittedPlaybackTimeMs;
+    const maxPlausibleDelta = elapsed * ANALYTICS_MAX_PLAYBACK_SPEED_FACTOR;
+    const isDiscontinuity = rawDelta < 0 || rawDelta > maxPlausibleDelta;
+    const playedDeltaMs = isDiscontinuity ? 0 : Math.max(0, rawDelta);
+    playingTimeAccumulatedMs += playedDeltaMs;
+    lastTimeupdateEmitMonotonic = now;
+    lastEmittedPlaybackTimeMs = playbackTimeMs;
+
+    if (config.debug) {
+      console.log('[IK Analytics] timeupdate bitrate', {
+        bitrate_bps: bitrate,
+        bitrate_mbps_approx:
+          typeof bitrate === 'number' && isFinite(bitrate) ? bitrate / 1e6 : undefined,
+      });
+    }
+
+    stateMachine.dispatch(
+      {
+        type: 'timeupdate',
+        playbackTimeMs,
+        playingTimeMs: playingTimeAccumulatedMs,
+        playedDeltaMs,
+        bitrate,
+      },
+      captureContext
+    );
+  };
+
+  // Close the throttle window at the switch so the time played on the old rendition
+  // is weighted with its own bitrate, not the new one.
+  const flushRenditionSwitch = () => {
+    if (preSwitchBitrate === undefined || !stateMachine.isPlaying()) return;
+    const bitrate = preSwitchBitrate;
+    preSwitchBitrate = undefined;
+    emitTimeupdate(nowMonotonic(), bitrate);
+  };
+
   createPlayerAdapter(player, cleanup, getCurrentSource, {
     onSignal: (sig) => {
       switch (sig.type) {
@@ -351,6 +423,8 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
           lastEmittedPlaybackTimeMs = 0;
           lastTimeupdateEmitMonotonic = 0;
           progressiveBitrateBps = undefined;
+          renderedBitrate = undefined;
+          preSwitchBitrate = undefined;
           detectedVideoCodec = undefined;
           detectedAudioCodec = undefined;
 
@@ -420,63 +494,35 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
           break;
         case 'playing':
           stateMachine.dispatch({ type: 'playing' }, captureContext);
+          flushRenditionSwitch();
           break;
         case 'pause':
           stateMachine.dispatch({ type: 'pause' }, captureContext);
           break;
         case 'timeupdate': {
-          const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-          const throttleMs = config.timeupdateThrottleMs;
-          const elapsed = lastTimeupdateEmitMonotonic ? now - lastTimeupdateEmitMonotonic : throttleMs;
-          if (elapsed < throttleMs) break; // throttle: only emit every N ms
-
-          const ct = player.currentTime();
-          const playbackTimeMs = typeof ct === 'number' && isFinite(ct) ? Math.round(ct * 1000) : 0;
-          const rawDelta = playbackTimeMs - lastEmittedPlaybackTimeMs;
-          const maxPlausibleDelta = elapsed * ANALYTICS_MAX_PLAYBACK_SPEED_FACTOR;
-          const isDiscontinuity = rawDelta < 0 || rawDelta > maxPlausibleDelta;
-          const playedDeltaMs = isDiscontinuity ? 0 : Math.max(0, rawDelta);
-          playingTimeAccumulatedMs += playedDeltaMs;
-          lastTimeupdateEmitMonotonic = now;
-          lastEmittedPlaybackTimeMs = playbackTimeMs;
-
-          let bitrate: number | undefined;
-          try {
-            const ql = (player as any).qualityLevels?.();
-            if (ql && typeof ql.selectedIndex === 'number') {
-              const selected = ql[ql.selectedIndex];
-              if (selected?.height) bitrate = (selected as any).bitrate;
-            }
-          } catch {
-            /* ignore */
-          }
+          const now = nowMonotonic();
+          const elapsed = lastTimeupdateEmitMonotonic ? now - lastTimeupdateEmitMonotonic : config.timeupdateThrottleMs;
+          if (elapsed < config.timeupdateThrottleMs) break; // throttle: only emit every N ms
+          // The state machine drops timeupdate outside `playing`; emitting would still advance
+          // the baseline and lose that played time.
+          if (!stateMachine.isPlaying()) break;
           // Fallback: use estimated progressive bitrate when ABR quality levels unavailable
-          if (bitrate === undefined && progressiveBitrateBps !== undefined) {
-            bitrate = progressiveBitrateBps;
-          }
-          if (config.debug) {
-            console.log('[IK Analytics] timeupdate bitrate', {
-              bitrate_bps: bitrate,
-              bitrate_mbps_approx:
-                typeof bitrate === 'number' && isFinite(bitrate) ? bitrate / 1e6 : undefined,
-            });
-          }
-
-          stateMachine.dispatch(
-            {
-              type: 'timeupdate',
-              playbackTimeMs,
-              playingTimeMs: playingTimeAccumulatedMs,
-              playedDeltaMs,
-              bitrate,
-            },
-            captureContext
-          );
+          emitTimeupdate(now, renderedBitrate ?? selectedLevelBitrate() ?? progressiveBitrateBps);
+          break;
+        }
+        case 'resize': {
+          const el = player.el()?.querySelector('video') as HTMLVideoElement | null | undefined;
+          const nextBitrate = bitrateForFrameHeight(el?.videoHeight ?? 0);
+          if (nextBitrate === renderedBitrate) break;
+          if (renderedBitrate !== undefined && preSwitchBitrate === undefined) preSwitchBitrate = renderedBitrate;
+          renderedBitrate = nextBitrate;
+          flushRenditionSwitch();
           break;
         }
         case 'seeking': {
           // Real user intent (scrubbing the timeline): rotate session if inactive.
           checkSessionRotation();
+          preSwitchBitrate = undefined;
           const ct = player.currentTime();
           const fromMs = typeof ct === 'number' && isFinite(ct) ? ct * 1000 : 0;
           // Re-base when seeking is observed first so a racing timeupdate is less likely to use a stale baseline.
