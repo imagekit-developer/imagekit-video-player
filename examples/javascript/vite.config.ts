@@ -31,6 +31,7 @@ export default defineConfig({
         seekThumbnails: path.resolve(__dirname, 'pages/seek-thumbnails.html'),
         abs: path.resolve(__dirname, 'pages/abs.html'),
         logo: path.resolve(__dirname, 'pages/logo.html'),
+        skins: path.resolve(__dirname, 'pages/skins.html'),
         tryItYourself: path.resolve(__dirname, 'pages/try-it-yourself.html'),
         tryItYourself2: path.resolve(__dirname, 'pages/try-it-yourself-2.html'),
         // Note: You didn't provide a context-menu example, so it's commented out.

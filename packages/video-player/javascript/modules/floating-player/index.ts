@@ -1,4 +1,5 @@
 import { CleanupRegistry } from '../../utils';
+import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 
 /**
  * Enables a robust floating-on-scroll functionality for the ImageKit Video Player.
@@ -38,7 +39,12 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
             addCloseButton();
         } else {
             playerElement.classList.remove('ik-player-floating', className);
-            playerElement.querySelector('.ik-floating-close-button')?.remove();
+            const closeButton = playerElement.querySelector('.ik-floating-close-button');
+            // Removing a focused button would drop keyboard focus; keep it in the player.
+            const hadFocus = !!closeButton && closeButton === document.activeElement;
+            closeButton?.remove();
+            // preventScroll: the player is back in its place on the page, usually off-screen.
+            if (hadFocus) playerElement.focus({ preventScroll: true });
             isFloatingDismissed = false;
         }
     };
@@ -48,13 +54,26 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
         if (playerElement.querySelector('.ik-floating-close-button')) return;
         const closeButton = document.createElement('div');
         closeButton.className = 'ik-floating-close-button';
-        closeButton.setAttribute('aria-label', 'Close floating video');
-        closeButton.innerHTML = "&#10005;";
-        cleanup.registerEventListener(closeButton, 'click', (e: MouseEvent) => {
-            // Stop click from bubbling up to the player and toggling play/pause
-            e.stopPropagation();
+        closeButton.setAttribute('role', 'button');
+        closeButton.setAttribute('tabindex', '0');
+        closeButton.setAttribute('aria-label', playerInstance.localize('Close floating video'));
+        closeButton.innerHTML = '<span aria-hidden="true">&#10005;</span>';
+        cleanup.registerEventListener(closeButton, 'mousedown', focusPlayerOnMouseDown(playerInstance));
+        const dismiss = () => {
             isFloatingDismissed = true;
             setFloating(false);
+        };
+        cleanup.registerEventListener(closeButton, 'click', (e: Event) => {
+            // Stop click from bubbling up to the player and toggling play/pause
+            e.stopPropagation();
+            dismiss();
+        });
+        cleanup.registerEventListener(closeButton, 'keydown', (e: Event) => {
+            const key = (e as KeyboardEvent).key;
+            if (key !== 'Enter' && key !== ' ') return;
+            e.preventDefault();
+            e.stopPropagation();
+            dismiss();
         });
         playerElement.appendChild(closeButton);
     };

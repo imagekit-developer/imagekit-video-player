@@ -135,3 +135,30 @@
     transform: rotate(360deg);
   }
 }
+
+
+.vjs-recommendations-overlay:focus {
+  outline: none;
+}
+
+.vjs-rec-item:focus-visible {
+  border: 1px solid rgba(255, 255, 255, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vjs-rec-close,
+  .vjs-rec-item {
+    transition: none;
+  }
+
+  .vjs-rec-close:hover,
+  .vjs-rec-item:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .vjs-rec-close {
+    border: 1px solid ButtonText;
+  }
+}
