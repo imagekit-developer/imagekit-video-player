@@ -3,6 +3,7 @@ import type Player from 'video.js/dist/types/player';
 import { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
 import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
+import { playerOverlays, type PlayerOverlay } from '../a11y/player-overlays';
 
 const Component = videojs.getComponent('Component');
 
@@ -20,7 +21,7 @@ export class RecommendationsOverlay extends Component {
   private playerOptions: IKPlayerOptions;
   private gridEl!: HTMLDivElement;
   private closeBtn!: HTMLButtonElement;
-  private inertedEls_: Element[] = [];
+  private overlay_!: PlayerOverlay;
   // A playlist "Up next" countdown is running; wait for it instead of covering it.
   private upNextActive_ = false;
   // Video ended during a countdown: show the recommendations if the viewer cancels it.
@@ -52,6 +53,21 @@ export class RecommendationsOverlay extends Component {
     this.el().appendChild(this.closeBtn);
     this.el().appendChild(this.gridEl);
 
+    // Shown through the player's overlay manager, after a shoppable post-play screen.
+    this.overlay_ = {
+      el: this.el() as HTMLElement,
+      priority: 1,
+      show: (moveFocus) => {
+        this.renderRecommendations();
+        this.show();
+        if (moveFocus) {
+          const firstCard = this.gridEl.querySelector<HTMLElement>('.vjs-rec-item');
+          (firstCard || this.el() as HTMLElement).focus();
+        }
+      },
+      hide: () => this.hide(),
+    };
+
     // Listeners
     this.cleanup_.registerVideoJsListener(player, 'ended', this.onEnded);
     this.cleanup_.registerVideoJsListener(player, UP_NEXT_EVENTS.START, () => { this.upNextActive_ = true; });
@@ -62,11 +78,10 @@ export class RecommendationsOverlay extends Component {
       this.openOverlay_(this.player_.el().contains(document.activeElement));
     });
     this.cleanup_.registerVideoJsListener(player, 'play', () => { this.pendingShow_ = false; });
-    // A new source makes these recommendations stale: close them (and un-inert the player).
+    // A new source makes these recommendations stale; the overlay manager closes them.
     this.cleanup_.registerVideoJsListener(player, 'loadstart', () => {
       this.pendingShow_ = false;
       this.upNextActive_ = false;
-      if (!this.hasClass('vjs-hidden')) this.closeOverlay(true);
     });
     this.cleanup_.registerEventListener(this.closeBtn, 'click', () => this.closeOverlay());
     this.cleanup_.registerEventListener(this.closeBtn, 'keydown', (e: Event) => {
@@ -105,48 +120,12 @@ export class RecommendationsOverlay extends Component {
   };
 
   private openOverlay_(moveFocus: boolean) {
-    this.renderRecommendations();
-    this.show();
-    this.setPlayerBackgroundInert(true);
-    if (moveFocus) {
-      const firstCard = this.gridEl.querySelector<HTMLElement>('.vjs-rec-item');
-      (firstCard || this.el() as HTMLElement).focus();
-    }
+    playerOverlays(this.player_).open(this.overlay_, moveFocus);
   }
 
-  /**
-   * Hides the overlay. If focus was inside it, focus moves to the play control
-   * (or the player root) so it isn't lost on a hidden element.
-   */
-  private closeOverlay(focusPlayerRoot = false) {
-    const focusWasInOverlay = this.el().contains(document.activeElement);
-    this.hide();
-    this.setPlayerBackgroundInert(false);
-    if (focusWasInOverlay && focusPlayerRoot) {
-      (this.player_.el() as HTMLElement).focus();
-    } else if (focusWasInOverlay) {
-      const playToggle = (this.player_ as any).getChild('ControlBar')?.getChild('PlayToggle')?.el() as HTMLElement | undefined;
-      (playToggle || this.player_.el() as HTMLElement).focus();
-    }
-  }
-
-  /**
-   * While the overlay covers the player, the controls underneath are made inert
-   * so keyboard and screen-reader users can't land on hidden controls. Other
-   * visible dialogs (e.g. the shoppable post-play overlay) are left alone.
-   */
-  private setPlayerBackgroundInert(inert: boolean) {
-    if (inert) {
-      this.inertedEls_ = Array.from((this.player_.el() as HTMLElement).children).filter(el =>
-        el !== this.el() &&
-        !el.hasAttribute('inert') &&
-        !(el.getAttribute('role') === 'dialog' && !el.classList.contains('vjs-hidden'))
-      );
-      this.inertedEls_.forEach(el => el.setAttribute('inert', ''));
-    } else {
-      this.inertedEls_.forEach(el => el.removeAttribute('inert'));
-      this.inertedEls_ = [];
-    }
+  /** Hides the overlay; the overlay manager moves focus and shows what waits next. */
+  private closeOverlay(focusPlayer = false) {
+    playerOverlays(this.player_).close(this.overlay_, focusPlayer ? { showNext: false, focusPlayer: true } : {});
   }
 
   private renderRecommendations() {
@@ -220,7 +199,7 @@ export class RecommendationsOverlay extends Component {
 
   dispose(): void {
     if (this.endedTimer_ != null) clearTimeout(this.endedTimer_);
-    this.setPlayerBackgroundInert(false);
+    playerOverlays(this.player_).close(this.overlay_, { showNext: false });
     this.cleanup_.dispose();
     super.dispose();
   }

@@ -10,6 +10,7 @@ import { CleanupRegistry } from '../../utils';
 import ShoppablePanelItem, { getProductRole } from './shoppable-item';
 import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
 import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
+import { playerOverlays, type PlayerOverlay } from '../a11y/player-overlays';
 
 const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
 
@@ -31,7 +32,7 @@ export class ShoppableManager {
   private pauseTimeout_: any = null;
   private sourceItem_: AugmentedSourceOptions;
   private currentActiveProductId_: string | number | null = null;
-  private inertedEls_: Element[] = [];
+  private postPlay_: PlayerOverlay | null = null;
   // A playlist "Up next" countdown is running; wait for it instead of covering it.
   private upNextActive_ = false;
   // Video ended during a countdown: show the post-play overlay if the viewer cancels it.
@@ -317,53 +318,15 @@ export class ShoppableManager {
   }
 
   private showPostPlayOverlay_(focusWasInPlayer: boolean) {
-    if (this.postPlayOverlay_) {
-      this.postPlayOverlay_.classList.remove('vjs-hidden');
-      if (this.toggleButton_) this.toggleButton_.classList.add('vjs-hidden');
-      this.setPlayerBackgroundInert(true);
-      if (focusWasInPlayer) {
-        const firstFocusable = this.postPlayOverlay_.querySelector<HTMLElement>('[tabindex="0"]');
-        (firstFocusable || this.postPlayOverlay_).focus();
-      }
-      this.player_.trigger('productHoverPost', {});
-    }
+    if (this.postPlay_) playerOverlays(this.player_).open(this.postPlay_, focusWasInPlayer);
   }
 
   /**
-   * Hides the post-play overlay. If focus was inside it, focus moves to the
-   * play control so it isn't lost on a hidden element.
+   * Hides the post-play overlay; the overlay manager moves focus and shows what waits
+   * next (recommendations), unless `showNext` is false because playback resumes.
    */
-  private hidePostPlayOverlay() {
-    if (!this.postPlayOverlay_) return;
-    const focusWasInOverlay = this.postPlayOverlay_.contains(document.activeElement);
-    this.postPlayOverlay_.classList.add('vjs-hidden');
-    this.setPlayerBackgroundInert(false);
-    if (this.toggleButton_) this.toggleButton_.classList.remove('vjs-hidden');
-    if (focusWasInOverlay) this.focusPlayControl();
-  }
-
-  /**
-   * While the post-play overlay covers the player, the controls underneath are
-   * made inert so keyboard and screen-reader users can't land on hidden controls.
-   */
-  private setPlayerBackgroundInert(inert: boolean) {
-    if (inert) {
-      // Other visible dialogs (e.g. the recommendations overlay) are left alone.
-      this.inertedEls_ = Array.from(this.player_.el().children).filter(el =>
-        el !== this.postPlayOverlay_ &&
-        !el.hasAttribute('inert') &&
-        !(el.getAttribute('role') === 'dialog' && !el.classList.contains('vjs-hidden'))
-      );
-      this.inertedEls_.forEach(el => el.setAttribute('inert', ''));
-    } else {
-      this.inertedEls_.forEach(el => el.removeAttribute('inert'));
-      this.inertedEls_ = [];
-    }
-  }
-
-  private focusPlayControl() {
-    const playToggle = (this.player_ as any).getChild('ControlBar')?.getChild('PlayToggle')?.el() as HTMLElement | undefined;
-    (playToggle || this.player_.el() as HTMLElement).focus();
+  private hidePostPlayOverlay(showNext = true) {
+    if (this.postPlay_) playerOverlays(this.player_).close(this.postPlay_, { showNext });
   }
 
   // Replace the existing buildPostPlayOverlay method with this one.
@@ -436,7 +399,7 @@ export class ShoppableManager {
 
         // Special handling for 'seek': close overlay and start playing.
         if (prod.onClick.action === 'seek' && prod.onClick.args?.time) {
-          this.hidePostPlayOverlay();
+          this.hidePostPlayOverlay(false);
           this.player_.currentTime(ShoppableManager.toSeconds(prod.onClick.args.time));
           this.player_.play();
         } else {
@@ -478,7 +441,7 @@ export class ShoppableManager {
     replayBtn.appendChild(replayText);
 
     const replayAction = () => {
-      this.hidePostPlayOverlay();
+      this.hidePostPlayOverlay(false);
       this.player_.play();
     };
 
@@ -496,6 +459,25 @@ export class ShoppableManager {
 
     this.postPlayOverlay_ = overlay;
     this.player_.el().appendChild(overlay);
+
+    // Shown through the player's overlay manager, before recommendations.
+    this.postPlay_ = {
+      el: overlay,
+      priority: 2,
+      show: (moveFocus) => {
+        overlay.classList.remove('vjs-hidden');
+        this.toggleButton_?.classList.add('vjs-hidden');
+        if (moveFocus) {
+          const firstFocusable = overlay.querySelector<HTMLElement>('[tabindex="0"]');
+          (firstFocusable || overlay).focus();
+        }
+        this.player_.trigger('productHoverPost', {});
+      },
+      hide: () => {
+        overlay.classList.add('vjs-hidden');
+        this.toggleButton_?.classList.remove('vjs-hidden');
+      },
+    };
   }
 
   private toggleBar() {
@@ -623,7 +605,7 @@ export class ShoppableManager {
     if (this.closeBar) {
       this.closeBar(true);
     }
-    this.setPlayerBackgroundInert(false);
+    if (this.postPlay_) playerOverlays(this.player_).close(this.postPlay_, { showNext: false });
     
     // Register DOM elements for cleanup
     if (this.barContainer_) {
