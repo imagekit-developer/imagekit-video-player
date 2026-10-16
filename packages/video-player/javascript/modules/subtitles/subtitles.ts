@@ -119,8 +119,7 @@ function getLanguageName(langCode: string): string {
 function disableOtherTracks(player: Player, activeTrack: any): void {
     //@ts-ignore
     for (const other of Array.from(player.textTracks())) {
-        // Only one subtitle/caption track shows at a time; descriptions, chapters and
-        // metadata tracks are independent and must stay as they are (WCAG 1.2.3 / 1.2.5).
+        // Only one subtitle/caption track shows at a time; other kinds keep their mode.
         //@ts-ignore
         if (other.kind !== 'subtitles' && other.kind !== 'captions') continue;
         if (other !== activeTrack) {
