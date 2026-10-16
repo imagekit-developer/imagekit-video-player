@@ -9,6 +9,7 @@ import { AugmentedSourceOptions } from 'javascript/interfaces/AugementedSourceOp
 import { CleanupRegistry } from '../../utils';
 import ShoppablePanelItem, { getProductRole } from './shoppable-item';
 import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
+import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 
 const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
 
@@ -143,6 +144,7 @@ export class ShoppableManager {
     toggle.setAttribute('aria-label', this.player_.localize('Products'));
     toggle.setAttribute('aria-controls', panel.id);
     toggle.setAttribute('aria-expanded', 'false');
+    this.cleanup_.registerEventListener(toggle, 'mousedown', focusPlayerOnMouseDown(this.player_));
 
     const openIconUrl = this.shoppable_.toggleIconUrl || 'https://imagekit.io/icons/icon-144x144.png';
     const closeIconUrl = 'https://imagekit.io/icons/icon-144x144.png';
@@ -234,6 +236,7 @@ export class ShoppableManager {
         this.cleanup_.registerEventListener(hsElement, 'blur', () => {
           if (!hsElement.matches(':hover')) hideTooltip();
         });
+        this.cleanup_.registerEventListener(hsElement, 'mousedown', focusPlayerOnMouseDown(this.player_));
         this.cleanup_.registerEventListener(hsElement, 'click', activate);
         this.cleanup_.registerEventListener(hsElement, 'keydown', (e: Event) => {
           const event = e as KeyboardEvent;
@@ -459,6 +462,7 @@ export class ShoppableManager {
     replayBtn.className = 'vjs-shoppable-replay-btn';
     replayBtn.setAttribute('role', 'button');
     replayBtn.setAttribute('tabindex', '0');
+    this.cleanup_.registerEventListener(replayBtn, 'mousedown', focusPlayerOnMouseDown(this.player_));
 
     // Create a span for the icon and add the Video.js icon class to it
     const replayIcon = document.createElement('span');

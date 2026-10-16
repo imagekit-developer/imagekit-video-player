@@ -1,4 +1,5 @@
 import { CleanupRegistry } from '../../utils';
+import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 
 /**
  * Enables a robust floating-on-scroll functionality for the ImageKit Video Player.
@@ -42,7 +43,8 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
             // Removing a focused button would drop keyboard focus; keep it in the player.
             const hadFocus = !!closeButton && closeButton === document.activeElement;
             closeButton?.remove();
-            if (hadFocus) playerElement.focus();
+            // preventScroll: the player is back in its place on the page, usually off-screen.
+            if (hadFocus) playerElement.focus({ preventScroll: true });
             isFloatingDismissed = false;
         }
     };
@@ -56,6 +58,7 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
         closeButton.setAttribute('tabindex', '0');
         closeButton.setAttribute('aria-label', playerInstance.localize('Close floating video'));
         closeButton.innerHTML = '<span aria-hidden="true">&#10005;</span>';
+        cleanup.registerEventListener(closeButton, 'mousedown', focusPlayerOnMouseDown(playerInstance));
         const dismiss = () => {
             isFloatingDismissed = true;
             setFloating(false);

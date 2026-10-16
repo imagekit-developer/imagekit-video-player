@@ -4,6 +4,7 @@ import { preparePosterSrc } from 'javascript/utils';
 import * as _ from 'lodash';
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
+import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 
 const ClickableComponent = videojs.getComponent('ClickableComponent');
 const dom = videojs.dom || videojs;
@@ -43,6 +44,7 @@ class ShoppablePanelItem extends ClickableComponent {
         super(player, initOptions);
 
         this.on('mouseenter', () => this.handleMouseEnter());
+        this.on('mousedown', focusPlayerOnMouseDown(player));
     }
 
     handleClick(event: Event) {
