@@ -57,6 +57,11 @@ class SourceMenuButton extends MenuButton {
     // Use native bind instead of deprecated videojs.bind
     const updateHandler = this.update.bind(this);
     this.cleanup_.registerVideoJsListener(qualityLevels, 'addqualitylevel', updateHandler);
+
+    // Also rebuild on source change: VHS empties qualityLevels without firing an
+    // event, so a switch to a progressive source would keep the old renditions.
+    // With no levels the rebuilt menu is empty, which hides the button.
+    this.cleanup_.registerVideoJsListener(this.player(), 'loadstart', updateHandler);
   }
 
   createEl(): HTMLElement {

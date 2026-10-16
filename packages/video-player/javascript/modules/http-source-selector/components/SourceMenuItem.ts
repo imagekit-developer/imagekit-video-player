@@ -1,6 +1,7 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import type MenuItemType from 'video.js/dist/types/menu/menu-item';
+import { markInternalSeek } from '../../analytics/internal-seek';
 
 const MenuItem = videojs.getComponent('MenuItem') as typeof MenuItemType;
 
@@ -50,6 +51,8 @@ function finishSwitch(player: Player, levelIndex: number) {
     }
     // VHS sets the flag right after the synchronous media change that fired
     // this event, so check on the next tick.
+    // Both members are private VHS internals; video.js is pinned to an exact
+    // version in package.json so they can't change under us.
     player.setTimeout(() => {
       const playlistController = (player.tech(true) as any)?.vhs?.playlistController_;
       if (
@@ -70,6 +73,7 @@ function finishSwitch(player: Player, levelIndex: number) {
       return;
     }
     cancel();
+    markInternalSeek(player);
     player.currentTime(currentTime);
   };
   const cancel = () => {
@@ -119,6 +123,12 @@ class SourceMenuItem extends MenuItem {
       return;
     }
 
+    // The menu can outlive its levels for a moment after a source change.
+    const level = levels[selected.index];
+    if (!level) {
+      return;
+    }
+
     // VHS skips the switch when the picked level is the one already playing.
     if (levels.selectedIndex !== selected.index) {
       finishSwitch(this.player(), selected.index);
@@ -135,7 +145,6 @@ class SourceMenuItem extends MenuItem {
     // Auto the picked level is already enabled, so toggle it off and on;
     // otherwise the already-buffered segments play out at the old quality.
     // A seek alone doesn't flush anything: VHS ignores seeks into the buffer.
-    const level = levels[selected.index];
     if (level.enabled) {
       level.enabled = false;
     }
