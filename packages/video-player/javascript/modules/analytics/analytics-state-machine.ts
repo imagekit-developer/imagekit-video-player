@@ -26,6 +26,7 @@ export type AnalyticsSignal =
   | { type: 'seeked'; toPositionMs: number; seekTimeMs: number }
   | { type: 'waiting' }
   | { type: 'playing_after_waiting' }
+  | { type: 'renditionchange'; bitrate?: number }
   | { type: 'ended' }
   | { type: 'error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'report_error'; errorCode: string; errorMessage?: string; errorContext?: string }
@@ -305,6 +306,12 @@ export class AnalyticsStateMachine {
       case 'playing_after_waiting':
         // Same as 'playing' - will close rebuffer if open
         this.dispatch({ type: 'playing' }, captureContext);
+        return;
+
+      case 'renditionchange':
+        if (this.phase_ === 'idle' || this.phase_ === 'disposed') return;
+        // No played_delta_ms: the forced timeupdate carries the old rendition's played time.
+        emit('renditionchange', { ...ctx, bitrate: signal.bitrate });
         return;
 
       case 'ended':

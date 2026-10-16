@@ -17,6 +17,7 @@ export type IKAnalyticsEventName =
   | 'seeked'
   | 'rebufferstart'
   | 'rebufferend'
+  | 'renditionchange'
   | 'error'
   | 'ended'
   | 'viewend';
@@ -148,6 +149,7 @@ export type IKPlayingEvent = IKPlaybackEventWithName<'playing'>;
 export type IKPauseEvent = IKPlaybackEventWithName<'pause'>;
 export type IKRebufferStartEvent = IKPlaybackEventWithName<'rebufferstart'>;
 export type IKEndedEvent = IKPlaybackEventWithName<'ended'>;
+export type IKRenditionChangeEvent = IKPlaybackEventWithName<'renditionchange'>;
 
 export type IKViewStartedEvent = IKPlaybackEventWithName<
   'viewstarted',
@@ -198,6 +200,7 @@ export type IKAnalyticsEvent =
   | IKPauseEvent
   | IKRebufferStartEvent
   | IKEndedEvent
+  | IKRenditionChangeEvent
   | IKViewStartedEvent
   | IKSeekingEvent
   | IKSeekedEvent

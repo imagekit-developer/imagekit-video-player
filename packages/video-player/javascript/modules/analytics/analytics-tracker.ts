@@ -514,9 +514,11 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
           const el = player.el()?.querySelector('video') as HTMLVideoElement | null | undefined;
           const nextBitrate = bitrateForFrameHeight(el?.videoHeight ?? 0);
           if (nextBitrate === renderedBitrate) break;
-          if (renderedBitrate !== undefined && preSwitchBitrate === undefined) preSwitchBitrate = renderedBitrate;
+          const isSwitch = renderedBitrate !== undefined;
+          if (isSwitch && preSwitchBitrate === undefined) preSwitchBitrate = renderedBitrate;
           renderedBitrate = nextBitrate;
           flushRenditionSwitch();
+          if (isSwitch) stateMachine.dispatch({ type: 'renditionchange', bitrate: nextBitrate }, captureContext);
           break;
         }
         case 'seeking': {
