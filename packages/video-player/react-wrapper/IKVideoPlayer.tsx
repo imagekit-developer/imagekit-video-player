@@ -1,3 +1,4 @@
+
 import {
   useRef,
   useEffect,
@@ -8,49 +9,42 @@ import { videoPlayer } from '../javascript';
 import type { Player } from '../javascript';
 
 import type { IKVideoPlayerProps, IKVideoPlayerRef } from './interfaces';
-import React from 'react';
 
 const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
-  (
-    { ikOptions, videoJsOptions = {}, source, playlist },
-    ref
-  ) => {
-    // A ref to the actual <video> element
-    const videoRef = useRef<HTMLVideoElement | null>(null);
-    // A ref to hold the Video.js player instance once initialized
+  ({ ikOptions, videoJsOptions = {}, source, playlist }, ref) => {
+    // React owns the container; Video.js owns the video element.
+    const containerRef = useRef<HTMLDivElement | null>(null);
     const playerRef = useRef<Player | null>(null);
 
-    // Expose getPlayer() to parent components
     useImperativeHandle(ref, () => ({
       getPlayer: () => playerRef.current,
     }));
 
     useEffect(() => {
-      // If there was already a player, dispose it before re-creating
-      if (playerRef.current) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
+      const container = containerRef.current;
+      if (!container) return;
 
-      // Ensure our <video> DOM node is present
-      if (!videoRef.current) return;
+      // Create a fresh video element for every effect setup.
+      const videoElement = document.createElement('video');
+      videoElement.className = 'video-js vjs-default-skin';
+      videoElement.controls = true;
+      videoElement.preload = 'auto';
+      container.appendChild(videoElement);
 
-      // Initialize Video.js via the helper from '@imagekit/video-player'
       const playerInstance = videoPlayer(
-        videoRef.current,
+        videoElement,
         ikOptions,
         videoJsOptions
       );
+
       playerRef.current = playerInstance;
 
-      // If both source and playlist are provided, warn and pick playlist
       if (source && playlist) {
         console.warn(
           '[IKVideoPlayer] Both `source` and `playlist` were provided. Using `playlist`.'
         );
       }
 
-      // Apply playlist if given
       if (
         playlist &&
         Array.isArray(playlist.sources) &&
@@ -62,29 +56,24 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
         });
         playlistMgr.loadFirstItem();
       } else if (source) {
-        // Otherwise, set a single source
         playerInstance.src(source);
       }
 
-      // Clean up when component unmounts
       return () => {
-        if (playerRef.current) {
-          playerRef.current.dispose();
+        if (playerRef.current === playerInstance) {
           playerRef.current = null;
         }
+
+        if (!playerInstance.isDisposed()) {
+          playerInstance.dispose();
+        }
+
+        // Remove the element if Video.js hasn't already removed it.
+        videoElement.parentNode?.removeChild(videoElement);
       };
-      // We intentionally do not re-run on `source` or `playlist` changes
-      // If you need runtime updates, add a separate effect for that.
     }, [ikOptions, videoJsOptions]);
 
-    return (
-      <video
-        ref={videoRef}
-        className={`video-js vjs-default-skin`}
-        controls
-        preload="auto"
-      />
-    );
+    return <div ref={containerRef} />;
   }
 );
 
