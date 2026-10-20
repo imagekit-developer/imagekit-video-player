@@ -185,6 +185,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
    */
   private async initRecommendationsOverlay() {
     if (!this.currentSource_ || !this.currentSource_.recommendations) return;
+    if (this.player.isDisposed()) return;
 
     const overlay = this.player.getChild('RecommendationsOverlay');
     if (overlay) overlay.dispose();
