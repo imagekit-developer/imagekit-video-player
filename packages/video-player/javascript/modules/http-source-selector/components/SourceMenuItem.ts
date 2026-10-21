@@ -1,11 +1,11 @@
 import videojs from 'video.js';
 import type Player from 'video.js/dist/types/player';
 import type MenuItemType from 'video.js/dist/types/menu/menu-item';
-import { markInternalSeek } from '../../analytics/internal-seek';
 
 const MenuItem = videojs.getComponent('MenuItem') as typeof MenuItemType;
 
 interface QualityLevel {
+  id: string;
   enabled: boolean;
   height?: string;
   bitrate?: number;
@@ -24,69 +24,89 @@ interface PlayerWithQualityLevels {
   qualityLevels(): QualityLevelList;
 }
 
-// Cancels the pending switch follow-up for a player, so a newer click replaces it.
-const pendingSwitch = new WeakMap<Player, () => void>();
+const BOUNDARY_OVERLAP = 0.1;
+
+// Latest switch per player, so a slower earlier click can't switch after a newer one.
+const latestSwitch = new WeakMap<Player, object>();
 
 /**
- * Makes a manual quality switch show up right away instead of after the
- * already-buffered segments play out. Two VHS behaviours get in the way:
- *
- * 1. Switching to a VOD rendition VHS has already loaded completes
- *    synchronously, before fastQualityChange_ sets the flag that triggers its
- *    buffer flush, so the flush never runs. Run it ourselves when VHS leaves
- *    the flag set after the switch.
- * 2. Even after the buffer is replaced, the browser keeps showing the frames it
- *    already decoded from the old rendition until the next keyframe (up to a
- *    whole segment later). Once the new rendition's segment covering the
- *    playhead is appended, seek to the current position so the decoder
- *    restarts from it.
+ * Where to cut the buffer for a manual switch: the end of the buffered segment at
+ * the playhead, or of a later one when that leaves too little time to fetch the
+ * new rendition's next segment. Uses VHS's segment-metadata cues, one per
+ * appended segment.
  */
-function finishSwitch(player: Player, levelIndex: number) {
-  pendingSwitch.get(player)?.();
+function switchBoundary(player: Player, vhs: any, target: any): number {
+  const currentTime = player.currentTime() as number;
+  const tracks = player.textTracks() as unknown as ArrayLike<TextTrack>;
+  let cues: TextTrackCue[] = [];
+  for (let i = 0; i < tracks.length; i++) {
+    if (tracks[i].label === 'segment-metadata' && tracks[i].cues) {
+      cues = Array.from(tracks[i].cues as ArrayLike<TextTrackCue>).sort((a, b) => a.startTime - b.startTime);
+    }
+  }
 
-  const levels = (player as unknown as PlayerWithQualityLevels).qualityLevels();
-  const onLevelChange = () => {
-    if (levels.selectedIndex !== levelIndex) {
-      return;
-    }
-    // VHS sets the flag right after the synchronous media change that fired
-    // this event, so check on the next tick.
-    // Both members are private VHS internals; video.js is pinned to an exact
-    // version in package.json so they can't change under us.
-    player.setTimeout(() => {
-      const playlistController = (player.tech(true) as any)?.vhs?.playlistController_;
-      if (
-        playlistController?.waitingForFastQualityPlaylistReceived_ &&
-        typeof playlistController.runFastQualitySwitch_ === 'function'
-      ) {
-        playlistController.runFastQualitySwitch_();
-      }
-    }, 0);
-  };
-  const onAppend = (event: any) => {
-    const segment = event.metadata?.segmentInfo;
-    if (levels.selectedIndex !== levelIndex || !segment || segment.type !== 'main' || segment.isMediaInitialization) {
-      return;
-    }
-    const currentTime = player.currentTime() as number;
-    if (currentTime < segment.start || currentTime >= segment.start + segment.duration) {
-      return;
-    }
-    cancel();
-    markInternalSeek(player);
-    player.currentTime(currentTime);
-  };
-  const cancel = () => {
-    levels.off('change', onLevelChange);
-    player.off('appendsdone', onAppend);
-    player.clearTimeout(timeout);
-    pendingSwitch.delete(player);
-  };
-  const timeout = player.setTimeout(cancel, 10000);
+  let i = cues.findIndex((cue) => cue.startTime <= currentTime && currentTime < cue.endTime);
+  if (i === -1) {
+    return currentTime;
+  }
 
-  levels.on('change', onLevelChange);
-  player.on('appendsdone', onAppend);
-  pendingSwitch.set(player, cancel);
+  const segmentDuration = cues[i].endTime - cues[i].startTime;
+  const bandwidth = target.attributes?.BANDWIDTH;
+  const fetchTime = bandwidth && vhs.systemBandwidth ? (bandwidth * segmentDuration) / vhs.systemBandwidth : 0;
+  const minLead = fetchTime + 1;
+
+  while (cues[i].endTime - currentTime < minLead && cues[i + 1] && cues[i + 1].startTime - cues[i].endTime < 0.1) {
+    i++;
+  }
+  return cues[i].endTime;
+}
+
+/**
+ * Switches to `target` from the next segment boundary, like hls.js's `nextLevel`:
+ * keeps the buffered segment at the playhead (so playback never runs dry), drops
+ * everything after it, and lets VHS refill from there with the new rendition.
+ *
+ * VHS has no public API for this. Its own manual switch (fastQualityChange_) drops
+ * the whole buffer and freezes playback until the new rendition arrives; plain
+ * switchMedia_ keeps loading after the existing buffer, so the change only shows
+ * once up to a minute of it has played out. The private members used here
+ * (playlistController_, mainSegmentLoader_, switchMedia_) are why video.js is
+ * pinned to an exact version in package.json.
+ */
+function switchAtNextSegment(player: Player, target: any) {
+  const vhs = (player.tech(true) as any)?.vhs;
+  const playlistController = vhs?.playlistController_;
+  const loader = playlistController?.mainSegmentLoader_;
+  if (!playlistController || !loader || !target || playlistController.media() === target) {
+    return;
+  }
+
+  const token = {};
+  latestSwitch.set(player, token);
+
+  const switchMedia = () => {
+    if (latestSwitch.get(player) !== token) {
+      return;
+    }
+    // VHS marks segments appended by position, across renditions, and skips to the
+    // one after an appended segment. The kept overlap puts the buffer end inside
+    // the boundary segment, so clear the marks or it would be skipped.
+    loader.mediaSequenceSync_?.resetAppendedStatus();
+    playlistController.switchMedia_(target, 'manual');
+  };
+
+  const boundary = switchBoundary(player, vhs, target);
+  const duration = player.duration() as number;
+  loader.pause();
+  loader.abort();
+  if (!(boundary < duration) || !loader.getMediaInfo_()) {
+    switchMedia();
+    return;
+  }
+  // Renditions' first frames don't line up exactly at a boundary (DASH ones can
+  // start ~30ms late), so cutting right at it leaves a gap the playhead stalls on.
+  // Keep a little past it; the new segment's append overwrites the overlap.
+  loader.remove(boundary + BOUNDARY_OVERLAP, Infinity, switchMedia);
 }
 
 class SourceMenuItem extends MenuItem {
@@ -111,44 +131,38 @@ class SourceMenuItem extends MenuItem {
       }
     });
 
-    const player = this.player() as unknown as PlayerWithQualityLevels;
-    const levels = player.qualityLevels();
-
-    if (selected.index == levels.length) {
-      // If this is the Auto option, enable all renditions for adaptive selection
-      pendingSwitch.get(this.player())?.();
-      for (let i = 0; i < levels.length; i++) {
-        levels[i].enabled = true;
-      }
-      return;
-    }
+    const player = this.player();
+    const levels = (player as unknown as PlayerWithQualityLevels).qualityLevels();
+    const isAuto = selected.index == levels.length;
 
     // The menu can outlive its levels for a moment after a source change.
-    const level = levels[selected.index];
-    if (!level) {
+    if (!isAuto && !levels[selected.index]) {
       return;
     }
 
-    // VHS skips the switch when the picked level is the one already playing.
-    if (levels.selectedIndex !== selected.index) {
-      finishSwitch(this.player(), selected.index);
-    }
-
-    for (let i = 0; i < levels.length; i++) {
-      if (i != selected.index) {
-        levels[i].enabled = false;
+    const vhs = (player.tech(true) as any)?.vhs;
+    const playlists: any[] | undefined = vhs?.playlists?.main?.playlists;
+    if (!playlists) {
+      for (let i = 0; i < levels.length; i++) {
+        levels[i].enabled = isAuto || i == selected.index;
       }
+      return;
     }
 
-    // VHS only runs its fast quality change (flush the buffer and reload at the
-    // new rendition) when a level goes from disabled to enabled. Coming from
-    // Auto the picked level is already enabled, so toggle it off and on;
-    // otherwise the already-buffered segments play out at the old quality.
-    // A seek alone doesn't flush anything: VHS ignores seeks into the buffer.
-    if (level.enabled) {
-      level.enabled = false;
-    }
-    level.enabled = true;
+    // Set the playlists' disabled flags directly rather than through
+    // `level.enabled`: the setter starts VHS's whole-buffer flush. The flags
+    // still drive VHS's adaptive selection and what `level.enabled` reports.
+    const pickedId = isAuto ? null : levels[selected.index].id;
+    playlists.forEach((playlist) => {
+      if (isAuto || playlist.id === pickedId) {
+        delete playlist.disabled;
+      } else {
+        playlist.disabled = true;
+      }
+    });
+
+    const target = isAuto ? vhs.playlistController_?.selectPlaylist() : playlists.find((p) => p.id === pickedId);
+    switchAtNextSegment(player, target);
   }
 }
 
