@@ -16,6 +16,7 @@ import { enableFloatingPlayer } from './modules/floating-player';
 import './modules/logo-button';
 import { initializeLogoButton } from './modules/logo-button/init';
 import { setupKeyboardShortcuts } from './modules/keyboard-shortcuts';
+import { setupMenuPlacement } from './modules/menu-placement';
 import { setupContextMenu } from './modules/context-menu/setup';
 import { createSourceOverride } from './modules/source-handler';
 import { extendTrackSettings } from './modules/subtitles/track-settings-extension';
@@ -147,6 +148,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
       this.player.ready(() => {
         setupKeyboardShortcuts(this.player, this.cleanup_);
+        setupMenuPlacement(this.player, this.cleanup_);
       });
     }
     catch (err) {

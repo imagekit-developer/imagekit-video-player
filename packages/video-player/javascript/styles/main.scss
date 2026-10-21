@@ -398,13 +398,14 @@ $spacing-progress-interactive-hover: -1.4rem;
     .vjs-menu {
         position: absolute;
         z-index: $z-index-menu;
+        translate: var(--ik-menu-shift, 0px);
         
         .vjs-menu-content {
-            max-width: 13em;
+            max-width: min(13em, var(--ik-menu-max-width, 13em));
             width: auto;
             padding: 0.2em 0;
             overflow-y: auto;
-            max-height: 20em;
+            max-height: min(20em, var(--ik-menu-max-height, 20em));
             z-index: $z-index-menu;
             // Firefox
             scrollbar-gutter: stable;
