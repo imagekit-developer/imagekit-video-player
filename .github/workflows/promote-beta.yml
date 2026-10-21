@@ -1,0 +1,22 @@
+name: Promote beta to latest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Point latest at the current beta version
+        run: |
+          BETA_VERSION=$(npm view @imagekit/video-player dist-tags.beta)
+          echo "Promoting @imagekit/video-player@${BETA_VERSION} to latest"
+          npm dist-tag add "@imagekit/video-player@${BETA_VERSION}" latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
