@@ -67,6 +67,10 @@ function cleanupChapters(player: Player): void {
     perChapterCleanup = null;
   }
 
+  if (player.isDisposed()) {
+    return;
+  }
+
   const existing = player.getChild('ChapterMarkersProgressBarControl');
   if (existing) {
     existing.dispose();
@@ -184,6 +188,10 @@ function applyChaptersToPlayer(player: Player, chapterList: ChapterMarker[]): vo
     }
   } catch (e) {
     player.log.warn(`Failed to create chapter text track: ${e}`);
+  }
+
+  if (player.isDisposed()) {
+    return;
   }
 
   const existing = player.getChild('ChapterMarkersProgressBarControl');

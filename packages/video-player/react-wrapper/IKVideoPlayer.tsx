@@ -15,8 +15,8 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
     { ikOptions, videoJsOptions = {}, source, playlist },
     ref
   ) => {
-    // A ref to the actual <video> element
-    const videoRef = useRef<HTMLVideoElement | null>(null);
+    // A ref to the container element
+    const videoRef = useRef<HTMLDivElement | null>(null);
     // A ref to hold the Video.js player instance once initialized
     const playerRef = useRef<Player | null>(null);
 
@@ -27,17 +27,27 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
 
     useEffect(() => {
       // If there was already a player, dispose it before re-creating
-      if (playerRef.current) {
+      if (playerRef.current && !playerRef.current.isDisposed()) {
         playerRef.current.dispose();
         playerRef.current = null;
       }
 
-      // Ensure our <video> DOM node is present
+      // Ensure our container DOM node is present
       if (!videoRef.current) return;
+
+      // Clear any prior children in case of remount
+      videoRef.current.innerHTML = '';
+
+      // The Video.js player needs to be created inside a container el for React Strict Mode compatibility
+      const videoElement = document.createElement('video');
+      videoElement.className = 'video-js vjs-default-skin';
+      videoElement.controls = true;
+      videoElement.preload = 'auto';
+      videoRef.current.appendChild(videoElement);
 
       // Initialize Video.js via the helper from '@imagekit/video-player'
       const playerInstance = videoPlayer(
-        videoRef.current,
+        videoElement,
         ikOptions,
         videoJsOptions
       );
@@ -68,7 +78,7 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
 
       // Clean up when component unmounts
       return () => {
-        if (playerRef.current) {
+        if (playerRef.current && !playerRef.current.isDisposed()) {
           playerRef.current.dispose();
           playerRef.current = null;
         }
@@ -78,12 +88,9 @@ const IKVideoPlayer = forwardRef<IKVideoPlayerRef, IKVideoPlayerProps>(
     }, [ikOptions, videoJsOptions]);
 
     return (
-      <video
-        ref={videoRef}
-        className={`video-js vjs-default-skin`}
-        controls
-        preload="auto"
-      />
+      <div data-vjs-player>
+        <div ref={videoRef} />
+      </div>
     );
   }
 );

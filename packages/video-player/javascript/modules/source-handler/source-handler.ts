@@ -24,6 +24,9 @@ export interface SourceOverrideOptions {
 }
 
 function showLoadingState(player: Player): void {
+  if (player.isDisposed()) {
+    return;
+  }
   const bigPlay = player.getChild('BigPlayButton');
   bigPlay && bigPlay.hide();
   const spinner = player.getChild('LoadingSpinner');
@@ -32,6 +35,9 @@ function showLoadingState(player: Player): void {
 }
 
 function hideLoadingState(player: Player): void {
+  if (player.isDisposed()) {
+    return;
+  }
   const bigPlay = player.getChild('BigPlayButton');
   bigPlay && bigPlay.show();
   player.removeClass('vjs-waiting');
@@ -133,6 +139,9 @@ function setupPoster(
   source: SourceOptions,
   options: IKPlayerOptions
 ): void {
+  if (player.isDisposed()) {
+    return;
+  }
   const preparedPoster = (source as AugmentedSourceOptions | null | undefined)?.prepared?.poster;
   
   if (preparedPoster) {
@@ -140,13 +149,18 @@ function setupPoster(
   } else {
     preparePosterSrc(source, options).then(
       poster => {
+        if (player.isDisposed()) {
+          return;
+        }
         if (poster) {
           player.poster(poster);
         }
         ensurePrepared(source as AugmentedSourceOptions).poster = poster ?? undefined;
       }
     ).catch(err => {
-      player.log.error(`Failed to load poster: ${err.message}`);
+      if (!player.isDisposed()) {
+        player.log.error(`Failed to load poster: ${err.message}`);
+      }
     });
   }
 }
@@ -190,7 +204,7 @@ export function createSourceOverride(
 
     prepareSourceIfNeeded(currentSource, options)
       .then(async (prepared: SourceOptions) => {
-        if (myCallId !== srcCallVersion) {
+        if (myCallId !== srcCallVersion || player.isDisposed()) {
           return;
         }
 
@@ -209,18 +223,22 @@ export function createSourceOverride(
           delayInMS
         );
 
+        if (myCallId !== srcCallVersion || player.isDisposed()) {
+          return;
+        }
+
         nativeSrc(prepared as any);
 
         setupTextTracks(player, prepared, options);
         setupPoster(player, prepared, options);
       })
       .catch(err => {
-        if (myCallId === srcCallVersion) {
+        if (myCallId === srcCallVersion && !player.isDisposed()) {
           player.error(err.message);
         }
       })
       .finally(() => {
-        if (myCallId === srcCallVersion) {
+        if (myCallId === srcCallVersion && !player.isDisposed()) {
           hideLoadingState(player);
         }
       });

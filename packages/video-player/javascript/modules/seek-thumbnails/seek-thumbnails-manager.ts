@@ -50,6 +50,10 @@ export class SeekThumbnailsManager {
       }
 
       // 3) Instantiate a new manager
+      if (player.isDisposed()) {
+        return null;
+      }
+
       const mgr = new SeekThumbnailsManager();
       mgr.thumbnails_ = cues.map((c) => ({
         startTime: c.startTime,
