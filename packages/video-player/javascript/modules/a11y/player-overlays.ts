@@ -33,8 +33,9 @@ class PlayerOverlays {
   private inerted_: Element[] = [];
 
   constructor(private player_: Player) {
-    // A new source makes every end-of-video overlay stale.
-    player_.on('loadstart', () => this.closeAll_());
+    // A new source, or playback resuming (e.g. replayed from the floating player while an
+    // overlay waited for it to dock), makes every end-of-video overlay stale.
+    player_.on(['loadstart', 'play'], () => this.closeAll_());
     player_.on(FLOATING_CHANGE_EVENT, () => this.onFloatingChange_());
   }
 
