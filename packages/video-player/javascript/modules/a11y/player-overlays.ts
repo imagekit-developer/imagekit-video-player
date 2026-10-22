@@ -1,4 +1,5 @@
 import type Player from 'video.js/dist/types/player';
+import { FLOATING_CHANGE_EVENT } from '../floating-player';
 
 /** An overlay that covers the player (recommendations, shoppable post-play). */
 export interface PlayerOverlay {
@@ -34,6 +35,7 @@ class PlayerOverlays {
   constructor(private player_: Player) {
     // A new source makes every end-of-video overlay stale.
     player_.on('loadstart', () => this.closeAll_());
+    player_.on(FLOATING_CHANGE_EVENT, () => this.onFloatingChange_());
   }
 
   /**
@@ -78,11 +80,43 @@ class PlayerOverlays {
   }
 
   private showNext_(moveFocus: boolean) {
+    // The floating mini-player hides overlays (floating-player.css), so making the rest
+    // inert would leave a player nothing can be clicked in. They wait until it docks.
+    if (this.isFloating_()) {
+      this.moveFocus_ = this.moveFocus_ || moveFocus;
+      return;
+    }
     const next = this.waiting_.shift();
     if (!next) return;
     this.current_ = next;
     this.setInert_(next);
     next.show(moveFocus);
+  }
+
+  private isFloating_(): boolean {
+    return (this.player_.el() as HTMLElement).classList.contains('ik-player-floating');
+  }
+
+  private onFloatingChange_() {
+    if (!this.isFloating_()) {
+      if (!this.current_ && this.openTimer_ == null && this.waiting_.length) {
+        const moveFocus = this.moveFocus_;
+        this.moveFocus_ = false;
+        this.showNext_(moveFocus);
+      }
+      return;
+    }
+    if (!this.current_) return;
+    // Started floating with an overlay up: queue it again until the player docks.
+    const overlay = this.current_;
+    const focusWasInOverlay = overlay.el.contains(document.activeElement);
+    overlay.hide();
+    this.current_ = null;
+    this.setInert_(null);
+    this.waiting_.push(overlay);
+    this.waiting_.sort((a, b) => b.priority - a.priority);
+    this.moveFocus_ = this.moveFocus_ || focusWasInOverlay;
+    if (focusWasInOverlay) this.focusPlayer_(true);
   }
 
   private closeAll_() {

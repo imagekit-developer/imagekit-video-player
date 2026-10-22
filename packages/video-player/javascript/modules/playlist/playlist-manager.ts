@@ -364,6 +364,8 @@ export class PlaylistManager {
       return false;
     }
 
+    // A chosen item replaces any pending auto-advance, so it can't skip ahead afterwards.
+    this.autoAdvance_?.cancel();
     this.loadItem_(items[index]);
     this.playlist_.setCurrentIndex(index);
 

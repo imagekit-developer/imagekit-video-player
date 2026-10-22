@@ -1,6 +1,9 @@
 import { CleanupRegistry } from '../../utils';
 import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 
+/** Player event fired when the player starts or stops floating. */
+export const FLOATING_CHANGE_EVENT = 'floatingchange';
+
 /**
  * Enables a robust floating-on-scroll functionality for the ImageKit Video Player.
  * @param {any} playerInstance The instance of the ImageKit Video Player.
@@ -33,6 +36,7 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
     // --- UI & INTERACTION LOGIC ---
     const setFloating = (isFloating) => {
         const className = `ik-player-floating-${floatPosition}`;
+        const wasFloating = playerElement.classList.contains('ik-player-floating');
         if (isFloating) {
             playerElement.classList.remove('shoppable-panel-visible');
             playerElement.classList.add('ik-player-floating', className);
@@ -47,6 +51,7 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
             if (hadFocus) playerElement.focus({ preventScroll: true });
             isFloatingDismissed = false;
         }
+        if (wasFloating !== !!isFloating) playerInstance.trigger(FLOATING_CHANGE_EVENT);
     };
 
     // --- CLOSE BUTTON with SVG ICON ---
