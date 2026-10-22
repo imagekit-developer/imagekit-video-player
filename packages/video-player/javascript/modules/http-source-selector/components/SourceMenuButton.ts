@@ -31,6 +31,11 @@ class SourceMenuButton extends MenuButton {
   constructor(player: Player, options: any) {
     super(player, options);
 
+    // Accessible name (and tooltip, like other Video.js controls): without it the
+    // button is announced as just "button" (WCAG 4.1.2).
+    (this as any).controlText_ = 'Quality';
+    (this as any).menuButton_?.controlText(this.localize('Quality'));
+
     const playerWithQualityLevels = this.player() as unknown as PlayerWithQualityLevels;
     const qualityLevels = playerWithQualityLevels.qualityLevels();
 

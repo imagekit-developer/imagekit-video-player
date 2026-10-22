@@ -110,6 +110,9 @@
 /* --- Item Layout --- */
 
 .vjs-shoppable-item {
+  /* Containing block for the absolutely positioned overlay/alt-image below; without it the
+     overlay sizes against a distant ancestor on keyboard focus (no :hover transform). */
+  position: relative;
   display: flex;
   flex-direction: column;
   margin: 10px;
@@ -291,7 +294,15 @@
   top: -12px;
   left: 50%;
   transform: translate(-50%, -100%);
-  pointer-events: none;
+  /* Hoverable, so moving the pointer onto the tooltip doesn't dismiss it (WCAG 1.4.13). */
+  pointer-events: auto;
+}
+
+/* Invisible hit area bridging the gap to the dot, so the pointer can cross onto the tooltip. */
+.vjs-shoppable-hotspot-tooltip::before {
+  content: "";
+  position: absolute;
+  inset: -10px;
 }
 
 .vjs-shoppable-hotspot-tooltip.tooltip-position-top {
@@ -413,4 +424,55 @@
 .vjs-shoppable-item-placeholder {
   background: #303030;
   height: 100%;
+}
+
+
+
+.vjs-shoppable-postplay-overlay:focus {
+  outline: none;
+}
+
+.vjs-shoppable-item:focus-visible .vjs-shoppable-item-img-alt,
+.vjs-shoppable-item:focus-visible .vjs-shoppable-item-overlay {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .video-js.shoppable-panel-visible .vjs-control-bar,
+  .vjs-shoppable-bar-inner,
+  .vjs-shoppable-toggle,
+  .vjs-shoppable-toggle-icon,
+  .vjs-shoppable-item,
+  .vjs-shoppable-item-img,
+  .vjs-shoppable-item-overlay,
+  .vjs-shoppable-replay-btn {
+    transition: none;
+  }
+
+  .vjs-shoppable-toggle-icon.animate,
+  .vjs-shoppable-toggle-icon:hover,
+  .vjs-shoppable-hotspot::after {
+    animation: none;
+  }
+
+  .vjs-shoppable-item:hover,
+  .vjs-shoppable-replay-btn:hover {
+    transform: none;
+  }
+}
+
+@media (forced-colors: active) {
+  /* Keep the hotspot dot visible; forced colours would otherwise drop its fill and ring. */
+  .vjs-shoppable-hotspot::after {
+    forced-color-adjust: none;
+  }
+
+  .vjs-shoppable-item.active {
+    border-color: Highlight;
+  }
+
+  .vjs-shoppable-toggle,
+  .vjs-shoppable-replay-btn {
+    border: 1px solid ButtonText;
+  }
 }

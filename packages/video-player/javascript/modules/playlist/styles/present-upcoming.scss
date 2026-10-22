@@ -103,3 +103,25 @@
       transform: scale(1.1); // Subtle zoom adds a premium feel
     }
   }
+
+
+
+  @media (prefers-reduced-motion: reduce) {
+    // !important: the skin rule in main.scss (.video-js .vjs-present-upcoming) has the
+    // same specificity and comes later in the bundle, so it would win otherwise.
+    .vjs-present-upcoming,
+    .vjs-up-next-close-button {
+      transition: none !important;
+    }
+
+    .vjs-up-next-close-button:hover {
+      transform: none;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .vjs-up-next-close-button {
+      border: 1px solid ButtonText;
+    }
+  }
+

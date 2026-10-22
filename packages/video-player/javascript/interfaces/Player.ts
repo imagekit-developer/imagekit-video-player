@@ -89,6 +89,8 @@ export interface IKPlayerOptions {
         showLogo: boolean;
         logoImageUrl: string;
         logoOnclickUrl: string;
+        /** Accessible name for the logo, e.g. your brand name. Defaults to "Logo". */
+        logoAltText?: string;
     };
     /** Enable seek thumbnails */
     seekThumbnails?: boolean;

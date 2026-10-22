@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Skins Example</title>
+    <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+    <div class="container">
+        <a href="../" class="back-link">&larr; Back to examples</a>
+        <h1>Skins Example</h1>
+        <p>The player comes with a dark skin (the default) and a light skin. Both players below load the same playlist with every feature turned on, so you can see how each skin looks across all of them:</p>
+        <ul>
+            <li><strong>Shoppable video</strong> (first item): product panel, hotspots and the post-play "Shop the Video" screen.</li>
+            <li><strong>Chapters and auto-generated subtitles</strong> (second item): chapter markers, chapter name in the control bar, captions and the caption settings.</li>
+            <li><strong>Recommendations</strong> (third item): the recommendations grid when the video ends (after you cancel the auto-advance countdown).</li>
+            <li><strong>Playlist</strong>: the playlist panel, the "Up next" card in the last seconds, and the "Up next in N" countdown when a video ends.</li>
+            <li>Also: logo button, seek thumbnails, playback speeds and the right-click (Shift+F10) menu.</li>
+        </ul>
+        <p>To use the light skin, add the <code>video-js-skin-light</code> class to the video element. The playlist panel has its own theme: add <code>theme-dark</code> to the playlist container for the dark version (done for the first player below).</p>
+
+        <h2>Dark skin (default)</h2>
+        <video id="player-dark" class="video-js" controls preload="auto" width="960" height="540"></video>
+
+        <h2>Light skin</h2>
+        <video id="player-light" class="video-js video-js-skin-light" controls preload="auto" width="960" height="540"></video>
+
+        <h2>Example Code</h2>
+        <div class="code-block">
+            <pre><code id="code-display" class="language-javascript"></code></pre>
+        </div>
+    </div>
+    <script type="module" src="/src/skins.ts"></script>
+</body>
+</html>
