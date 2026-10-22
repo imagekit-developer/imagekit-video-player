@@ -13,10 +13,6 @@ interface QualityLevel {
 
 interface QualityLevelList {
   length: number;
-  selectedIndex: number;
-  forEach(callback: (level: QualityLevel, index: number) => void): void;
-  on(event: string, handler: () => void): void;
-  off(event: string, handler: () => void): void;
   [index: number]: QualityLevel;
 }
 
@@ -24,89 +20,108 @@ interface PlayerWithQualityLevels {
   qualityLevels(): QualityLevelList;
 }
 
+// Renditions' first frames don't line up exactly at a segment boundary (DASH ones can
+// start ~30ms late), so cutting right at it leaves a gap the playhead stalls on. Cut a
+// little past it; the new rendition's segment overwrites the overlap.
 const BOUNDARY_OVERLAP = 0.1;
 
-// Latest switch per player, so a slower earlier click can't switch after a newer one.
-const latestSwitch = new WeakMap<Player, object>();
+// Switch in progress per player, so a newer click replaces or cancels it. `cut` once its
+// buffer remove has started.
+const pendingSwitch = new WeakMap<Player, { cut: boolean }>();
 
 /**
- * Where to cut the buffer for a manual switch: the end of the buffered segment at
- * the playhead, or of a later one when that leaves too little time to fetch the
- * new rendition's next segment. Uses VHS's segment-metadata cues, one per
+ * Where to start removing buffer for a switch to `target`, as hls.js does for
+ * `nextLevel`: after the buffered segment that will be playing once the new
+ * rendition's first segment can arrive. Reads VHS's segment-metadata cues, one per
  * appended segment.
  */
-function switchBoundary(player: Player, vhs: any, target: any): number {
+function cutStart(player: Player, vhs: any, target: any): number | null {
+  const tracks = Array.from(player.textTracks() as unknown as ArrayLike<TextTrack>);
+  const track = tracks.find((t) => t.label === 'segment-metadata');
+  const cues = Array.from((track?.cues ?? []) as ArrayLike<TextTrackCue>).sort((a, b) => a.startTime - b.startTime);
+
   const currentTime = player.currentTime() as number;
-  const tracks = player.textTracks() as unknown as ArrayLike<TextTrack>;
-  let cues: TextTrackCue[] = [];
-  for (let i = 0; i < tracks.length; i++) {
-    if (tracks[i].label === 'segment-metadata' && tracks[i].cues) {
-      cues = Array.from(tracks[i].cues as ArrayLike<TextTrackCue>).sort((a, b) => a.startTime - b.startTime);
-    }
+  const playing = cues.find((cue) => cue.startTime <= currentTime && currentTime < cue.endTime);
+  if (!playing) {
+    return null;
   }
 
-  let i = cues.findIndex((cue) => cue.startTime <= currentTime && currentTime < cue.endTime);
-  if (i === -1) {
-    return currentTime;
-  }
-
-  const segmentDuration = cues[i].endTime - cues[i].startTime;
   const bandwidth = target.attributes?.BANDWIDTH;
+  const segmentDuration = playing.endTime - playing.startTime;
   const fetchTime = bandwidth && vhs.systemBandwidth ? (bandwidth * segmentDuration) / vhs.systemBandwidth : 0;
-  const minLead = fetchTime + 1;
+  const reach = currentTime + fetchTime + 1;
 
-  while (cues[i].endTime - currentTime < minLead && cues[i + 1] && cues[i + 1].startTime - cues[i].endTime < 0.1) {
-    i++;
-  }
-  return cues[i].endTime;
+  const cut = cues.find((cue) => reach < cue.endTime);
+  return cut ? cut.endTime + BOUNDARY_OVERLAP : null;
 }
 
 /**
  * Switches to `target` from the next segment boundary, like hls.js's `nextLevel`:
- * keeps the buffered segment at the playhead (so playback never runs dry), drops
- * everything after it, and lets VHS refill from there with the new rendition.
+ * keeps the buffered segments playback will reach before the new rendition can
+ * arrive, drops everything after them, and lets VHS refill from there.
  *
  * VHS has no public API for this. Its own manual switch (fastQualityChange_) drops
  * the whole buffer and freezes playback until the new rendition arrives; plain
  * switchMedia_ keeps loading after the existing buffer, so the change only shows
- * once up to a minute of it has played out. The private members used here
- * (playlistController_, mainSegmentLoader_, switchMedia_) are why video.js is
- * pinned to an exact version in package.json.
+ * once up to a minute of it has played out. The private members used here are why
+ * video.js is pinned to an exact version in package.json.
  */
 function switchAtNextSegment(player: Player, target: any) {
   const vhs = (player.tech(true) as any)?.vhs;
   const playlistController = vhs?.playlistController_;
   const loader = playlistController?.mainSegmentLoader_;
-  if (!playlistController || !loader || !target || playlistController.media() === target) {
+  if (!playlistController || !loader || !target) {
     return;
   }
 
-  const token = {};
-  latestSwitch.set(player, token);
+  // An earlier click's remove may still be pending, or VHS may still be fetching the
+  // playlist it switched to (until then media() reports the old rendition).
+  const switchInFlight =
+    pendingSwitch.has(player) || playlistController.mainPlaylistLoader_?.state === 'SWITCHING_MEDIA';
+  if (playlistController.media() === target && !switchInFlight) {
+    return;
+  }
+
+  const token = { cut: pendingSwitch.get(player)?.cut ?? false };
+  pendingSwitch.set(player, token);
 
   const switchMedia = () => {
-    if (latestSwitch.get(player) !== token) {
+    if (pendingSwitch.get(player) !== token) {
       return;
     }
+    pendingSwitch.delete(player);
     // VHS marks segments appended by position, across renditions, and skips to the
-    // one after an appended segment. The kept overlap puts the buffer end inside
-    // the boundary segment, so clear the marks or it would be skipped.
-    loader.mediaSequenceSync_?.resetAppendedStatus();
+    // one after an appended segment. A cut's overlap puts the buffer end inside the
+    // boundary segment, so clear the marks or it would be skipped. Without a cut, leave
+    // them: clearing them makes VHS refetch the last segment, which Firefox can append
+    // at the wrong time.
+    if (token.cut) {
+      loader.mediaSequenceSync_?.resetAppendedStatus();
+    }
+    const sameMedia = playlistController.media() === target;
     playlistController.switchMedia_(target, 'manual');
+    // Switching to the media already playing fires no mediachange, so resync and
+    // restart the loader the way a rendition change does, or it resumes past the cut.
+    if (sameMedia) {
+      loader.resyncLoader();
+      loader.load();
+    }
   };
 
-  const boundary = switchBoundary(player, vhs, target);
-  const duration = player.duration() as number;
-  loader.pause();
-  loader.abort();
-  if (!(boundary < duration) || !loader.getMediaInfo_()) {
+  // Cut only before the end of the playlist's last segment, so VHS refetches up to it and
+  // ends the stream again. Past it there is nothing to refetch, and the remove would reopen
+  // an ended MediaSource that VHS never ends again.
+  const start = cutStart(player, vhs, target);
+  const segments: any[] = playlistController.media()?.segments ?? [];
+  const playlistEnd = segments.reduce((end, segment) => end + segment.duration, 0);
+  if (start === null || !(start < playlistEnd) || !loader.getMediaInfo_()) {
     switchMedia();
     return;
   }
-  // Renditions' first frames don't line up exactly at a boundary (DASH ones can
-  // start ~30ms late), so cutting right at it leaves a gap the playhead stalls on.
-  // Keep a little past it; the new segment's append overwrites the overlap.
-  loader.remove(boundary + BOUNDARY_OVERLAP, Infinity, switchMedia);
+  token.cut = true;
+  loader.pause();
+  loader.abort();
+  loader.remove(start, Infinity, switchMedia);
 }
 
 class SourceMenuItem extends MenuItem {
