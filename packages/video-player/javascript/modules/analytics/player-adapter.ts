@@ -16,6 +16,7 @@ export type AdapterSignal =
   | { type: 'seeking' }
   | { type: 'seeked' }
   | { type: 'waiting' }
+  | { type: 'resize' }
   | { type: 'ended' }
   | { type: 'error'; error: unknown }
   | { type: 'source_changed'; source: SourceOptions | null }
@@ -83,6 +84,11 @@ export function createPlayerAdapter(
   // Waiting - buffering/stall (Video.js fires this when playback stalls)
   cleanup.registerVideoJsListener(player, 'waiting', () => {
     onSignal({ type: 'waiting' });
+  });
+
+  // Media `resize`: the decoded frame size changed, i.e. a different rendition is on screen.
+  cleanup.registerVideoJsListener(player, 'resize', () => {
+    onSignal({ type: 'resize' });
   });
 
   cleanup.registerVideoJsListener(player, 'ended', () => {

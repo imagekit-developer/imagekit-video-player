@@ -182,6 +182,8 @@ export function encodeEvent(
       return { ...base, event: 'rebufferstart', playback_id: base.playback_id ?? '' };
     case 'ended':
       return { ...base, event: 'ended', playback_id: base.playback_id ?? '' };
+    case 'renditionchange':
+      return { ...base, event: 'renditionchange', playback_id: base.playback_id ?? '' };
     default:
       return assertNever(internal.event);
   }
