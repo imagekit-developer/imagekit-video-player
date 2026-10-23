@@ -49,3 +49,12 @@
   /* Removed the text-shadow for a cleaner, more modern look */
   text-shadow: none;
 }
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  .vjs-contextmenu-ui-menu .vjs-menu-item {
+    transition: none;
+  }
+}
+

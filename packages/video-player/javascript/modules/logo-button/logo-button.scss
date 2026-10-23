@@ -18,8 +18,14 @@
 
   &:active,
   &:focus {
-    outline: none;
     opacity: 1;
+  }
+
+  // No outline for mouse clicks; keyboard focus gets the player-wide ring from
+  // styles/main.scss (the logo is a background image, so Video.js's text-shadow glow
+  // has nothing to show).
+  &:focus:not(:focus-visible) {
+    outline: none;
   }
 
   &:last-child {

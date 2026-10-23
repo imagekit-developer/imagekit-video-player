@@ -103,7 +103,7 @@ function addHighlightColorFieldset(settingsComponent: any, player: Player): void
   
   const legend = document.createElement('legend');
   legend.id = `captions-highlight-legend-${player.id()}`;
-  legend.textContent = 'Word Highlight';
+  legend.textContent = player.localize('Word Highlight');
   highlightFieldset.appendChild(legend);
 
   const colorSpan = document.createElement('span');
@@ -113,7 +113,7 @@ function addHighlightColorFieldset(settingsComponent: any, player: Player): void
   label.id = `captions-highlight-color-${player.id()}`;
   label.className = 'vjs-label';
   label.setAttribute('for', `vjs_select_highlight_${player.id()}`);
-  label.textContent = 'Color';
+  label.textContent = player.localize('Color');
   
   const select = document.createElement('select');
   select.id = `vjs_select_highlight_${player.id()}`;
@@ -142,7 +142,7 @@ function addHighlightColorFieldset(settingsComponent: any, player: Player): void
     const option = document.createElement('option');
     option.id = `captions-highlight-color-${player.id()}-${color.label.replace(/\s+/g, '')}`;
     option.value = color.value;
-    option.textContent = color.label;
+    option.textContent = player.localize(color.label);
     option.setAttribute('aria-labelledby', `captions-highlight-legend-${player.id()} captions-highlight-color-${player.id()} captions-highlight-color-${player.id()}-${color.label.replace(/\s+/g, '')}`);
     
     if (color.value === currentColor) {

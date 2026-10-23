@@ -31,6 +31,11 @@ class SourceMenuButton extends MenuButton {
   constructor(player: Player, options: any) {
     super(player, options);
 
+    // Accessible name (and tooltip, like other Video.js controls): without it the
+    // button is announced as just "button" (WCAG 4.1.2).
+    (this as any).controlText_ = 'Quality';
+    (this as any).menuButton_?.controlText(this.localize('Quality'));
+
     const playerWithQualityLevels = this.player() as unknown as PlayerWithQualityLevels;
     const qualityLevels = playerWithQualityLevels.qualityLevels();
 
@@ -47,11 +52,16 @@ class SourceMenuButton extends MenuButton {
       }
     }
 
-    // Bind update to qualityLevels changes
+    // Rebuild the menu when renditions are added. No need to rebuild on 'change'
+    // (playing rendition switched) since the checkmark follows the user's choice.
     // Use native bind instead of deprecated videojs.bind
     const updateHandler = this.update.bind(this);
-    this.cleanup_.registerVideoJsListener(qualityLevels, 'change', updateHandler);
     this.cleanup_.registerVideoJsListener(qualityLevels, 'addqualitylevel', updateHandler);
+
+    // Also rebuild on source change: VHS empties qualityLevels without firing an
+    // event, so a switch to a progressive source would keep the old renditions.
+    // With no levels the rebuilt menu is empty, which hides the button.
+    this.cleanup_.registerVideoJsListener(this.player(), 'loadstart', updateHandler);
   }
 
   createEl(): HTMLElement {
@@ -74,9 +84,22 @@ class SourceMenuButton extends MenuButton {
     const levels = playerWithQualityLevels.qualityLevels();
     const labels: string[] = [];
 
+    // Check the user's choice rather than levels.selectedIndex, which tracks the
+    // rendition currently playing and lags behind a manual pick (and moves around
+    // in Auto). Exactly one enabled level means a manual pick; otherwise it's Auto.
+    let enabledCount = 0;
+    let enabledIndex = -1;
+    for (let i = 0; i < levels.length; i++) {
+      if (levels[i].enabled) {
+        enabledCount++;
+        enabledIndex = i;
+      }
+    }
+    const manualIndex = enabledCount === 1 ? enabledIndex : -1;
+
     for (let i = 0; i < levels.length; i++) {
       const index = levels.length - (i + 1);
-      const selected = (index === levels.selectedIndex);
+      const selected = (index === manualIndex);
 
       // Display height or bitrate
       let label = `${index}`;
@@ -101,7 +124,7 @@ class SourceMenuButton extends MenuButton {
       menuItems.push(new SourceMenuItem(this.player_, {
         label: 'Auto',
         index: levels.length,
-        selected: false,
+        selected: manualIndex === -1,
         sortVal: 99999
       }));
     }

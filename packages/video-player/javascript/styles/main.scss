@@ -36,10 +36,16 @@ $spacing-progress-interactive-hover: -1.4rem;
     --color-subtitle-bg: rgba(0, 0, 0, 0.8);
     --color-seek-feedback-bg: rgba(43, 51, 63, 0.7);
     --color-error-bg: #90a0b3;
+    // Keyboard focus ring: a light ring with a dark edge (W3C technique C40). The two are
+    // at least 9:1 apart, so one of them always has 3:1 against whatever is behind it
+    // (WCAG 2.4.7, 1.4.11). Both are tints of the accent; see the @supports block below.
+    --color-focus-ring: #aadcff;
+    --color-focus-edge: #032740;
 
     &.video-js-skin-light {
         --color-base: #FFFFFF;
         --color-text: #000000;
+        --color-seek-feedback-bg: rgba(255, 255, 255, 0.85);
     }
 
     overflow: hidden;
@@ -59,19 +65,15 @@ $spacing-progress-interactive-hover: -1.4rem;
         z-index: $z-index-controls;
     }
 
+    // Icons are dimmed until hover. Text (time divider, duration, playback-rate label)
+    // stays at full opacity: dimmed white text over a bright scene fell to 3.86:1 (WCAG 1.4.3).
     .vjs-control::before,
-    .vjs-icon-placeholder::before,
-    .vjs-time-divider,
-    .vjs-duration,
-    .vjs-playback-rate-value {
+    .vjs-icon-placeholder::before {
         opacity: $opacity-default;
     }
 
     .vjs-control:hover::before,
-    .vjs-icon-placeholder:hover::before,
-    .vjs-time-divider:hover,
-    .vjs-duration:hover,
-    .vjs-playback-rate:hover .vjs-playback-rate-value {
+    .vjs-icon-placeholder:hover::before {
         opacity: $opacity-hover;
         text-shadow: none;
     }
@@ -398,13 +400,14 @@ $spacing-progress-interactive-hover: -1.4rem;
     .vjs-menu {
         position: absolute;
         z-index: $z-index-menu;
+        translate: var(--ik-menu-shift, 0px);
         
         .vjs-menu-content {
-            max-width: 13em;
+            max-width: min(13em, var(--ik-menu-max-width, 13em));
             width: auto;
             padding: 0.2em 0;
             overflow-y: auto;
-            max-height: 20em;
+            max-height: min(20em, var(--ik-menu-max-height, 20em));
             z-index: $z-index-menu;
             // Firefox
             scrollbar-gutter: stable;
@@ -616,3 +619,102 @@ $spacing-progress-interactive-hover: -1.4rem;
         }
     }
 }
+
+// Light control surfaces with dark text and icons (the default skin is the dark one from Video.js).
+// The light bar is more opaque than the dark one: it has to hide more of a dark video to
+// keep dark text readable.
+.video-js.video-js-skin-light {
+    .vjs-control-bar {
+        background-color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text);
+    }
+
+    .vjs-menu-button-popup .vjs-menu .vjs-menu-content {
+        background-color: rgba(255, 255, 255, 0.95);
+        color: var(--color-text);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+
+    .vjs-menu li.vjs-menu-item:hover,
+    .vjs-menu li.vjs-menu-item:focus {
+        background-color: rgba(0, 0, 0, 0.08);
+        color: var(--color-text);
+    }
+
+    .vjs-menu .vjs-selected {
+        font-weight: 600;
+    }
+
+    .vjs-progress-control .vjs-slider {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+
+    .vjs-play-progress,
+    .vjs-volume-level {
+        background-color: var(--color-text);
+    }
+
+    .vjs-big-play-button {
+        background-color: rgba(255, 255, 255, 0.85);
+        color: var(--color-text);
+    }
+
+    .vjs-big-play-button:hover,
+    .vjs-big-play-button:focus {
+        background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    // Image icons are forced white with a filter in the dark skin; make them dark.
+    .vjs-skip-forward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-forward-10::before,
+    .vjs-icon-skip-forward-10::before,
+    .vjs-skip-backward-10 .vjs-icon-placeholder::before,
+    .vjs-icon-replay-10::before,
+    .vjs-icon-skip-back-10::before,
+    .vjs-seek-feedback::before {
+        filter: brightness(0);
+    }
+
+    .vjs-seek-feedback {
+        color: var(--color-text);
+    }
+}
+
+// Keyboard focus only (:focus-visible): mouse clicks show nothing. The playlist sits
+// outside the player element, so it can't inherit the tokens and uses the same values as fallbacks.
+// Two bands, from the element outwards: 2px light ring, 2px dark edge.
+
+// Derive both shades from the accent so a brand colour carries through (35% with white,
+// 25% with black: 10.5:1 apart for the default accent). Browsers without color-mix()
+// keep the fixed defaults above instead of losing the ring.
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+    .video-js {
+        --color-focus-ring: color-mix(in srgb, var(--color-accent) 35%, white);
+        --color-focus-edge: color-mix(in srgb, var(--color-accent) 25%, black);
+    }
+}
+
+.video-js :focus-visible,
+.ik-player-container :focus-visible {
+    outline: 2px solid var(--color-focus-ring, #aadcff);
+    outline-offset: 0;
+    box-shadow: 0 0 0 4px var(--color-focus-edge, #032740);
+    text-shadow: none;
+}
+
+// Inset where anything drawn outside would be clipped: the control bar at the player's
+// bottom edge, scrolling menus, playlist items, and the player itself when it has focus.
+.video-js .vjs-control-bar :focus-visible,
+.video-js .vjs-menu :focus-visible,
+.ik-player-container .vjs-playlist-item:focus-visible,
+.video-js:focus-visible {
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 4px var(--color-focus-edge, #032740);
+}
+
+// Sliders (progress, volume) are too thin for an inset ring.
+.video-js .vjs-control-bar .vjs-slider:focus-visible {
+    outline-offset: 0;
+    box-shadow: 0 0 0 4px var(--color-focus-edge, #032740);
+}
+

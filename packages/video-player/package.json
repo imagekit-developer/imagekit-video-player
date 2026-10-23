@@ -1,6 +1,6 @@
 {
   "name": "@imagekit/video-player",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Core ImageKit Video Player + framework-specific wrappers (React, Vue, Astro)",
   "license": "Apache-2.0",
   "main": "dist/index.js",
@@ -74,7 +74,7 @@
     "sass": "^1.75.0",
     "tsup": "^8.3.5",
     "typescript": "~5.8.0",
-    "video.js": "^8.20.0",
+    "video.js": "8.23.3",
     "vue": "^3.0.0"
   },
   "repository": {

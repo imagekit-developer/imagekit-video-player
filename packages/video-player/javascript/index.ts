@@ -16,6 +16,7 @@ import { enableFloatingPlayer } from './modules/floating-player';
 import './modules/logo-button';
 import { initializeLogoButton } from './modules/logo-button/init';
 import { setupKeyboardShortcuts } from './modules/keyboard-shortcuts';
+import { setupMenuPlacement } from './modules/menu-placement';
 import { setupContextMenu } from './modules/context-menu/setup';
 import { createSourceOverride } from './modules/source-handler';
 import { extendTrackSettings } from './modules/subtitles/track-settings-extension';
@@ -133,6 +134,20 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           }
         );
 
+        // The class above is added without telling Video.js, which still thinks the user is
+        // active and so never re-shows the controls for keyboard users. Clear it on any key press;
+        // Video.js's inactivity timeout hides the controls again.
+        this.cleanup_.registerEventListener(
+          playerEl,
+          'keydown',
+          () => {
+            if (this.player.userActive() && this.player.hasClass('vjs-user-inactive')) {
+              this.player.removeClass('vjs-user-inactive');
+            }
+          },
+          true
+        );
+
         this.cleanup_.registerEventListener(
           playerEl,
           'mouseenter',
@@ -147,6 +162,7 @@ class ImageKitVideoPlayerPlugin extends Plugin {
 
       this.player.ready(() => {
         setupKeyboardShortcuts(this.player, this.cleanup_);
+        setupMenuPlacement(this.player, this.cleanup_);
       });
     }
     catch (err) {
@@ -184,10 +200,12 @@ class ImageKitVideoPlayerPlugin extends Plugin {
    * Initializes the recommendations overlay if recommendations are provided in the source.
    */
   private async initRecommendationsOverlay() {
-    if (!this.currentSource_ || !this.currentSource_.recommendations) return;
-
+    // Always drop the previous source's overlay, so its recommendations can't show
+    // at the end of a later video that has none of its own.
     const overlay = this.player.getChild('RecommendationsOverlay');
     if (overlay) overlay.dispose();
+
+    if (!this.currentSource_ || !this.currentSource_.recommendations) return;
     this.player.addChild('RecommendationsOverlay', { recommendations: this.currentSource_.recommendations, playerOptions: this.ikGlobalSettings_ });
   }
 
@@ -258,7 +276,10 @@ export function videoPlayer(
 
   const player: VideoJsPlayer = videojs(element, {
     ...videoJsOptions,
-    html5: { nativeTextTracks: false },
+    html5: {
+      ...(videoJsOptions.html5 ?? {}),
+      nativeTextTracks: false,
+    },
     plugins: {
       ...(videoJsOptions.plugins ?? {}),
       httpSourceSelector: { default: 'auto' },
