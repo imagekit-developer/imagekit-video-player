@@ -16,8 +16,8 @@ type PlayerWithContextMenu = Player & {
     contextmenuUIKeyCleanup_?: () => void;
 };
 
-// Set when the menu was opened from the keyboard, so a native `contextmenu` event the
-// browser may fire for the same key press is ignored instead of closing the menu again.
+// Set on every Menu key / Shift+F10 press, so a native `contextmenu` event the browser
+// may fire for the same key press is ignored instead of undoing the open or close.
 const KEY_OPEN_GRACE_MS = 500;
 const lastKeyOpen = new WeakMap<Player, number>();
 
@@ -88,17 +88,18 @@ function onContextMenu(this: PlayerWithContextMenu, e: MouseEvent): void {
         return;
     }
 
-    // Keyboard-generated contextmenu events (the Menu key handled natively) report
-    // button -1; a real right-click reports 2.
+    // The browser's own event for a Menu key / Shift+F10 press that onMenuKey already
+    // handled. Browsers disagree on its `button` value, so only the timing identifies it.
+    if (performance.now() - (lastKeyOpen.get(this) ?? -Infinity) < KEY_OPEN_GRACE_MS) {
+        return;
+    }
+
     const fromKeyboard = e.button === -1;
-    const duplicateOfKeyOpen = fromKeyboard && performance.now() - (lastKeyOpen.get(this) ?? -Infinity) < KEY_OPEN_GRACE_MS;
 
     // If menu already exists, close it and return
     // preventDefault already called above, so native menu won't show
     if (hasMenu(this)) {
-        // ...unless we just opened it from the keyboard and this is the browser's own
-        // event for the same key press.
-        if (!duplicateOfKeyOpen) this.contextmenuUI.menu!.dispose();
+        this.contextmenuUI.menu!.dispose();
         return;
     }
 

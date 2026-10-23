@@ -7,8 +7,7 @@ import type { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
 import type { Player as ImageKitPlayer } from '../../interfaces/Player';
 import { announce } from '../a11y/announcer';
-
-const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
+import { isActivationKey } from '../a11y/keys';
 
 const Component = videojs.getComponent('Component') as typeof ComponentType;
 
@@ -120,20 +119,13 @@ export class PresentUpcoming extends Component {
   }
 
   /**
-   * Hides the card. If it had keyboard focus, focus moves to the play control,
-   * or to the player root when the control bar is hidden (e.g. a new source is
-   * loading), so it isn't lost on a hidden element.
+   * Hides the card. If it had keyboard focus, focus moves to the player root,
+   * which stays visible while the next source loads and the control bar is hidden.
    */
   hide(): void {
     const hadFocus = !!this.el_ && this.el().contains(document.activeElement);
     super.hide();
-    if (!hadFocus) return;
-    const playToggle = (this.player_ as any).getChild('ControlBar')?.getChild('PlayToggle')?.el() as HTMLElement | undefined;
-    if (playToggle && playToggle.offsetParent !== null) {
-      playToggle.focus();
-    } else {
-      (this.player_.el() as HTMLElement).focus();
-    }
+    if (hadFocus) (this.player_.el() as HTMLElement).focus();
   }
 
   /**

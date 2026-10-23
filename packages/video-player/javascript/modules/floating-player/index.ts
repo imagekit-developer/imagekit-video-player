@@ -1,5 +1,6 @@
 import { CleanupRegistry } from '../../utils';
 import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
+import { isActivationKey } from '../a11y/keys';
 
 /** Player event fired when the player starts or stops floating. */
 export const FLOATING_CHANGE_EVENT = 'floatingchange';
@@ -74,8 +75,7 @@ export const enableFloatingPlayer = (playerInstance: any, floatPosition: string)
             dismiss();
         });
         cleanup.registerEventListener(closeButton, 'keydown', (e: Event) => {
-            const key = (e as KeyboardEvent).key;
-            if (key !== 'Enter' && key !== ' ') return;
+            if (!isActivationKey(e as KeyboardEvent)) return;
             e.preventDefault();
             e.stopPropagation();
             dismiss();

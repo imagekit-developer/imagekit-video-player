@@ -106,19 +106,13 @@ export class UpNextOverlay extends Component {
   }
 
   /**
-   * Hides the overlay. If it had keyboard focus, focus moves to the play control,
-   * or to the player root when the control bar is hidden (a new source is loading).
+   * Hides the overlay. If it had keyboard focus, focus moves to the player root,
+   * which stays visible while the next source loads and the control bar is hidden.
    */
   hide(): void {
     const hadFocus = !!this.el_ && this.el().contains(document.activeElement);
     super.hide();
-    if (!hadFocus) return;
-    const playToggle = (this.player_ as any).getChild('ControlBar')?.getChild('PlayToggle')?.el() as HTMLElement | undefined;
-    if (playToggle && playToggle.offsetParent !== null) {
-      playToggle.focus();
-    } else {
-      (this.player_.el() as HTMLElement).focus();
-    }
+    if (hadFocus) (this.player_.el() as HTMLElement).focus();
   }
 
   private async loadThumbnail_(item: SourceOptions) {

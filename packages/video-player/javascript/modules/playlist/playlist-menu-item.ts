@@ -5,6 +5,7 @@ import type { IKPlayerOptions, Transformation } from '../../interfaces';
 import { Playlist } from './playlist';
 import { preparePosterSrc } from '../../utils';
 import { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
+import { isActivationKey } from '../a11y/keys';
 
 const Component = videojs.getComponent('Component') as typeof ComponentType;
 
@@ -46,7 +47,7 @@ export class PlaylistMenuItem extends Component {
   }
 
   private handleKeyDown_(event: KeyboardEvent): void {
-    if (event.key === 'Enter' || event.key === ' ') {
+    if (isActivationKey(event)) {
       // Space would otherwise also scroll the playlist.
       event.preventDefault();
       event.stopPropagation();

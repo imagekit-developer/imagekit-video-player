@@ -55,7 +55,7 @@ export function setupKeyboardShortcuts(
     // player-wide shortcuts. Video.js controls already stop propagation themselves.
     const target = event.target as HTMLElement | null;
     const interactiveTarget = target?.closest?.(INTERACTIVE_SELECTOR);
-    if (interactiveTarget && interactiveTarget !== player.el()) {
+    if (interactiveTarget && interactiveTarget !== player.el() && player.el().contains(interactiveTarget)) {
       return;
     }
 

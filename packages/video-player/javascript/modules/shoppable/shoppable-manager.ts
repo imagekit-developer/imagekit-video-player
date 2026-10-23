@@ -11,8 +11,7 @@ import ShoppablePanelItem, { getProductRole } from './shoppable-item';
 import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
 import { focusPlayerOnMouseDown } from '../a11y/mouse-focus';
 import { playerOverlays, type PlayerOverlay } from '../a11y/player-overlays';
-
-const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
+import { isActivationKey } from '../a11y/keys';
 
 const prefersReducedMotion = () =>
   typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;

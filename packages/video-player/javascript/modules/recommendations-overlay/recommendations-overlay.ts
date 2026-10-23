@@ -4,10 +4,9 @@ import { IKPlayerOptions, SourceOptions } from '../../interfaces';
 import { preparePosterSrc, CleanupRegistry } from '../../utils';
 import { UP_NEXT_EVENTS } from '../playlist/up-next-events';
 import { playerOverlays, type PlayerOverlay } from '../a11y/player-overlays';
+import { isActivationKey } from '../a11y/keys';
 
 const Component = videojs.getComponent('Component');
-
-const isActivationKey = (event: KeyboardEvent) => event.key === 'Enter' || event.key === ' ';
 
 interface RecommendationsOverlayOptions {
   recommendations: SourceOptions[];
