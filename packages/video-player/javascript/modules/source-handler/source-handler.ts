@@ -209,18 +209,28 @@ export function createSourceOverride(
           delayInMS
         );
 
+        if (
+          myCallId !== srcCallVersion ||
+          player.isDisposed() ||
+          !player.el()
+        ) {
+          return;
+        }
         nativeSrc(prepared as any);
-
         setupTextTracks(player, prepared, options);
         setupPoster(player, prepared, options);
       })
       .catch(err => {
-        if (myCallId === srcCallVersion) {
+        if (
+          myCallId === srcCallVersion &&
+          !player.isDisposed() &&
+          player.el()
+        ) {
           player.error(err.message);
         }
       })
       .finally(() => {
-        if (myCallId === srcCallVersion) {
+        if (myCallId === srcCallVersion && !player.isDisposed() && player.el()) {
           hideLoadingState(player);
         }
       });
