@@ -84,7 +84,8 @@ export function normalizeInput(
 
 
 /**
- * Polls a URL until the video is ready or max attempts are reached.
+ * Polls a URL until the video is ready or max attempts are reached. A 202 or a redirect
+ * to the original (tr=orig) means the asset is still processing.
  * @param url - The fully-built and signed video URL
  * @param maxTries - Maximum number of polling attempts
  * @param timeoutMs - Request timeout in milliseconds
@@ -112,8 +113,10 @@ export async function waitForVideoReady(
     }
     clearTimeout(timer);
 
+    // While the asset is processing, delivery answers 202 or redirects to the original (tr=orig).
     const parsedUrl = new URL(res.url);
-    if (res.redirected && parsedUrl.searchParams.has('tr') && parsedUrl.searchParams.get('tr') === 'orig') {
+    const redirectedToOriginal = res.redirected && parsedUrl.searchParams.get('tr') === 'orig';
+    if (res.status === 202 || redirectedToOriginal) {
       if (attempt === maxTries) break;
       const delay = fixedDelayMs != null
         ? fixedDelayMs
