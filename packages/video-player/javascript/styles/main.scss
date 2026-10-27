@@ -438,6 +438,13 @@ $spacing-progress-interactive-hover: -1.4rem;
         color: var(--color-text, #FFFFFF);
     }
 
+    // Video.js sets Arial on these directly, so they would ignore the player's font.
+    .vjs-menu .vjs-menu-content,
+    .vjs-time-tooltip,
+    .vjs-volume-tooltip {
+        font-family: inherit;
+    }
+
     .vjs-menu {
         position: absolute;
         z-index: $z-index-menu;
