@@ -103,6 +103,10 @@ async function loadChaptersForLanguage(
 
   try {
     const res = await fetch(vttUrl);
+    if (res.status === 202) {
+      player.log(`Chapters for ${langCode} are still being generated`);
+      return [];
+    }
     if (!res.ok) {
       player.log.warn(`Chapter VTT fetch failed for ${langCode} with status: (${res.status})`);
       return [];

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.0-beta.7]
+
+- Subtitles and chapters that are still being generated are now handled: the player no longer fails on a 202 response and logs that they are not ready yet
+- Source files that are still processing are waited for, including when ImageKit redirects to the original in the meantime
+- Added `@imagekit/video-player/utils` with the helpers that build the source, poster, subtitle and chapters URLs the player loads
+- Skin colours are driven by the `--color-base`, `--color-text` and `--color-accent` tokens; unset tokens keep the existing look
+- Tooltips and menu content inherit the player's font family
+
 ## [1.0.0-beta.6]
 
 - Fixed the quality menu showing two checkmarks after a rendition change: the selection now follows the user's choice (manual rendition or Auto) instead of the rendition currently playing
