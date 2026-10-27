@@ -13,6 +13,11 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js"
     },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.mjs",
+      "require": "./dist/utils/index.js"
+    },
     "./react": {
       "types": "./dist/react/index.d.ts",
       "import": "./dist/react/index.mjs",
@@ -29,6 +34,13 @@
       "default": "./dist/astro/index.mjs"
     },
     "./styles.css": "./dist/styles.css"
+  },
+  "typesVersions": {
+    "*": {
+      "utils": [
+        "./dist/utils/index.d.ts"
+      ]
+    }
   },
   "files": [
     "dist"
