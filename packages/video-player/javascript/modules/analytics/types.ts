@@ -53,6 +53,8 @@ export interface IKAnalyticsClientContext {
    * Custom Dimensions). Stored verbatim on the server in the matching slot.
    */
   custom_dimensions?: Record<string, string>;
+  /** `navigator.webdriver`; only sent when true (browser driven by automation). */
+  webdriver?: boolean;
 }
 
 /**
