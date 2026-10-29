@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.0-beta.8]
+
+- Analytics: when the page is driven by automation (`navigator.webdriver` is `true`, e.g. Playwright, Puppeteer, Selenium), the analytics context includes `webdriver: true` so automated views can be flagged as bots
+- ImageKit HLS/DASH streams (`ik-master.m3u8` / `ik-master.mpd`) on a browser with no H.264 decoder now fail with "This browser cannot decode H.264 video, which this adaptive (HLS/DASH) stream requires." instead of the generic "No compatible source was found for this media." The error code (4) is unchanged
+
 ## [1.0.0-beta.6]
 
 - Fixed the quality menu showing two checkmarks after a rendition change: the selection now follows the user's choice (manual rendition or Auto) instead of the rendition currently playing
