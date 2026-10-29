@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.0-beta.8]
+## [1.0.0-beta.7]
 
 - Analytics: when the page is driven by automation (`navigator.webdriver` is `true`, e.g. Playwright, Puppeteer, Selenium), the analytics context includes `webdriver: true` so automated views can be flagged as bots
 - ImageKit HLS/DASH streams (`ik-master.m3u8` / `ik-master.mpd`) on a browser with no H.264 decoder now fail with "This browser cannot decode H.264 video, which this adaptive (HLS/DASH) stream requires." instead of the generic "No compatible source was found for this media." The error code (4) is unchanged
