@@ -23,6 +23,23 @@ export interface SourceOverrideOptions {
   hasPreparedSrc: (opts: SourceOptions) => opts is AugmentedSourceOptions;
 }
 
+// ImageKit ABS (ik-master.m3u8 / ik-master.mpd) renditions are always H.264 High + AAC.
+const ABS_STREAM_MIME = 'video/mp4; codecs="avc1.64001f,mp4a.40.2"';
+
+const UNSUPPORTED_ABS_CODEC_MESSAGE =
+  'This browser cannot decode H.264 video, which this adaptive (HLS/DASH) stream requires.';
+
+/**
+ * Whether the browser has no H.264/AAC decoder for an ImageKit ABS stream. Both MSE and
+ * the video element are checked so Safari and pre-17.1 iOS (no MSE) are not flagged.
+ */
+function cannotDecodeImageKitAbsStream(src: string): boolean {
+  if (!/\/ik-master\.(m3u8|mpd)(\?|$)/.test(src)) return false;
+  const mediaSource = (window as any).ManagedMediaSource ?? window.MediaSource;
+  if (mediaSource?.isTypeSupported?.(ABS_STREAM_MIME)) return false;
+  return document.createElement('video').canPlayType(ABS_STREAM_MIME) === '';
+}
+
 function showLoadingState(player: Player): void {
   const bigPlay = player.getChild('BigPlayButton');
   bigPlay && bigPlay.hide();
@@ -165,6 +182,8 @@ export function createSourceOverride(
 ): any {
   const { options, getCurrentSource, getOriginalCurrentSource, onSourceUpdate, onOriginalSourceUpdate, hasPreparedSrc } = overrideOptions;
   const nativeSrc = player.src.bind(player);
+  // options({}) returns the merged player options; video.js's typings require an argument.
+  const defaultNotSupportedMessage = player.options({}).notSupportedMessage;
   let srcCallVersion = 0;
 
   return (source?: SourceOptions) => {
@@ -209,6 +228,13 @@ export function createSourceOverride(
           delayInMS
         );
 
+        // video.js raises its "no compatible source" error (code 4) with `notSupportedMessage`;
+        // name the missing decoder instead when that is the cause.
+        player.options({
+          notSupportedMessage: cannotDecodeImageKitAbsStream(prepared.src)
+            ? UNSUPPORTED_ABS_CODEC_MESSAGE
+            : defaultNotSupportedMessage,
+        });
         nativeSrc(prepared as any);
 
         setupTextTracks(player, prepared, options);

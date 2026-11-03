@@ -1,12 +1,17 @@
 # Changelog
 
-## [1.0.0-beta.7]
+## [1.0.0-beta.8]
 
 - Subtitles and chapters that are still being generated are now handled: the player no longer fails on a 202 response and logs that they are not ready yet
 - Source files that are still processing are waited for, including when ImageKit redirects to the original in the meantime
 - Added `@imagekit/video-player/utils` with the helpers that build the source, poster, subtitle and chapters URLs the player loads
 - Skin colours are driven by the `--color-base`, `--color-text` and `--color-accent` tokens; unset tokens keep the existing look
 - Tooltips and menu content inherit the player's font family
+
+## [1.0.0-beta.7]
+
+- Analytics: when the page is driven by automation (`navigator.webdriver` is `true`, e.g. Playwright, Puppeteer, Selenium), the analytics context includes `webdriver: true` so automated views can be flagged as bots
+- ImageKit HLS/DASH streams (`ik-master.m3u8` / `ik-master.mpd`) on a browser with no H.264 decoder now fail with "This browser cannot decode H.264 video, which this adaptive (HLS/DASH) stream requires." instead of the generic "No compatible source was found for this media." The error code (4) is unchanged
 
 ## [1.0.0-beta.6]
 

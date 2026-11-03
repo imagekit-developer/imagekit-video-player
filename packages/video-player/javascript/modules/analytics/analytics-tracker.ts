@@ -133,6 +133,7 @@ export function createAnalyticsTracker(options: AnalyticsTrackerOptions): Analyt
     imagekit_plugin: PLUGIN_NAME,
     imagekit_plugin_version: PLUGIN_VERSION,
     custom_dimensions: sanitizeCustomDimensions(userConfig.customDimensions),
+    webdriver: typeof navigator !== 'undefined' && navigator.webdriver === true ? true : undefined,
   };
 
   const capturePlayerUiContext = (): void => {

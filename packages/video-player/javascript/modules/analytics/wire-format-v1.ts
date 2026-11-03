@@ -88,6 +88,7 @@ export const CONTEXT_KEY_MAP_V1: Record<string, keyof IKAnalyticsClientContext> 
    * each entry verbatim in the ClickHouse Map column.
    */
   cd: 'custom_dimensions',
+  wd: 'webdriver',
 };
 
 /** Canonical → short-key (inverse of CONTEXT_KEY_MAP_V1). */
