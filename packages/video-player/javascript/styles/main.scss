@@ -613,6 +613,25 @@ $spacing-progress-interactive-hover: -1.4rem;
         }
     }
 
+    // The skip icons are masks filled with background-color, which forced-colors
+    // mode replaces with the system background, hiding them.
+    @media (forced-colors: active) {
+        .vjs-skip-forward-10 .vjs-icon-placeholder::before,
+        .vjs-icon-forward-10::before,
+        .vjs-icon-skip-forward-10::before,
+        .vjs-skip-backward-10 .vjs-icon-placeholder::before,
+        .vjs-icon-replay-10::before,
+        .vjs-icon-skip-back-10::before {
+            forced-color-adjust: none;
+            background-color: ButtonText;
+        }
+
+        .vjs-seek-feedback::before {
+            forced-color-adjust: none;
+            background-color: CanvasText;
+        }
+    }
+
     .vjs-progress-control {
         overflow: visible;
 
