@@ -683,10 +683,11 @@ function createTranslationTracks(
                 } catch (err) {
                     if (err instanceof StillProcessingError) {
                         logProcessing(`${label}: ${err.message}`);
+                        translatedTextTrack.label = player.localize('{1} (processing)', [label]);
                         return;
                     }
                     logError(`Failed to load translated track for ${langCode}: ${err instanceof Error ? err.message : String(err)}`);
-                    translatedTrack.label = `${label} (failed to load)`;
+                    translatedTextTrack.label = player.localize('{1} (failed to load)', [label]);
                 }
             };
 
@@ -773,12 +774,16 @@ export async function setTextTracks(
                         try {
                             await initBaseTrack(player, trackEl, options, baseTranscriptUrl);
                         } catch (err) {
+                            // The menu shows the TextTrack's label; the element's is a copy.
+                            //@ts-ignore
+                            const textTrack = trackEl.track;
                             if (err instanceof StillProcessingError) {
                                 logProcessing(`${label}: ${err.message}`);
+                                textTrack.label = player.localize('{1} (processing)', [label]);
                                 return;
                             }
                             logError(`Base subtitle setup failed: ${err instanceof Error ? err.message : String(err)}`);
-                            trackEl.label = player.localize('Failed to load subtitles');
+                            textTrack.label = player.localize('Failed to load subtitles');
                         }
                     };
 
