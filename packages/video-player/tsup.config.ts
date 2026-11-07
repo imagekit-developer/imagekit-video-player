@@ -46,6 +46,20 @@ export default defineConfig([
     external: [/\.css$/, /\.astro$/],
   },
 
+  // Separate so importing the URL builders doesn't pull in video.js. No IIFE:
+  // it would also claim the ImageKitVideoPlayer global.
+  {
+    entry: { 'utils/index': 'javascript/public-utils.ts' },
+    outDir: 'dist',
+    format: ["esm", "cjs"],
+    dts: true,
+    sourcemap: false,
+    treeshake: true,
+    minify: true,
+    splitting: false,
+    clean: false,
+  },
+
   // ─── Config 2: Astro entry (JS re-export + DTS) ──────────────────────────
   //
   // `astro/index.ts` re-exports the default export of `IKVideoPlayer.astro`
