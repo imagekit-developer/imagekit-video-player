@@ -1,7 +1,7 @@
 import type Player from 'video.js/dist/types/player';
 import type { IKPlayerOptions, RemoteTextTrackOptions, SourceOptions, ShoppableProps } from '../../interfaces';
 import type { AugmentedSourceOptions } from '../../interfaces/AugementedSourceOptions';
-import { waitForVideoReady, prepareSource, preparePosterSrc } from '../../utils';
+import { waitForVideoReady, prepareSource, preparePosterSrc, buildSourceUrl } from '../../utils';
 import { setTextTracks, validateRemoteTextTrackOptions } from '../subtitles/subtitles';
 import { hasPreparedSrc, ensurePrepared } from './source-helpers';
 
@@ -185,6 +185,58 @@ export function createSourceOverride(
   // options({}) returns the merged player options; video.js's typings require an argument.
   const defaultNotSupportedMessage = player.options({}).notSupportedMessage;
   let srcCallVersion = 0;
+  let sourceReady: Promise<void> | null = null;
+  // A play() requested while the source is being prepared; pause() and reset() cancel it.
+  let playPending = false;
+  // The URL the source being prepared will play, minus the signature (known before signing).
+  let preparingSourceUrl = '';
+  const nativePlay = player.play.bind(player);
+  const nativePause = player.pause.bind(player);
+  const nativePaused = player.paused.bind(player);
+  const nativeReset = player.reset.bind(player);
+
+  const playWhenReady = (ready: Promise<void>): Promise<void> => {
+    const playIfStillRequested = () => {
+      if (!playPending) return undefined;
+      if (sourceReady && sourceReady !== ready) return playWhenReady(sourceReady);
+      playPending = false;
+      return nativePlay();
+    };
+    return ready.then(playIfStillRequested, (err) => {
+      if (sourceReady && sourceReady !== ready) return playIfStillRequested();
+      throw err;
+    });
+  };
+
+  player.play = () => {
+    const ready = sourceReady;
+    if (!ready) return nativePlay();
+    if (!playPending) {
+      // iOS Safari blocks a play() that runs more than ~5 s after the tap, unless the element
+      // was loaded during the tap. Emptying it first keeps the previous video from reloading.
+      const el = player.tech(true)?.el() as HTMLMediaElement | undefined;
+      if (el) {
+        if (el.currentSrc) el.removeAttribute('src');
+        el.load();
+      }
+      playPending = true;
+      // Lets analytics open the view at the request instead of at the later loadstart.
+      player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
+    }
+    return playWhenReady(ready);
+  };
+  player.pause = () => {
+    if (playPending) {
+      playPending = false;
+      player.trigger('ikplaycancel');
+    }
+    return nativePause();
+  };
+  player.paused = () => !playPending && nativePaused();
+  player.reset = () => {
+    playPending = false;
+    nativeReset();
+  };
 
   return (source?: SourceOptions) => {
     if (source === undefined) {
@@ -197,6 +249,13 @@ export function createSourceOverride(
     const sourceClone = { ...source };
     onOriginalSourceUpdate({ ...sourceClone });
     onSourceUpdate({ ...sourceClone });
+    try {
+      preparingSourceUrl = buildSourceUrl(sourceClone, options);
+    } catch {
+      // Invalid options are reported as a player error when the source is prepared.
+      preparingSourceUrl = sourceClone.src;
+    }
+    if (playPending) player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
 
     const myCallId = ++srcCallVersion;
 
@@ -207,7 +266,7 @@ export function createSourceOverride(
       return;
     }
 
-    prepareSourceIfNeeded(currentSource, options)
+    const ready = prepareSourceIfNeeded(currentSource, options)
       .then(async (prepared: SourceOptions) => {
         if (myCallId !== srcCallVersion) {
           return;
@@ -228,6 +287,10 @@ export function createSourceOverride(
           delayInMS
         );
 
+        if (myCallId !== srcCallVersion) {
+          return;
+        }
+
         // video.js raises its "no compatible source" error (code 4) with `notSupportedMessage`;
         // name the missing decoder instead when that is the cause.
         player.options({
@@ -239,14 +302,21 @@ export function createSourceOverride(
 
         setupTextTracks(player, prepared, options);
         setupPoster(player, prepared, options);
-      })
+      });
+    sourceReady = ready;
+
+    ready
       .catch(err => {
         if (myCallId === srcCallVersion) {
+          playPending = false;
+          // The source never reached Video.js, so no loadstart precedes this error.
+          player.trigger('iksourcefailed', { sourceUrl: preparingSourceUrl });
           player.error(err.message);
         }
       })
       .finally(() => {
         if (myCallId === srcCallVersion) {
+          sourceReady = null;
           hideLoadingState(player);
         }
       });

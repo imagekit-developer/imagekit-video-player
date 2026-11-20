@@ -1,0 +1,292 @@
+[
+  {
+    "id": "R1",
+    "title": "Stall, then recover",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 8000, "type": "playing"},
+      {"t": 10000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 7000, "rebufferCount": 1, "rebufferMs": 3000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 2750, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "rebuffer_duration_ms": 3000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 10, "event": "playing", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8100, "view": "v1", "session": "s1", "order": 11, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 5100, "playing_time_ms": 5100, "played_delta_ms": 100},
+      {"t": 10000, "view": "v1", "session": "s1", "order": 12, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1900, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "played_delta_ms": 1900},
+      {"t": 10000, "view": "v1", "session": "s1", "order": 13, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R2",
+    "title": "Stall, pause, resume",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 8000, "type": "pause"},
+      {"t": 11000, "type": "play"},
+      {"t": 11000, "type": "playing"},
+      {"t": 13000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 7000, "rebufferCount": 1, "rebufferMs": 3000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 2750, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "rebuffer_duration_ms": 3000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 10, "event": "pause", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11000, "view": "v1", "session": "s1", "order": 11, "event": "play", "previous_event": "pause", "ms_from_previous_event": 3000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11000, "view": "v1", "session": "s1", "order": 12, "event": "playing", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11100, "view": "v1", "session": "s1", "order": 13, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 5100, "playing_time_ms": 5100, "played_delta_ms": 100},
+      {"t": 13000, "view": "v1", "session": "s1", "order": 14, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1900, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "played_delta_ms": 1900},
+      {"t": 13000, "view": "v1", "session": "s1", "order": 15, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R3",
+    "title": "Stall, pause, resume while still stalled",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 8000, "type": "pause"},
+      {"t": 11000, "type": "play"},
+      {"t": 11000, "type": "waiting"},
+      {"t": 16000, "type": "playing"},
+      {"t": 18000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 7000, "rebufferCount": 1, "rebufferMs": 3000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 2750, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "rebuffer_duration_ms": 3000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 10, "event": "pause", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11000, "view": "v1", "session": "s1", "order": 11, "event": "play", "previous_event": "pause", "ms_from_previous_event": 3000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 16000, "view": "v1", "session": "s1", "order": 12, "event": "playing", "previous_event": "play", "ms_from_previous_event": 5000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 16100, "view": "v1", "session": "s1", "order": 13, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 5100, "playing_time_ms": 5100, "played_delta_ms": 100},
+      {"t": 18000, "view": "v1", "session": "s1", "order": 14, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1900, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "played_delta_ms": 1900},
+      {"t": 18000, "view": "v1", "session": "s1", "order": 15, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 7000, "playing_time_ms": 7000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R4",
+    "title": "Stall, then seek",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 8000, "type": "seeking", "to": 30000},
+      {"t": 13000, "type": "seeked"},
+      {"t": 13000, "type": "playing"},
+      {"t": 15000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 7000, "rebufferCount": 1, "rebufferMs": 3000, "seekCount": 1, "seekMs": 5000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 2750, "playback_time_instant_ms": 30000, "playing_time_ms": 5000, "rebuffer_duration_ms": 3000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 10, "event": "seeking", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 5000, "from_position_ms": 5000},
+      {"t": 13000, "view": "v1", "session": "s1", "order": 11, "event": "seeked", "previous_event": "seeking", "ms_from_previous_event": 5000, "playback_time_instant_ms": 30000, "playing_time_ms": 5000, "to_position_ms": 30000, "seek_time_ms": 5000},
+      {"t": 13000, "view": "v1", "session": "s1", "order": 12, "event": "playing", "previous_event": "seeked", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 5000},
+      {"t": 13100, "view": "v1", "session": "s1", "order": 13, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 30100, "playing_time_ms": 5100, "played_delta_ms": 100},
+      {"t": 15000, "view": "v1", "session": "s1", "order": 14, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1900, "playback_time_instant_ms": 32000, "playing_time_ms": 7000, "played_delta_ms": 1900},
+      {"t": 15000, "view": "v1", "session": "s1", "order": 15, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 32000, "playing_time_ms": 7000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R5",
+    "title": "Stall, then leave",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 10000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 5000, "rebufferCount": 1, "rebufferMs": 5000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 10000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 4750, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "rebuffer_duration_ms": 5000},
+      {"t": 10000, "view": "v1", "session": "s1", "order": 10, "event": "viewend", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R6",
+    "title": "Stall, pause, resume, stall again",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 8000, "type": "pause"},
+      {"t": 11000, "type": "play"},
+      {"t": 11000, "type": "playing"},
+      {"t": 40000, "type": "waiting"},
+      {"t": 42000, "type": "playing"},
+      {"t": 44000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 36000, "rebufferCount": 2, "rebufferMs": 5000}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5250, "view": "v1", "session": "s1", "order": 8, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 9, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 2750, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "rebuffer_duration_ms": 3000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 10, "event": "pause", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11000, "view": "v1", "session": "s1", "order": 11, "event": "play", "previous_event": "pause", "ms_from_previous_event": 3000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11000, "view": "v1", "session": "s1", "order": 12, "event": "playing", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 11100, "view": "v1", "session": "s1", "order": 13, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 5100, "playing_time_ms": 5100, "played_delta_ms": 100},
+      {"t": 13100, "view": "v1", "session": "s1", "order": 14, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 7100, "playing_time_ms": 7100, "played_delta_ms": 2000},
+      {"t": 15100, "view": "v1", "session": "s1", "order": 15, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 9100, "playing_time_ms": 9100, "played_delta_ms": 2000},
+      {"t": 17100, "view": "v1", "session": "s1", "order": 16, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 11100, "playing_time_ms": 11100, "played_delta_ms": 2000},
+      {"t": 19100, "view": "v1", "session": "s1", "order": 17, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 13100, "playing_time_ms": 13100, "played_delta_ms": 2000},
+      {"t": 21100, "view": "v1", "session": "s1", "order": 18, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 15100, "playing_time_ms": 15100, "played_delta_ms": 2000},
+      {"t": 23100, "view": "v1", "session": "s1", "order": 19, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 17100, "playing_time_ms": 17100, "played_delta_ms": 2000},
+      {"t": 25100, "view": "v1", "session": "s1", "order": 20, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 19100, "playing_time_ms": 19100, "played_delta_ms": 2000},
+      {"t": 27100, "view": "v1", "session": "s1", "order": 21, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 21100, "playing_time_ms": 21100, "played_delta_ms": 2000},
+      {"t": 29100, "view": "v1", "session": "s1", "order": 22, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 23100, "playing_time_ms": 23100, "played_delta_ms": 2000},
+      {"t": 31100, "view": "v1", "session": "s1", "order": 23, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 25100, "playing_time_ms": 25100, "played_delta_ms": 2000},
+      {"t": 33100, "view": "v1", "session": "s1", "order": 24, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 27100, "playing_time_ms": 27100, "played_delta_ms": 2000},
+      {"t": 35100, "view": "v1", "session": "s1", "order": 25, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 29100, "playing_time_ms": 29100, "played_delta_ms": 2000},
+      {"t": 37100, "view": "v1", "session": "s1", "order": 26, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 31100, "playing_time_ms": 31100, "played_delta_ms": 2000},
+      {"t": 39100, "view": "v1", "session": "s1", "order": 27, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 33100, "playing_time_ms": 33100, "played_delta_ms": 2000},
+      {"t": 40000, "view": "v1", "session": "s1", "order": 28, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 900, "playback_time_instant_ms": 34000, "playing_time_ms": 34000, "played_delta_ms": 900},
+      {"t": 40250, "view": "v1", "session": "s1", "order": 29, "event": "rebufferstart", "previous_event": "timeupdate", "ms_from_previous_event": 250, "playback_time_instant_ms": 34000, "playing_time_ms": 34000},
+      {"t": 42000, "view": "v1", "session": "s1", "order": 30, "event": "rebufferend", "previous_event": "rebufferstart", "ms_from_previous_event": 1750, "playback_time_instant_ms": 34000, "playing_time_ms": 34000, "rebuffer_duration_ms": 2000},
+      {"t": 42000, "view": "v1", "session": "s1", "order": 31, "event": "playing", "previous_event": "rebufferend", "ms_from_previous_event": 0, "playback_time_instant_ms": 34000, "playing_time_ms": 34000},
+      {"t": 42100, "view": "v1", "session": "s1", "order": 32, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 100, "playback_time_instant_ms": 34100, "playing_time_ms": 34100, "played_delta_ms": 100},
+      {"t": 44000, "view": "v1", "session": "s1", "order": 33, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1900, "playback_time_instant_ms": 36000, "playing_time_ms": 36000, "played_delta_ms": 1900},
+      {"t": 44000, "view": "v1", "session": "s1", "order": 34, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 36000, "playing_time_ms": 36000, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R7",
+    "title": "Waiting blip right after a seek",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 6000, "type": "seeking", "to": 30000},
+      {"t": 6010, "type": "seeked"},
+      {"t": 6010, "type": "playing"},
+      {"t": 6010, "type": "waiting"},
+      {"t": 6011, "type": "playing"},
+      {"t": 8000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 7989, "seekCount": 1, "seekMs": 10}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 6000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 6000, "playing_time_ms": 6000, "played_delta_ms": 2000},
+      {"t": 6000, "view": "v1", "session": "s1", "order": 8, "event": "seeking", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 6000, "from_position_ms": 6000},
+      {"t": 6010, "view": "v1", "session": "s1", "order": 9, "event": "seeked", "previous_event": "seeking", "ms_from_previous_event": 10, "playback_time_instant_ms": 30000, "playing_time_ms": 6000, "to_position_ms": 30000, "seek_time_ms": 10},
+      {"t": 6010, "view": "v1", "session": "s1", "order": 10, "event": "playing", "previous_event": "seeked", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 6000},
+      {"t": 6011, "view": "v1", "session": "s1", "order": 11, "event": "playing", "previous_event": "playing", "ms_from_previous_event": 1, "playback_time_instant_ms": 30000, "playing_time_ms": 6000},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 12, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 1989, "playback_time_instant_ms": 31989, "playing_time_ms": 7989, "played_delta_ms": 1989},
+      {"t": 8000, "view": "v1", "session": "s1", "order": 13, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 31989, "playing_time_ms": 7989, "view_end_reason": "navigation"}
+    ]
+  },
+  {
+    "id": "R8",
+    "title": "Stall shorter than 250 ms",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "waiting"},
+      {"t": 5200, "type": "playing"},
+      {"t": 7000, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 6800}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5000, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1000, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5200, "view": "v1", "session": "s1", "order": 8, "event": "playing", "previous_event": "timeupdate", "ms_from_previous_event": 200, "playback_time_instant_ms": 5000, "playing_time_ms": 5000},
+      {"t": 7000, "view": "v1", "session": "s1", "order": 9, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 1800, "playback_time_instant_ms": 6800, "playing_time_ms": 6800, "played_delta_ms": 1800},
+      {"t": 7000, "view": "v1", "session": "s1", "order": 10, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 6800, "playing_time_ms": 6800, "view_end_reason": "navigation"}
+    ]
+  }
+]

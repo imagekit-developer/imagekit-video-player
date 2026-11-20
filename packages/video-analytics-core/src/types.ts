@@ -17,6 +17,7 @@ export type IKAnalyticsEventName =
   | 'seeked'
   | 'rebufferstart'
   | 'rebufferend'
+  | 'renditionchange'
   | 'error'
   | 'ended'
   | 'viewend';
@@ -48,7 +49,7 @@ export interface IKAnalyticsClientContext {
   imagekit_plugin?: string;
   imagekit_plugin_version?: string;
   /**
-   * Per-session custom dimensions, keyed by slot code (`cd_01` .. `cd_99`).
+   * Per-session custom dimensions, keyed by slot code (`cd_1`, `cd_2`, …).
    * Slot codes are allocated in the dashboard (Settings → Video Analytics →
    * Custom Dimensions). Stored verbatim on the server in the matching slot.
    */
@@ -114,16 +115,6 @@ export interface IKAnalyticsEventBase {
   error_code?: string;
   error_message?: string;
   error_context?: string;
-  custom_data_1?: string;
-  custom_data_2?: string;
-  custom_data_3?: string;
-  custom_data_4?: string;
-  custom_data_5?: string;
-  custom_data_6?: string;
-  custom_data_7?: string;
-  custom_data_8?: string;
-  custom_data_9?: string;
-  custom_data_10?: string;
   played_delta_ms?: number;
   view_end_reason?: ViewEndReason;
   new_video_source_url?: string;
@@ -138,8 +129,8 @@ type IKEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
 type IKPlaybackEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
   IKEventWithName<TName, { playback_id: string } & TExtra>;
 
-export type IKSessionInitEvent = IKPlaybackEventWithName<'sessioninit'>;
-export type IKPlayerReadyEvent = IKPlaybackEventWithName<
+export type IKSessionInitEvent = IKEventWithName<'sessioninit'>;
+export type IKPlayerReadyEvent = IKEventWithName<
   'playerready',
   { page_load_time_ms: number; player_startup_time_ms: number }
 >;
@@ -150,6 +141,7 @@ export type IKPlayingEvent = IKPlaybackEventWithName<'playing'>;
 export type IKPauseEvent = IKPlaybackEventWithName<'pause'>;
 export type IKRebufferStartEvent = IKPlaybackEventWithName<'rebufferstart'>;
 export type IKEndedEvent = IKPlaybackEventWithName<'ended'>;
+export type IKRenditionChangeEvent = IKPlaybackEventWithName<'renditionchange'>;
 
 export type IKViewStartedEvent = IKPlaybackEventWithName<
   'viewstarted',
@@ -200,6 +192,7 @@ export type IKAnalyticsEvent =
   | IKPauseEvent
   | IKRebufferStartEvent
   | IKEndedEvent
+  | IKRenditionChangeEvent
   | IKViewStartedEvent
   | IKSeekingEvent
   | IKSeekedEvent
@@ -240,17 +233,10 @@ export interface InternalAnalyticsEvent {
   view_end_reason?: ViewEndReason;
   new_video_source_url?: string;
   next_playback_id?: string;
-  ms_from_previous_event?: number;
-  custom_data_1?: string;
-  custom_data_2?: string;
-  custom_data_3?: string;
-  custom_data_4?: string;
-  custom_data_5?: string;
-  custom_data_6?: string;
-  custom_data_7?: string;
-  custom_data_8?: string;
-  custom_data_9?: string;
-  custom_data_10?: string;
+  /** Position of the event in its view, from 1. */
+  event_order: number;
+  previous_event?: IKAnalyticsEventName;
+  ms_from_previous_event: number;
 }
 
 /** Event payload for ingest: context-only fields are omitted (sent in context only). */
@@ -280,7 +266,6 @@ export interface AnalyticsConfig {
   flushIntervalMs: number;
   maxBatchSize: number;
   timeupdateThrottleMs: number;
-  debug?: boolean;
   userId?: string;
   customDimensions?: Record<string, string>;
 }
