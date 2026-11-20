@@ -251,6 +251,19 @@ class ImageKitVideoPlayerPlugin extends Plugin {
   }
 
   /**
+   * Replaces all analytics custom dimensions (e.g. after sign-in). Events already
+   * recorded keep their previous values. No-op if analytics is disabled.
+   */
+  public setCustomDimensions = (dims: Record<string, string>): void => {
+    this.analyticsHandle_?.setCustomDimensions(dims);
+  }
+
+  /** The custom dimensions currently in effect; `{}` if analytics is disabled. */
+  public getCustomDimensions = (): Record<string, string> => {
+    return this.analyticsHandle_?.getCustomDimensions() ?? {};
+  }
+
+  /**
    * Clean up all event listeners and resources when the plugin is disposed.
    */
   dispose(): void {

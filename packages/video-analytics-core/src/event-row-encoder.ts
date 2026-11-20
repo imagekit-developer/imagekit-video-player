@@ -1,38 +1,25 @@
 /**
  * Converts internal analytics events into wire-format rows for ingest.
- * Ensures session_start_date, event_order, previous_event, ms_from_previous_event are correct.
  */
 import type {
   IKAnalyticsEvent,
   IKAnalyticsEventBase,
   IKAnalyticsEventName,
   IKAnalyticsClientContext,
-  IKAnalyticsIngestRequest,
   IKAnalyticsEventSlim,
   InternalAnalyticsEvent,
   VideoSourceType,
 } from './types';
 
 const VIDEO_SOURCE_TYPES: VideoSourceType[] = ['hls', 'dash', 'mp4', 'webm', 'other'];
-const CUSTOM_DATA_KEYS = [
-  'custom_data_1',
-  'custom_data_2',
-  'custom_data_3',
-  'custom_data_4',
-  'custom_data_5',
-  'custom_data_6',
-  'custom_data_7',
-  'custom_data_8',
-  'custom_data_9',
-  'custom_data_10',
-] as const;
 
+/** From the file extension of the URL path; manifests without one (e.g. `manifest(format=…)`) are `other`. */
 function deriveVideoSourceType(url: string): VideoSourceType {
-  const lower = url.toLowerCase();
-  if (lower.includes('.m3u8') || lower.includes('m3u8')) return 'hls';
-  if (lower.includes('.mpd') || lower.includes('mpd')) return 'dash';
-  if (lower.includes('.mp4')) return 'mp4';
-  if (lower.includes('.webm')) return 'webm';
+  const path = url.split(/[?#]/, 1)[0].toLowerCase();
+  if (path.endsWith('.m3u8')) return 'hls';
+  if (path.endsWith('.mpd')) return 'dash';
+  if (path.endsWith('.mp4')) return 'mp4';
+  if (path.endsWith('.webm')) return 'webm';
   return 'other';
 }
 
@@ -44,21 +31,18 @@ export function encodeEvent(
   internal: InternalAnalyticsEvent,
   context: IKAnalyticsClientContext,
   playbackId: string | null,
-  eventOrder: number,
-  previousEvent: IKAnalyticsEventName | null,
-  msFromPrevious: number
+  eventTimeMs: number
 ): IKAnalyticsEvent {
-  const eventTime = new Date().toISOString();
   const base: IKAnalyticsEventBase = {
-    event_time_iso: eventTime,
+    event_time_iso: new Date(eventTimeMs).toISOString(),
     session_start_date: context.session_start_date,
     imagekit_id: context.imagekit_id,
     session_id: context.session_id,
     player_instance_id: context.player_instance_id,
-    event_order: eventOrder,
+    event_order: internal.event_order,
     event_id: internal.event_id,
-    previous_event: previousEvent ?? undefined,
-    ms_from_previous_event: msFromPrevious,
+    previous_event: internal.previous_event,
+    ms_from_previous_event: internal.ms_from_previous_event,
   };
   if (playbackId) base.playback_id = playbackId;
 
@@ -99,12 +83,6 @@ export function encodeEvent(
   // Empty strings are omitted so the wire row stays compact for cold-start playbacks.
   if (internal.previous_playback_id) base.previous_playback_id = internal.previous_playback_id;
   if (internal.previous_session_id) base.previous_session_id = internal.previous_session_id;
-
-  for (const key of CUSTOM_DATA_KEYS) {
-    if (internal[key] != null) {
-      base[key] = internal[key];
-    }
-  }
 
   switch (internal.event) {
     case 'viewstarted':
@@ -182,6 +160,8 @@ export function encodeEvent(
       return { ...base, event: 'rebufferstart', playback_id: base.playback_id ?? '' };
     case 'ended':
       return { ...base, event: 'ended', playback_id: base.playback_id ?? '' };
+    case 'renditionchange':
+      return { ...base, event: 'renditionchange', playback_id: base.playback_id ?? '' };
     default:
       return assertNever(internal.event);
   }
@@ -198,20 +178,4 @@ export function toSlimEvent(event: IKAnalyticsEvent): IKAnalyticsEventSlim {
   const slim = { ...event };
   for (const key of CONTEXT_ONLY_KEYS) delete slim[key];
   return slim as IKAnalyticsEventSlim;
-}
-
-export function buildIngestRequest(
-  schemaVersion: 1,
-  context: IKAnalyticsClientContext,
-  events: IKAnalyticsEvent[],
-  flushReason?: IKAnalyticsIngestRequest['flush_reason']
-): IKAnalyticsIngestRequest {
-  return {
-    schema_version: schemaVersion,
-    batch_id: `b_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-    sent_at_iso: new Date().toISOString(),
-    context,
-    events: events.map(toSlimEvent),
-    flush_reason: flushReason,
-  };
 }

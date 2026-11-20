@@ -83,7 +83,7 @@ export const CONTEXT_KEY_MAP_V1: Record<string, keyof IKAnalyticsClientContext> 
   pa: 'player_autoplay',
   pp: 'player_preload',
   /**
-   * Custom dimensions object keyed by slot code: `{ cd_01: value, cd_02: value }`.
+   * Custom dimensions object keyed by slot code: `{ cd_1: value, cd_2: value }`.
    * Slots are allocated per tenant in the dashboard; the ingest server stores
    * each entry verbatim in the ClickHouse Map column.
    */
@@ -110,20 +110,27 @@ export interface IKAnalyticsIngestRequestV1 {
   e: Array<Array<unknown>>;         // positional event rows, trailing nulls trimmed
 }
 
-/** Truncate string to N bytes (UTF-8 safe). Appends ellipsis when truncated. */
+/**
+ * Truncates to at most `maxBytes` of UTF-8, cutting only between characters and appending `…`
+ * (3 bytes) when truncated. Sizes are computed from char codes, so no encoder is needed.
+ */
 export function truncateBytes(s: string | undefined, maxBytes: number): string | undefined {
-  if (s == null) return s;
-  if (typeof TextEncoder === 'undefined') {
-    // Fallback for environments without TextEncoder — use char length.
-    return s.length <= maxBytes ? s : s.slice(0, maxBytes - 1) + '…';
+  if (typeof s !== 'string') return undefined;
+  const keepBytes = maxBytes - 3;
+  let bytes = 0;
+  let cut = 0;
+  for (let i = 0; i < s.length; i++) {
+    const code = s.charCodeAt(i);
+    let size = code < 0x80 ? 1 : code < 0x800 ? 2 : 3;
+    const next = s.charCodeAt(i + 1);
+    const isSurrogatePair = code >= 0xd800 && code <= 0xdbff && next >= 0xdc00 && next <= 0xdfff;
+    if (isSurrogatePair) size = 4;
+    bytes += size;
+    if (bytes > maxBytes) return s.slice(0, cut) + '…';
+    if (isSurrogatePair) i++;
+    if (bytes <= keepBytes) cut = i + 1;
   }
-  const enc = new TextEncoder();
-  const bytes = enc.encode(s);
-  if (bytes.length <= maxBytes) return s;
-  // Decode a prefix of bytes safely, leaving room for the ellipsis (3 bytes UTF-8).
-  const cut = bytes.slice(0, maxBytes - 3);
-  const dec = new TextDecoder('utf-8', { fatal: false });
-  return dec.decode(cut) + '…';
+  return s;
 }
 
 /** Encode canonical context into short-key wire shape, dropping undefined values. */

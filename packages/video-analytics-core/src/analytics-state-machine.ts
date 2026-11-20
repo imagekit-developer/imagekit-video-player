@@ -4,9 +4,9 @@
  */
 import type {
   IKAnalyticsEventName,
-  ViewEndReason,
   InternalAnalyticsEvent,
 } from './types';
+import { ANALYTICS_MIN_REBUFFER_MS } from './constants';
 
 export type AnalyticsSignal =
   | { type: 'session_init' }
@@ -25,13 +25,24 @@ export type AnalyticsSignal =
   | { type: 'seeking'; fromPositionMs: number }
   | { type: 'seeked'; toPositionMs: number; seekTimeMs: number }
   | { type: 'waiting' }
-  | { type: 'playing_after_waiting' }
+  | { type: 'rebuffer_check' }
+  | { type: 'renditionchange'; bitrate?: number }
   | { type: 'ended' }
   | { type: 'error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'report_error'; errorCode: string; errorMessage?: string; errorContext?: string }
   | { type: 'dispose' }
   | { type: 'page_hide' }
-  | { type: 'visibility_hidden' };
+  | { type: 'page_suspend' };
+
+/** Signals that may still act once the current view has sent its `viewend`; every other one is dropped. */
+const SIGNALS_AFTER_VIEWEND = new Set<AnalyticsSignal['type']>([
+  'session_init',
+  'session_rotated',
+  'player_ready',
+  'load_start',
+  'dispose',
+  'page_hide',
+]);
 
 type PlaybackPhase =
   | 'idle'           // no view yet
@@ -47,11 +58,8 @@ type PlaybackPhase =
 
 export interface AnalyticsStateMachineCallbacks {
   onSessionInit: () => void;
-  onPlayerReady: (playerStartupTimeMs: number, pageLoadTimeMs?: number) => void;
   onViewInit: (playbackId: string) => void;
-  onViewStarted: (videoStartupTimeMs: number) => void;
   onVideoChange: (playbackId: string) => void;
-  onViewEnd: (reason: ViewEndReason) => void;
   onEvent: (event: InternalAnalyticsEvent) => void;
 }
 
@@ -65,16 +73,19 @@ export class AnalyticsStateMachine {
   // Guards against a duplicate viewend for the same view (e.g. page_hide then dispose).
   private viewEndEmitted_ = false;
   private rebufferOpen_ = false;
+  private rebufferReported_ = false;
   private rebufferStartMonotonic_ = 0;
   private seekOpen_ = false;
   private seekStartMonotonic_ = 0;
   private seekFromPositionMs_ = 0;
   private phaseBeforeSeek_: PlaybackPhase | null = null;
-  private playStartMonotonic_ = 0; // for video startup time
+  // Video startup is measured from the view's last `play`, or from its `load_start` if it has none.
+  private playStartMonotonic_: number | null = null;
   private lastEventMonotonic_ = 0;
   private lastEventName_: IKAnalyticsEventName | null = null;
   private eventOrder_ = 0;
   private generateEventId_: () => string;
+  private monotonicNow_: () => number;
 
   /**
    * Predecessor links stamped onto every event of the active view.
@@ -90,14 +101,16 @@ export class AnalyticsStateMachine {
 
   constructor(
     callbacks: AnalyticsStateMachineCallbacks,
-    generateEventId: () => string
+    generateEventId: () => string,
+    monotonicNow: () => number
   ) {
     this.callbacks_ = callbacks;
     this.generateEventId_ = generateEventId;
+    this.monotonicNow_ = monotonicNow;
   }
 
   dispatch(signal: AnalyticsSignal, captureContext?: () => Partial<InternalAnalyticsEvent>): void {
-    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    const now = this.monotonicNow_();
     const ctx = captureContext?.() ?? {};
 
     const emit = (event: IKAnalyticsEventName, payload: Partial<InternalAnalyticsEvent> = {}): void => {
@@ -113,6 +126,8 @@ export class AnalyticsStateMachine {
       this.callbacks_.onEvent({
         event,
         event_id: eventId,
+        event_order: this.eventOrder_,
+        previous_event: this.lastEventName_ ?? undefined,
         ms_from_previous_event: msFromPrev,
         ...linkStamp,
         ...ctx,
@@ -121,6 +136,26 @@ export class AnalyticsStateMachine {
       this.lastEventMonotonic_ = now;
       this.lastEventName_ = event;
     };
+
+    // A stall is reported only once it has lasted ANALYTICS_MIN_REBUFFER_MS.
+    const reportRebufferStart = (): void => {
+      if (!this.rebufferOpen_ || this.rebufferReported_) return;
+      if (now - this.rebufferStartMonotonic_ < ANALYTICS_MIN_REBUFFER_MS) return;
+      this.rebufferReported_ = true;
+      emit('rebufferstart', ctx);
+    };
+    // A stall also ends when the viewer pauses or seeks, or the view ends. Left open,
+    // it would never be reported and would hide every later stall in the view.
+    const closeOpenRebuffer = (): void => {
+      reportRebufferStart();
+      if (!this.rebufferOpen_) return;
+      this.rebufferOpen_ = false;
+      if (this.rebufferReported_) {
+        emit('rebufferend', { rebuffer_duration_ms: Math.round(now - this.rebufferStartMonotonic_) });
+      }
+    };
+
+    if (this.viewEndEmitted_ && !SIGNALS_AFTER_VIEWEND.has(signal.type)) return;
 
     switch (signal.type) {
       case 'session_init':
@@ -141,8 +176,8 @@ export class AnalyticsStateMachine {
           // Emit a viewend on the OLD view BEFORE flipping predecessor links. We
           // do not want this viewend to carry the new view's predecessor stamps.
           // It keeps the live ctx (playhead/playing_time) captured for the old view.
+          closeOpenRebuffer();
           emit('viewend', { view_end_reason: 'sessionrotate' });
-          this.callbacks_.onViewEnd('sessionrotate');
         }
         // Reset session-level flags so sessioninit emits again.
         this.sessionInitialized_ = false;
@@ -169,7 +204,6 @@ export class AnalyticsStateMachine {
       case 'player_ready':
         if (this.playerReady_) return;
         this.playerReady_ = true;
-        this.callbacks_.onPlayerReady(signal.playerStartupTimeMs, signal.pageLoadTimeMs);
         emit('playerready', {
           page_load_time_ms: signal.pageLoadTimeMs ?? 0,
           player_startup_time_ms: signal.playerStartupTimeMs,
@@ -181,8 +215,8 @@ export class AnalyticsStateMachine {
         const oldPlaybackId = this.currentPlaybackId_;
         if (signal.isVideoChange && this.currentPlaybackId_) {
           if (this.phase_ !== 'errored') {
+            closeOpenRebuffer();
             emit('viewend', { view_end_reason: 'videochange', video_source_url: signal.previousVideoSourceUrl });
-            this.callbacks_.onViewEnd('videochange');
           }
           emit('videochange', {
             video_source_url: signal.previousVideoSourceUrl,
@@ -205,7 +239,8 @@ export class AnalyticsStateMachine {
         }
         this.lastVideoSourceUrl_ = signal.videoSourceUrl;
         this.openView(signal.playbackId);
-        emit('viewinit', { video_source_url: signal.videoSourceUrl });
+        this.playStartMonotonic_ = now;
+        emit('viewinit', { video_source_url: signal.videoSourceUrl, playing_time_ms: 0 });
         return;
       }
       case 'play':
@@ -218,20 +253,14 @@ export class AnalyticsStateMachine {
         return;
 
       case 'playing':
-        if (this.phase_ === 'buffering') {
-          const rebufferDuration = Math.round(now - this.rebufferStartMonotonic_);
-          this.rebufferOpen_ = false;
-          emit('rebufferend', { rebuffer_duration_ms: rebufferDuration });
-        }
+        closeOpenRebuffer();
         if (!this.hasEmittedViewStarted_) {
           this.hasEmittedViewStarted_ = true;
-          if (this.previousSessionId_) {
+          if (this.previousSessionId_ || this.playStartMonotonic_ === null) {
             // Warm resume: omit video_startup_time_ms (server MV gates it on previous_session_id = '').
-            this.callbacks_.onViewStarted?.(0);
             emit('viewstarted', {});
           } else {
             const videoStartupMs = Math.round(now - this.playStartMonotonic_);
-            this.callbacks_.onViewStarted?.(videoStartupMs);
             emit('viewstarted', { video_startup_time_ms: videoStartupMs });
           }
         }
@@ -249,24 +278,31 @@ export class AnalyticsStateMachine {
         if (this.phase_ === 'ended' || this.phase_ === 'disposed') return;
         if (this.phase_ === 'seeking') return;
         if (this.phase_ === 'paused') return;
+        closeOpenRebuffer();
         emit('pause', ctx);
         this.phase_ = 'paused';
         return;
 
       case 'timeupdate':
         if (this.phase_ !== 'playing') return;
+        // The row's playhead is where the counted time ended, which at a seek is no longer the player's.
         emit('timeupdate', {
+          ...ctx,
           playback_time_instant_ms: signal.playbackTimeMs,
           playing_time_ms: signal.playingTimeMs,
           played_delta_ms: signal.playedDeltaMs,
           bitrate: signal.bitrate,
-          ...ctx,
         });
         return;
 
       case 'seeking':
         if (this.phase_ === 'disposed') return;
-        if (this.phase_ === 'seeking') return; // dedupe continuous drag
+        if (this.phase_ === 'seeking') {
+          // A drag sends `seeking` for each position it passes: one seek, timed from where the viewer let go.
+          this.seekStartMonotonic_ = now;
+          return;
+        }
+        closeOpenRebuffer();
         this.phaseBeforeSeek_ = this.phase_;
         this.seekOpen_ = true;
         this.seekStartMonotonic_ = now;
@@ -286,7 +322,13 @@ export class AnalyticsStateMachine {
         });
         const prior = this.phaseBeforeSeek_;
         this.phaseBeforeSeek_ = null;
-        this.phase_ = prior === 'paused' ? 'paused' : 'playing';
+        // A `play` during the seek has already moved the phase on. Otherwise playback goes back to
+        // what it was doing; a seek away from the end leaves it stopped, not ended.
+        if (this.phase_ === 'seeking') {
+          if (prior === 'playing' || prior === 'buffering') this.phase_ = 'playing';
+          else if (prior === 'ended' || prior === null) this.phase_ = 'paused';
+          else this.phase_ = prior;
+        }
         return;
       }
 
@@ -297,14 +339,19 @@ export class AnalyticsStateMachine {
         if (this.seekOpen_) return; // do not treat seek as rebuffer
         if (this.rebufferOpen_) return;
         this.rebufferOpen_ = true;
+        this.rebufferReported_ = false;
         this.rebufferStartMonotonic_ = now;
-        emit('rebufferstart', ctx);
         this.phase_ = 'buffering';
         return;
 
-      case 'playing_after_waiting':
-        // Same as 'playing' - will close rebuffer if open
-        this.dispatch({ type: 'playing' }, captureContext);
+      case 'rebuffer_check':
+        reportRebufferStart();
+        return;
+
+      case 'renditionchange':
+        if (this.phase_ === 'idle' || this.phase_ === 'disposed') return;
+        // No played_delta_ms: the timeupdate flushed at the switch carries the old rendition's time.
+        emit('renditionchange', { ...ctx, bitrate: signal.bitrate });
         return;
 
       case 'ended':
@@ -316,6 +363,7 @@ export class AnalyticsStateMachine {
 
       case 'error':
         if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
+        closeOpenRebuffer();
         emit('error', {
           error_code: signal.errorCode,
           error_message: signal.errorMessage,
@@ -326,7 +374,6 @@ export class AnalyticsStateMachine {
         if (this.currentPlaybackId_) {
           emit('viewend', { view_end_reason: 'error' });
           this.viewEndEmitted_ = true;
-          this.callbacks_.onViewEnd('error');
         }
         return;
 
@@ -344,9 +391,9 @@ export class AnalyticsStateMachine {
       case 'dispose':
         if (this.phase_ === 'disposed') return;
         if (this.phase_ !== 'errored' && !this.viewEndEmitted_ && this.currentPlaybackId_) {
+          closeOpenRebuffer();
           emit('viewend', { view_end_reason: 'dispose' });
           this.viewEndEmitted_ = true;
-          this.callbacks_.onViewEnd('dispose');
         }
         this.phase_ = 'disposed';
         return;
@@ -356,14 +403,16 @@ export class AnalyticsStateMachine {
         // viewend; video.js 'dispose' does not fire before the page is torn down.
         if (this.phase_ === 'disposed' || this.phase_ === 'errored') return;
         if (!this.viewEndEmitted_ && this.currentPlaybackId_) {
+          closeOpenRebuffer();
           emit('viewend', { view_end_reason: 'navigation' });
           this.viewEndEmitted_ = true;
-          this.callbacks_.onViewEnd('navigation');
         }
         return;
 
-      case 'visibility_hidden':
-        // Tracker handles flush; state machine doesn't emit for this
+      case 'page_suspend':
+        // The page may never come back, so report an open stall now; the view itself stays open.
+        if (this.phase_ === 'idle' || this.phase_ === 'disposed' || this.phase_ === 'errored') return;
+        closeOpenRebuffer();
         return;
     }
   }
@@ -372,6 +421,7 @@ export class AnalyticsStateMachine {
     this.currentPlaybackId_ = playbackId;
     this.phase_ = 'view_open';
     this.hasEmittedViewStarted_ = false;
+    this.playStartMonotonic_ = null;
     this.viewEndEmitted_ = false;
     this.rebufferOpen_ = false;
     this.seekOpen_ = false;
@@ -384,11 +434,8 @@ export class AnalyticsStateMachine {
     return this.currentPlaybackId_;
   }
 
-  getEventOrder(): number {
-    return this.eventOrder_;
-  }
 
-  getLastEventName(): IKAnalyticsEventName | null {
-    return this.lastEventName_;
+  isPlaying(): boolean {
+    return this.phase_ === 'playing' && !this.viewEndEmitted_;
   }
 }
