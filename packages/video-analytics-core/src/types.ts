@@ -24,8 +24,6 @@ export type IKAnalyticsEventName =
 
 export type VideoSourceType = 'hls' | 'dash' | 'mp4' | 'webm' | 'other';
 
-export type Orientation = 'landscape' | 'portrait' | 'square' | 'unknown';
-
 export type ViewEndReason = 'videochange' | 'error' | 'dispose' | 'navigation' | 'sessionrotate';
 
 export interface IKAnalyticsClientContext {
@@ -59,156 +57,16 @@ export interface IKAnalyticsClientContext {
 }
 
 /**
- * Common fields for all analytics events. Does not include `event` (discriminator).
- * Event-specific required fields are enforced by the union members (e.g. IKViewStartedEvent, IKSeekedEvent).
+ * One event as the state machine emits it. Field names are the wire names (`EVENT_FIELDS_V1`);
+ * empty strings and missing values are sent as null.
  */
-export interface IKAnalyticsEventBase {
-  /** Required on every event */
-  event_time_iso: string;
-  session_start_date: string;
-  playback_id?: string;
-  event_order: number;
-  event_id: string;
-  imagekit_id: string;
-  session_id: string;
-  player_instance_id: string;
-
-  previous_event?: IKAnalyticsEventName;
-  ms_from_previous_event?: number;
-
-  /**
-   * Link to the playback that immediately preceded this one in the same player
-   * instance. Set on the FIRST event of any non-cold-start playback:
-   *   - video-change continuation: previous_playback_id != '', previous_session_id = ''
-   *   - 60-min-idle warm resume:   previous_playback_id != '', previous_session_id != ''
-   * Symmetric with `next_playback_id` (forward link on the predecessor's `viewend`).
-   */
-  previous_playback_id?: string;
-  /**
-   * Link to the session that the rotated session continued from. Only set on
-   * warm resumes (session_id changed). Empty for video-change and cold-start.
-   * Server-side, `previous_session_id != ''` is the canonical "warm resume"
-   * predicate that gates startup-time metrics.
-   */
-  previous_session_id?: string;
-
-  /** Optional payload; required only on specific event types (see union) */
-  video_source_url?: string;
-  video_source_type?: VideoSourceType;
-  video_width_pixels?: number;
-  video_height_pixels?: number;
-  video_total_duration_ms?: number;
-  video_startup_time_ms?: number;
-  page_load_time_ms?: number;
-  player_startup_time_ms?: number;
-  playback_time_instant_ms?: number;
-  playing_time_ms?: number;
-  video_upscale_percentage?: number;
-  video_downscale_percentage?: number;
-  bitrate?: number;
-  audio_codec?: string;
-  video_codec?: string;
-  from_position_ms?: number;
-  to_position_ms?: number;
-  seek_time_ms?: number;
-  rebuffer_duration_ms?: number;
-  error_code?: string;
-  error_message?: string;
-  error_context?: string;
-  played_delta_ms?: number;
-  view_end_reason?: ViewEndReason;
-  new_video_source_url?: string;
-  next_playback_id?: string;
-}
-
-type IKEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
-  IKAnalyticsEventBase &
-  { event: TName } &
-  TExtra;
-
-type IKPlaybackEventWithName<TName extends IKAnalyticsEventName, TExtra = {}> =
-  IKEventWithName<TName, { playback_id: string } & TExtra>;
-
-export type IKSessionInitEvent = IKEventWithName<'sessioninit'>;
-export type IKPlayerReadyEvent = IKEventWithName<
-  'playerready',
-  { page_load_time_ms: number; player_startup_time_ms: number }
->;
-export type IKViewInitEvent = IKPlaybackEventWithName<'viewinit'>;
-export type IKVideoChangeEvent = IKPlaybackEventWithName<'videochange'>;
-export type IKPlayEvent = IKPlaybackEventWithName<'play'>;
-export type IKPlayingEvent = IKPlaybackEventWithName<'playing'>;
-export type IKPauseEvent = IKPlaybackEventWithName<'pause'>;
-export type IKRebufferStartEvent = IKPlaybackEventWithName<'rebufferstart'>;
-export type IKEndedEvent = IKPlaybackEventWithName<'ended'>;
-export type IKRenditionChangeEvent = IKPlaybackEventWithName<'renditionchange'>;
-
-export type IKViewStartedEvent = IKPlaybackEventWithName<
-  'viewstarted',
-  { video_startup_time_ms: number }
->;
-
-export type IKSeekingEvent = IKPlaybackEventWithName<
-  'seeking',
-  { from_position_ms: number }
->;
-
-export type IKSeekedEvent = IKPlaybackEventWithName<
-  'seeked',
-  { to_position_ms: number; seek_time_ms: number }
->;
-
-export type IKRebufferEndEvent = IKPlaybackEventWithName<
-  'rebufferend',
-  { rebuffer_duration_ms: number }
->;
-
-export type IKErrorEvent = IKPlaybackEventWithName<
-  'error',
-  { error_code: string }
->;
-
-export type IKTimeupdateEvent = IKPlaybackEventWithName<
-  'timeupdate',
-  {
-    playback_time_instant_ms: number;
-    playing_time_ms: number;
-    played_delta_ms: number;
-  }
->;
-
-export type IKViewEndEvent = IKPlaybackEventWithName<
-  'viewend',
-  { view_end_reason: ViewEndReason }
->;
-
-export type IKAnalyticsEvent =
-  | IKSessionInitEvent
-  | IKPlayerReadyEvent
-  | IKViewInitEvent
-  | IKVideoChangeEvent
-  | IKPlayEvent
-  | IKPlayingEvent
-  | IKPauseEvent
-  | IKRebufferStartEvent
-  | IKEndedEvent
-  | IKRenditionChangeEvent
-  | IKViewStartedEvent
-  | IKSeekingEvent
-  | IKSeekedEvent
-  | IKRebufferEndEvent
-  | IKErrorEvent
-  | IKTimeupdateEvent
-  | IKViewEndEvent;
-
-/** Internal event shape before encoding to wire format */
-export interface InternalAnalyticsEvent {
+export interface AnalyticsEvent {
   event: IKAnalyticsEventName;
   event_id: string;
+  playback_id: string;
   previous_playback_id?: string;
   previous_session_id?: string;
   video_source_url?: string;
-  video_source_type?: VideoSourceType;
   video_width_pixels?: number;
   video_height_pixels?: number;
   video_total_duration_ms?: number;
@@ -239,33 +97,11 @@ export interface InternalAnalyticsEvent {
   ms_from_previous_event: number;
 }
 
-/** Event payload for ingest: context-only fields are omitted (sent in context only). */
-export type IKAnalyticsEventSlim = Omit<
-  IKAnalyticsEvent,
-  'imagekit_id' | 'session_id' | 'player_instance_id' | 'session_start_date'
->;
-
-export interface IKAnalyticsIngestRequest {
-  schema_version: 1;
-  batch_id?: string;
-  sent_at_iso?: string;
-  context: IKAnalyticsClientContext;
-  events: IKAnalyticsEventSlim[];
-  flush_reason?:
-    | 'interval'
-    | 'visibility_hidden'
-    | 'pagehide'
-    | 'manual'
-    | 'buffer_full'
-    | 'dispose'
-    | 'size_limit';
-}
-
-export interface AnalyticsConfig {
-  ingestUrl: string;
-  flushIntervalMs: number;
-  maxBatchSize: number;
-  timeupdateThrottleMs: number;
-  userId?: string;
-  customDimensions?: Record<string, string>;
-}
+export type FlushReason =
+  | 'interval'
+  | 'visibility_hidden'
+  | 'pagehide'
+  | 'manual'
+  | 'dispose'
+  | 'size_limit'
+  | 'buffer_full';

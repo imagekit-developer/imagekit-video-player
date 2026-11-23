@@ -2,7 +2,7 @@
  * Orchestrates analytics state machine, encoder, and batch queue.
  * Receives signals from the player binding, drives the state machine, and flushes events to ingest.
  */
-import type { IKAnalyticsClientContext, AnalyticsConfig, InternalAnalyticsEvent } from './types';
+import type { AnalyticsEvent, IKAnalyticsClientContext } from './types';
 import type { AnalyticsPlatform } from './platform';
 import type { AnalyticsErrorInfo, AnalyticsPlayer, PlayerSignal } from './player';
 import {
@@ -18,7 +18,7 @@ import { PlayedTimeCounter } from './played-time-counter';
 import { scheduleRepeating } from './timers';
 import { createPlayerInstanceId, createPlaybackId, createEventId, sessionStoreFor } from './id-factory';
 import { AnalyticsStateMachine } from './analytics-state-machine';
-import { encodeEvent } from './event-row-encoder';
+import { encodeEventRowV1 } from './wire-format-v1';
 import { createBatchQueue } from './batch-queue';
 
 /** All fields optional; omitted fields keep their original value. */
@@ -114,27 +114,15 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
     : (): void => {};
   const internalError = (err: unknown): void => warn('internal error; some analytics may be missing', err);
 
-  const config: AnalyticsConfig = {
-    ingestUrl: ANALYTICS_INGEST_URL,
-    flushIntervalMs: ANALYTICS_FLUSH_INTERVAL_MS,
-    maxBatchSize: ANALYTICS_MAX_BATCH_SIZE,
-    timeupdateThrottleMs: ANALYTICS_TIMEUPDATE_THROTTLE_MS,
-    userId: userConfig.userId,
-    customDimensions: userConfig.customDimensions,
-  };
-
   // First touch on a fresh host start is never a rotation; it seeds the tracker context.
   const sessionStore = sessionStoreFor(platform.storage);
   const session = sessionStore.resolve(clock.now()).identity;
   const playerInstanceId = createPlayerInstanceId();
-  let currentPlaybackId: string | null = createPlaybackId();
-  let hasLoadedFirstView = false;
-  // Holds the new session identity + playback id during a rotation. Applied only
-  // once the state machine has emitted the OLD view's closing viewend (via the
-  // onSessionInit callback), so that viewend keeps the old session_id/playback_id.
-  let pendingRotation:
-    | { session_id: string; session_start_date: string; session_start_time_iso: string; newPlaybackId: string }
-    | null = null;
+  // Holds the new session identity during a rotation. Applied only once the state machine has
+  // emitted the OLD view's closing viewend (via the onSessionInit callback), so that viewend
+  // keeps the old session_id.
+  let pendingRotation: { session_id: string; session_start_date: string; session_start_time_iso: string } | null =
+    null;
   // The open view's URL, from its load_start. Every row of the view carries it.
   let viewSourceUrl: string | null = null;
   const playedTime = new PlayedTimeCounter(ANALYTICS_MAX_TIMEUPDATE_GAP_MS);
@@ -147,7 +135,7 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
     imagekit_id: imagekitId,
     session_id: session.session_id,
     player_instance_id: playerInstanceId,
-    user_id: config.userId,
+    user_id: userConfig.userId,
     page_url: device.page_url,
     device_display_width: device.device_display_width,
     device_display_height: device.device_display_height,
@@ -178,45 +166,41 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
   };
 
   const batchQueue = createBatchQueue({
-    ingestUrl: config.ingestUrl,
-    flushIntervalMs: config.flushIntervalMs,
-    maxBatchSize: config.maxBatchSize,
+    ingestUrl: ANALYTICS_INGEST_URL,
+    flushIntervalMs: ANALYTICS_FLUSH_INTERVAL_MS,
+    maxBatchSize: ANALYTICS_MAX_BATCH_SIZE,
     transport: platform.transport,
     debugLog: debug,
     onInternalError: internalError,
     clock,
   });
 
-  const pushEvent = (internal: InternalAnalyticsEvent): void => {
-    const encoded = encodeEvent(internal, context, currentPlaybackId, clock.now());
-    debug(`event ${encoded.event}`, encoded);
-    batchQueue.push(encoded, context);
+  const pushEvent = (event: AnalyticsEvent): void => {
+    debug(`event ${event.event}`, event);
+    batchQueue.push(encodeEventRowV1(event, clock.now()), context);
   };
 
   const stateMachine = new AnalyticsStateMachine(
     {
       onSessionInit: () => {
-        // On a rotation, flip to the new session + playback id here — after the old
-        // view's viewend(sessionrotate) has been emitted, before sessioninit.
+        // On a rotation, flip to the new session here — after the old view's
+        // viewend(sessionrotate) has been emitted, before sessioninit.
         if (pendingRotation) {
           // Context travels per batch: ship the old view's queued viewend under the old session.
           batchQueue.flush('manual');
           context.session_id = pendingRotation.session_id;
           context.session_start_date = pendingRotation.session_start_date;
           context.session_start_time_iso = pendingRotation.session_start_time_iso;
-          currentPlaybackId = pendingRotation.newPlaybackId;
           pendingRotation = null;
         }
       },
-      onViewInit: (newId) => { currentPlaybackId = newId; },
-      onVideoChange: (newId) => { currentPlaybackId = newId; },
       onEvent: pushEvent,
     },
-    createEventId,
+    { eventId: createEventId, playbackId: createPlaybackId },
     () => clock.monotonicNow()
   );
 
-  const captureContext = (): Partial<InternalAnalyticsEvent> => {
+  const captureContext = (): Partial<AnalyticsEvent> => {
     const snapshot = player.getSnapshot();
     return {
       video_source_url: viewSourceUrl ?? undefined,
@@ -245,18 +229,15 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
     const { identity, rotated } = sessionStore.resolve(clock.now());
     if (!rotated) return;
     // Defer applying the new identity until onSessionInit: mutating context here would
-    // stamp the OLD view's closing viewend with the new session_id/playback_id.
-    const newPlaybackId = createPlaybackId();
+    // stamp the OLD view's closing viewend with the new session_id.
     pendingRotation = {
       session_id: identity.session_id,
       session_start_date: identity.session_start_date,
       session_start_time_iso: new Date(identity.session_start_time_ms).toISOString(),
-      newPlaybackId,
     };
     stateMachine.dispatch(
       {
         type: 'session_rotated',
-        newPlaybackId,
         previousSessionId,
         videoSourceUrl: viewSourceUrl ?? undefined,
       },
@@ -293,10 +274,11 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
         warn('mapError threw; reporting the unmapped error', err);
       }
     }
+    const errorCode = code || 'UNKNOWN';
     stateMachine.dispatch(
       kind === 'report'
-        ? { type: 'report_error', errorCode: code, errorMessage: message, errorContext: errCtx }
-        : { type: 'error', errorCode: code, errorMessage: message, errorContext: errCtx },
+        ? { type: 'report_error', errorCode, errorMessage: message, errorContext: errCtx }
+        : { type: 'error', errorCode, errorMessage: message, errorContext: errCtx },
       captureContext,
     );
   };
@@ -345,7 +327,7 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
   const onTick = (): void => {
     if (!playedTime.isCounting) return;
     tick();
-    const due = clock.monotonicNow() - lastReportMonotonic >= config.timeupdateThrottleMs;
+    const due = clock.monotonicNow() - lastReportMonotonic >= ANALYTICS_TIMEUPDATE_THROTTLE_MS;
     if (due && playedTime.hasUnreported) report();
   };
 
@@ -412,22 +394,17 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
         stopCountingAtJump();
         checkSessionRotation();
         const videoSourceUrl = sig.sourceUrl;
-        const isFirstView = !hasLoadedFirstView;
         const prevSourceUrl = viewSourceUrl;
-        const isVideoChange = !isFirstView && !!videoSourceUrl && !!prevSourceUrl && videoSourceUrl !== prevSourceUrl;
+        const isVideoChange = !!videoSourceUrl && !!prevSourceUrl && videoSourceUrl !== prevSourceUrl;
 
         viewSourceUrl = videoSourceUrl;
         player.resetSourceState();
 
-        const newPlaybackId = isFirstView ? currentPlaybackId! : createPlaybackId();
-        hasLoadedFirstView = true;
         stateMachine.dispatch(
           {
             type: 'load_start',
-            playbackId: newPlaybackId,
             videoSourceUrl,
             previousVideoSourceUrl: prevSourceUrl ?? undefined,
-            isFirstView,
             isVideoChange,
           },
           captureContext
@@ -472,8 +449,7 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
       case 'seeked': {
         const toMs = currentTimeMsOrZero();
         playedTime.position = toMs;
-        // seek_time_ms is computed by the state machine from the matching `seeking`.
-        stateMachine.dispatch({ type: 'seeked', toPositionMs: toMs, seekTimeMs: 0 }, captureContext);
+        stateMachine.dispatch({ type: 'seeked', toPositionMs: toMs }, captureContext);
         if (resumeCountingAfterSeek) startCounting();
         resumeCountingAfterSeek = false;
         break;

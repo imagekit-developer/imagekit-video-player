@@ -17,23 +17,14 @@ export type {
   AnalyticsPlatform,
   AnalyticsClock,
   AnalyticsLifecycle,
+  AnalyticsLog,
+  AnalyticsLogLevel,
   AnalyticsTransport,
   DeviceContext,
   KeyValueStorage,
   LifecycleHandlers,
+  SentBeacon,
 } from './platform';
-export {
-  createPlayerInstanceId,
-  createPlaybackId,
-  createEventId,
-  type SessionIdentity,
-  type SessionResolution,
-} from './id-factory';
+export type { IKAnalyticsIngestRequestV1 } from './wire-format-v1';
 export { createBeaconTransport, type BeaconTransportOptions } from './transport';
-export { createBatchQueue, type BatchQueue, type BatchQueueOptions, type FlushReason } from './batch-queue';
-export { AnalyticsStateMachine, type AnalyticsSignal, type AnalyticsStateMachineCallbacks } from './analytics-state-machine';
-export { encodeEvent, toSlimEvent } from './event-row-encoder';
 export { computeScalePercentages, type ScalePercentages } from './scale';
-export * from './wire-format-v1';
-export * from './constants';
-export type * from './types';

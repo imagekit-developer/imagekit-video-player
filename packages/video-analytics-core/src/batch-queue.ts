@@ -3,14 +3,11 @@
  * Size-based flush trigger is a heuristic to keep URLs under typical browser/server limits;
  * it does not strictly guarantee compliance, especially without gzip.
  */
-import type { IKAnalyticsIngestRequest, IKAnalyticsEvent, IKAnalyticsClientContext } from './types';
+import type { FlushReason, IKAnalyticsClientContext } from './types';
 import type { AnalyticsClock, AnalyticsTransport } from './platform';
-import { toSlimEvent } from './event-row-encoder';
 import { buildIngestRequestV1 } from './wire-format-v1';
 import { scheduleRepeating } from './timers';
 import { ANALYTICS_RAW_JSON_FLUSH_THRESHOLD, ANALYTICS_URL_SAFE_LIMIT_BYTES } from './constants';
-
-export type FlushReason = IKAnalyticsIngestRequest['flush_reason'];
 
 export interface BatchQueueOptions {
   ingestUrl: string;
@@ -23,7 +20,8 @@ export interface BatchQueueOptions {
 }
 
 export interface BatchQueue {
-  push: (event: IKAnalyticsEvent, context: IKAnalyticsClientContext) => void;
+  /** `row` from `encodeEventRowV1`; `context` is sent once per batch, so it must not change under queued rows. */
+  push: (row: Array<unknown>, context: IKAnalyticsClientContext) => void;
   flush: (reason: FlushReason) => void;
   dispose: () => void;
 }
@@ -34,17 +32,18 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
   const rawFlushThreshold = transport.supportsCompression
     ? ANALYTICS_RAW_JSON_FLUSH_THRESHOLD
     : Math.floor(ANALYTICS_URL_SAFE_LIMIT_BYTES / 1.37);
-  const events: IKAnalyticsEvent[] = [];
+  const rows: Array<Array<unknown>> = [];
+  // JSON length of the queued rows, separators included.
+  let rowsJsonLength = 0;
   let lastContext: IKAnalyticsClientContext | null = null;
   let stopInterval: (() => void) | null = null;
   let disposed = false;
 
   function doFlush(reason: FlushReason) {
-    if (events.length === 0 || !lastContext) return;
+    if (rows.length === 0 || !lastContext) return;
     if (disposed && reason !== 'dispose' && reason !== 'pagehide' && reason !== 'visibility_hidden') return;
-    const batch = events.splice(0, events.length);
-    const slim = batch.map(toSlimEvent);
-    const req = buildIngestRequestV1(lastContext, slim, reason ?? '', undefined, clock.now());
+    const req = buildIngestRequestV1(lastContext, rows.splice(0, rows.length), reason, clock.now());
+    rowsJsonLength = 0;
     transport.send(req, { ingestUrl }).then(
       (sent) =>
         debugLog(
@@ -55,24 +54,23 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
     );
   }
 
-  function projectedBatchJsonLength(): number {
-    if (!lastContext || events.length === 0) return 0;
-    const slim = events.map(toSlimEvent);
-    const req = buildIngestRequestV1(lastContext, slim, 'size_limit', undefined, clock.now());
-    return JSON.stringify(req).length;
+  function projectedBatchJsonLength(context: IKAnalyticsClientContext): number {
+    const envelope = JSON.stringify(buildIngestRequestV1(context, [], 'size_limit', clock.now()));
+    return envelope.length + rowsJsonLength;
   }
 
-  function push(event: IKAnalyticsEvent, context: IKAnalyticsClientContext) {
+  function push(row: Array<unknown>, context: IKAnalyticsClientContext) {
     if (disposed) return;
     lastContext = context;
-    events.push(event);
+    rowsJsonLength += JSON.stringify(row).length + (rows.length > 0 ? 1 : 0);
+    rows.push(row);
 
-    if (events.length >= maxBatchSize) {
+    if (rows.length >= maxBatchSize) {
       doFlush('buffer_full');
       return;
     }
 
-    if (projectedBatchJsonLength() >= rawFlushThreshold) {
+    if (projectedBatchJsonLength(context) >= rawFlushThreshold) {
       doFlush('size_limit');
     }
   }
@@ -102,7 +100,7 @@ export function createBatchQueue(opts: BatchQueueOptions): BatchQueue {
   stopInterval = scheduleRepeating(
     clock,
     () => guarded(() => {
-      if (events.length > 0) doFlush('interval');
+      if (rows.length > 0) doFlush('interval');
     }),
     flushIntervalMs
   );

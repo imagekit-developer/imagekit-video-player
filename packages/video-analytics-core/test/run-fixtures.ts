@@ -9,17 +9,15 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
-  EVENT_FIELDS_V1,
   createAnalyticsTracker,
-  decodeIngestRequestV1,
   type AnalyticsPlayer,
   type AnalyticsPlatform,
-  type IKAnalyticsEvent,
   type IKAnalyticsIngestRequestV1,
   type KeyValueStorage,
   type LifecycleHandlers,
   type PlayerSignal,
 } from '../src/index';
+import { EVENT_FIELDS_V1 } from '../src/wire-format-v1';
 
 const TICK_MS = 250;
 const DRAIN_MS = 6000;
@@ -264,15 +262,28 @@ class FakePlayer implements AnalyticsPlayer {
 
 // ─── One fixture run ──────────────────────────────────────────────────────────
 
+/** One sent row, keyed by its `EVENT_FIELDS_V1` names (null positions left out), plus the batch's session id. */
+type Ev = Record<string, unknown>;
+
+function decodeRows(request: IKAnalyticsIngestRequestV1): Ev[] {
+  return request.e.map((row) => {
+    const ev: Ev = { session_id: request.c.s };
+    EVENT_FIELDS_V1.forEach((field, i) => {
+      if (row[i] !== null && row[i] !== undefined) ev[field] = row[i];
+    });
+    return ev;
+  });
+}
+
 interface RunOutput {
-  events: IKAnalyticsEvent[];
+  events: Ev[];
   warnings: string[];
 }
 
 function runFixture(fx: Fixture): RunOutput {
   const vt = new VirtualTime();
   const restoreTimers = forbidGlobalTimers();
-  const events: IKAnalyticsEvent[] = [];
+  const events: Ev[] = [];
   const warnings: string[] = [];
   let lifecycle: LifecycleHandlers | null = null;
   const memory = new Map<string, string>();
@@ -300,8 +311,7 @@ function runFixture(fx: Fixture): RunOutput {
     transport: {
       supportsCompression: true,
       send(request: IKAnalyticsIngestRequestV1) {
-        const { context, events: batch } = decodeIngestRequestV1(request);
-        events.push(...batch.map((e) => ({ ...e, session_id: context.session_id }) as IKAnalyticsEvent));
+        events.push(...decodeRows(request));
         return Promise.resolve({ jsonBytes: 0, urlBytes: 0, gzipped: true });
       },
     },
@@ -406,11 +416,9 @@ function applySignal(
 
 // ─── Metrics, as playback_agg_mv + dashboard queries compute them ─────────────
 
-type Ev = IKAnalyticsEvent & Record<string, unknown>;
-
-function groupByPlayback(events: IKAnalyticsEvent[]): Map<string, Ev[]> {
+function groupByPlayback(events: Ev[]): Map<string, Ev[]> {
   const views = new Map<string, Ev[]>();
-  for (const e of events as Ev[]) {
+  for (const e of events) {
     const id = e.playback_id as string | undefined;
     if (!id) continue;
     if (!views.has(id)) views.set(id, []);
@@ -528,7 +536,7 @@ const ROW_MEDIA_FIELDS = new Set([
   'video_codec',
 ]);
 
-function fixtureRows(events: IKAnalyticsEvent[]): Row[] {
+function fixtureRows(events: Ev[]): Row[] {
   const aliases = new Map<string, string>();
   const counts = { v: 0, s: 0 };
   const alias = (kind: 'v' | 's', id: unknown): string => {
@@ -539,12 +547,12 @@ function fixtureRows(events: IKAnalyticsEvent[]): Row[] {
   };
   const lastMedia = new Map<string, Record<string, string>>();
 
-  return (events as Ev[]).map((e) => {
+  return events.map((e) => {
     const view = alias('v', e.playback_id);
     const media = lastMedia.get(view) ?? {};
     lastMedia.set(view, media);
     const row: Row = {
-      t: Date.parse(String(e.event_time_iso)) - EPOCH_MS,
+      t: Number(e.event_time) - EPOCH_MS,
       view,
       session: alias('s', e.session_id),
       order: e.event_order,

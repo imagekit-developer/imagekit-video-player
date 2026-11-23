@@ -7,12 +7,7 @@
  *  - `orientation` and `video_source_hostname` are derived server-side from video_source_url + w/h.
  *  - `error_context` is truncated to 512 B at encode time.
  */
-import type {
-  IKAnalyticsClientContext,
-  IKAnalyticsEvent,
-  IKAnalyticsEventSlim,
-  IKAnalyticsIngestRequest,
-} from './types';
+import type { AnalyticsEvent, FlushReason, IKAnalyticsClientContext, VideoSourceType } from './types';
 
 export const WIRE_VERSION = 1;
 
@@ -58,8 +53,6 @@ export const EVENT_FIELDS_V1 = [
   'previous_playback_id',        // 33  — predecessor playback (videochange or warm resume)
   'previous_session_id',         // 34  — predecessor session (warm resume only; gates startup-time MVs server-side)
 ] as const;
-
-export type EventFieldV1 = (typeof EVENT_FIELDS_V1)[number];
 
 /** Short-key → canonical context field. */
 export const CONTEXT_KEY_MAP_V1: Record<string, keyof IKAnalyticsClientContext> = {
@@ -144,102 +137,52 @@ export function encodeContextV1(context: IKAnalyticsClientContext): Record<strin
   return out;
 }
 
-/** Decode wire-shape context back to canonical (long-key) shape. */
-export function decodeContextV1(shortContext: Record<string, unknown>): IKAnalyticsClientContext {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(shortContext)) {
-    const longKey = CONTEXT_KEY_MAP_V1[key] ?? key;
-    out[longKey] = value;
-  }
-  return out as unknown as IKAnalyticsClientContext;
+/** From the file extension of the URL path; manifests without one (e.g. `manifest(format=…)`) are `other`. */
+function deriveVideoSourceType(url: string): VideoSourceType {
+  const path = url.split(/[?#]/, 1)[0].toLowerCase();
+  if (path.endsWith('.m3u8')) return 'hls';
+  if (path.endsWith('.mpd')) return 'dash';
+  if (path.endsWith('.mp4')) return 'mp4';
+  if (path.endsWith('.webm')) return 'webm';
+  return 'other';
 }
 
-/** Defensive per-field truncation applied before wire encoding. */
-function applyTruncation(ev: IKAnalyticsEventSlim): IKAnalyticsEventSlim {
-  let out: IKAnalyticsEventSlim = ev;
-  if (out.error_message) {
-    const t = truncateBytes(out.error_message, 256);
-    if (t !== out.error_message) out = { ...out, error_message: t } as IKAnalyticsEventSlim;
-  }
-  if (out.error_context) {
-    const t = truncateBytes(out.error_context, 512);
-    if (t !== out.error_context) out = { ...out, error_context: t } as IKAnalyticsEventSlim;
-  }
-  return out;
-}
+const EVENT_TIME = EVENT_FIELDS_V1.indexOf('event_time');
+const VIDEO_SOURCE_TYPE = EVENT_FIELDS_V1.indexOf('video_source_type');
+const ERROR_MESSAGE = EVENT_FIELDS_V1.indexOf('error_message');
+const ERROR_CONTEXT = EVENT_FIELDS_V1.indexOf('error_context');
 
-/** Encode one slim event into a positional row, with trailing-null trim. */
-export function encodeEventRowV1(ev: IKAnalyticsEventSlim): Array<unknown> {
-  const truncated = applyTruncation(ev);
-  const e = truncated as unknown as Record<string, unknown>;
-  const row: Array<unknown> = new Array(EVENT_FIELDS_V1.length);
+/** Encodes one event into its positional row, trailing nulls trimmed. */
+export function encodeEventRowV1(event: AnalyticsEvent, eventTimeMs: number): Array<unknown> {
+  const fields = event as unknown as Record<string, unknown>;
+  const row: Array<unknown> = EVENT_FIELDS_V1.map((field) => {
+    const value = fields[field];
+    return value === undefined || value === '' ? null : value;
+  });
+  row[EVENT_TIME] = Number.isFinite(eventTimeMs) ? Math.trunc(eventTimeMs) : null;
+  if (event.video_source_url) row[VIDEO_SOURCE_TYPE] = deriveVideoSourceType(event.video_source_url);
+  row[ERROR_MESSAGE] = truncateBytes(event.error_message || undefined, 256) ?? null;
+  row[ERROR_CONTEXT] = truncateBytes(event.error_context || undefined, 512) ?? null;
 
-  for (let i = 0; i < EVENT_FIELDS_V1.length; i++) {
-    const field = EVENT_FIELDS_V1[i];
-    if (field === 'event_time') {
-      // Convert ISO string → ms epoch.
-      const iso = e.event_time_iso as string | undefined;
-      const t = iso ? Date.parse(iso) : NaN;
-      row[i] = Number.isFinite(t) ? t : null;
-    } else {
-      const v = e[field];
-      row[i] = v === undefined ? null : v;
-    }
-  }
-
-  // Trim trailing nulls.
   let len = row.length;
   while (len > 0 && row[len - 1] === null) len--;
   row.length = len;
-
   return row;
 }
 
-/** Decode a positional row back to the canonical slim-event object. */
-export function decodeEventRowV1(row: Array<unknown>): IKAnalyticsEventSlim {
-  const out: Record<string, unknown> = {};
-  for (let i = 0; i < EVENT_FIELDS_V1.length; i++) {
-    const value = i < row.length ? row[i] : null;
-    if (value === null || value === undefined) continue;
-    const field = EVENT_FIELDS_V1[i];
-    if (field === 'event_time') {
-      const t = typeof value === 'number' ? value : Number(value);
-      if (Number.isFinite(t)) {
-        out.event_time_iso = new Date(t).toISOString();
-      }
-    } else {
-      out[field] = value;
-    }
-  }
-  return out as IKAnalyticsEventSlim;
-}
-
-/** Build the full v1 wire envelope from canonical inputs. */
+/** Builds the v1 envelope around rows already encoded with `encodeEventRowV1`. */
 export function buildIngestRequestV1(
   context: IKAnalyticsClientContext,
-  events: IKAnalyticsEventSlim[] | IKAnalyticsEvent[],
-  flushReason: string,
-  batchId?: string,
-  sentAtMs?: number
+  rows: Array<Array<unknown>>,
+  flushReason: FlushReason,
+  sentAtMs: number
 ): IKAnalyticsIngestRequestV1 {
   return {
     v: WIRE_VERSION,
-    b: batchId ?? `b_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-    t: sentAtMs ?? Date.now(),
+    b: `b_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+    t: sentAtMs,
     r: flushReason,
     c: encodeContextV1(context),
-    e: (events as IKAnalyticsEventSlim[]).map(encodeEventRowV1),
-  };
-}
-
-/** Decode a wire envelope back to the canonical IKAnalyticsIngestRequest shape. */
-export function decodeIngestRequestV1(raw: IKAnalyticsIngestRequestV1): IKAnalyticsIngestRequest {
-  return {
-    schema_version: 1,
-    batch_id: raw.b,
-    sent_at_iso: new Date(raw.t).toISOString(),
-    context: decodeContextV1(raw.c),
-    events: raw.e.map(decodeEventRowV1) as IKAnalyticsIngestRequest['events'],
-    flush_reason: raw.r as IKAnalyticsIngestRequest['flush_reason'],
+    e: rows,
   };
 }
