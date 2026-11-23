@@ -56,6 +56,22 @@ function hideLoadingState(player: Player): void {
   spinner?.el()?.setAttribute('aria-hidden', 'true');
 }
 
+interface HeldPlay {
+  promise: Promise<void>;
+  resolve: () => void;
+  reject: (err: unknown) => void;
+}
+
+function createHeldPlay(): HeldPlay {
+  let resolve!: () => void;
+  let reject!: (err: unknown) => void;
+  const promise = new Promise<void>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 function validateSourceOptions(source: SourceOptions): void {
   if (!source.src || typeof source.src !== 'string') {
     throw new Error('`src` is required and must be a non-empty string.');
@@ -143,29 +159,25 @@ function setupTextTracks(
 }
 
 /**
- * Sets up the poster image for the player from the current source.
+ * The poster URL for a source as the app passed it: its thumbnail or its `poster` option, signed
+ * when a `signerFn` is set. Built from the unsigned source so the video's signature is not carried over.
  */
-function setupPoster(
-  player: Player,
-  source: SourceOptions,
-  options: IKPlayerOptions
-): void {
-  const preparedPoster = (source as AugmentedSourceOptions | null | undefined)?.prepared?.poster;
-  
-  if (preparedPoster) {
-    player.poster(preparedPoster);
-  } else {
-    preparePosterSrc(source, options).then(
-      poster => {
-        if (poster) {
-          player.poster(poster);
-        }
-        ensurePrepared(source as AugmentedSourceOptions).poster = poster ?? undefined;
-      }
-    ).catch(err => {
-      player.log.error(`Failed to load poster: ${err.message}`);
-    });
-  }
+function loadPosterUrl(source: SourceOptions, options: IKPlayerOptions): Promise<string | undefined> {
+  const cached = (source as AugmentedSourceOptions).prepared?.poster;
+  if (cached) return Promise.resolve(cached);
+  return preparePosterSrc(source, options).then((poster) => {
+    ensurePrepared(source as AugmentedSourceOptions).poster = poster || undefined;
+    return poster || undefined;
+  });
+}
+
+function imageLoads(url: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = url;
+  });
 }
 
 /**
@@ -186,55 +198,67 @@ export function createSourceOverride(
   const defaultNotSupportedMessage = player.options({}).notSupportedMessage;
   let srcCallVersion = 0;
   let sourceReady: Promise<void> | null = null;
-  // A play() requested while the source is being prepared; pause() and reset() cancel it.
-  let playPending = false;
+  // A play() requested while a source is being prepared. It plays whichever source is current
+  // when one loads; pause() and reset() cancel it. paused() stays true meanwhile, as in Video.js.
+  let heldPlay: HeldPlay | null = null;
   // The URL the source being prepared will play, minus the signature (known before signing).
   let preparingSourceUrl = '';
   const nativePlay = player.play.bind(player);
   const nativePause = player.pause.bind(player);
-  const nativePaused = player.paused.bind(player);
   const nativeReset = player.reset.bind(player);
 
-  const playWhenReady = (ready: Promise<void>): Promise<void> => {
-    const playIfStillRequested = () => {
-      if (!playPending) return undefined;
-      if (sourceReady && sourceReady !== ready) return playWhenReady(sourceReady);
-      playPending = false;
-      return nativePlay();
-    };
-    return ready.then(playIfStillRequested, (err) => {
-      if (sourceReady && sourceReady !== ready) return playIfStillRequested();
-      throw err;
+  const takeHeldPlay = (): HeldPlay | null => {
+    const held = heldPlay;
+    heldPlay = null;
+    return held;
+  };
+
+  const cancelHeldPlay = () => {
+    const held = takeHeldPlay();
+    if (!held) return;
+    player.trigger('ikplaycancel');
+    held.resolve();
+  };
+
+  const startHeldPlay = () => {
+    const held = takeHeldPlay();
+    if (!held) return;
+    Promise.resolve(nativePlay()).then(held.resolve, (err) => {
+      // A blocked play fires no `play` event; analytics must not keep waiting for one.
+      player.trigger('ikplaycancel');
+      held.reject(err);
     });
   };
 
+  const failHeldPlay = (err: unknown) => {
+    takeHeldPlay()?.reject(err);
+  };
+
   player.play = () => {
-    const ready = sourceReady;
-    if (!ready) return nativePlay();
-    if (!playPending) {
-      // iOS Safari blocks a play() that runs more than ~5 s after the tap, unless the element
-      // was loaded during the tap. Emptying it first keeps the previous video from reloading.
-      const el = player.tech(true)?.el() as HTMLMediaElement | undefined;
-      if (el) {
-        if (el.currentSrc) el.removeAttribute('src');
-        el.load();
-      }
-      playPending = true;
-      // Lets analytics open the view at the request instead of at the later loadstart.
-      player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
+    if (heldPlay) return heldPlay.promise;
+    if (!sourceReady) return nativePlay();
+    // iOS Safari blocks a play() that runs more than ~5 s after the tap, unless the element
+    // was loaded during the tap. Emptying it first keeps the previous video from reloading.
+    const el = player.tech(true)?.el() as HTMLMediaElement | undefined;
+    if (el) {
+      if (el.currentSrc) el.removeAttribute('src');
+      el.load();
     }
-    return playWhenReady(ready);
+    const held = createHeldPlay();
+    heldPlay = held;
+    // Lets analytics open the view at the request instead of at the later loadstart.
+    player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
+    return held.promise;
   };
   player.pause = () => {
-    if (playPending) {
-      playPending = false;
-      player.trigger('ikplaycancel');
-    }
+    cancelHeldPlay();
     return nativePause();
   };
-  player.paused = () => !playPending && nativePaused();
   player.reset = () => {
-    playPending = false;
+    ++srcCallVersion;
+    sourceReady = null;
+    cancelHeldPlay();
+    hideLoadingState(player);
     nativeReset();
   };
 
@@ -255,7 +279,7 @@ export function createSourceOverride(
       // Invalid options are reported as a player error when the source is prepared.
       preparingSourceUrl = sourceClone.src;
     }
-    if (playPending) player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
+    if (heldPlay) player.trigger('ikplayheld', { sourceUrl: preparingSourceUrl });
 
     const myCallId = ++srcCallVersion;
 
@@ -265,6 +289,16 @@ export function createSourceOverride(
     if (!currentSource) {
       return;
     }
+
+    // The thumbnail is its own job on the original file, so it does not wait for the video.
+    player.poster('');
+    const posterUrl = loadPosterUrl(currentSource, options);
+    posterUrl
+      .then((url) => (url ? imageLoads(url).then((loaded) => (loaded ? url : undefined)) : undefined))
+      .then((url) => {
+        if (url && myCallId === srcCallVersion) player.poster(url);
+      })
+      .catch((err) => player.log.error(`Failed to load poster: ${err.message}`));
 
     const ready = prepareSourceIfNeeded(currentSource, options)
       .then(async (prepared: SourceOptions) => {
@@ -298,17 +332,27 @@ export function createSourceOverride(
             ? UNSUPPORTED_ABS_CODEC_MESSAGE
             : defaultNotSupportedMessage,
         });
+        // Playing before the new source's loadstart makes Safari's Video.js call load(), which
+        // re-enters this override with the prepared source and prepares it again.
+        player.any(['loadstart', 'error'], (event: Event) => {
+          if (myCallId !== srcCallVersion) return;
+          if (event.type === 'loadstart') startHeldPlay();
+          else failHeldPlay(player.error());
+        });
         nativeSrc(prepared as any);
 
         setupTextTracks(player, prepared, options);
-        setupPoster(player, prepared, options);
+        // A thumbnail still being generated answers 202 and is not retried; try again now.
+        posterUrl.then((url) => {
+          if (url && myCallId === srcCallVersion && player.poster() !== url) player.poster(url);
+        }, () => {});
       });
     sourceReady = ready;
 
     ready
       .catch(err => {
         if (myCallId === srcCallVersion) {
-          playPending = false;
+          failHeldPlay(err);
           // The source never reached Video.js, so no loadstart precedes this error.
           player.trigger('iksourcefailed', { sourceUrl: preparingSourceUrl });
           player.error(err.message);

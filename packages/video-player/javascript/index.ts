@@ -11,7 +11,7 @@ import { SeekThumbnailsManager } from './modules/seek-thumbnails/seek-thumbnails
 import { initChapterMarkers } from './modules/chapters/chapters';
 import './modules/recommendations-overlay/recommendations-overlay';
 import { ShoppableManager } from './modules/shoppable/shoppable-manager';
-import { validateIKPlayerOptions, CleanupRegistry } from './utils';
+import { validateIKPlayerOptions, CleanupRegistry, buildSourceUrl } from './utils';
 import { enableFloatingPlayer } from './modules/floating-player';
 import './modules/logo-button';
 import { initializeLogoButton } from './modules/logo-button/init';
@@ -67,6 +67,15 @@ class ImageKitVideoPlayerPlugin extends Plugin {
           imagekitId: this.ikGlobalSettings_.imagekitId,
           player: this.player,
           getCurrentSource: () => this.getOriginalCurrentSource(),
+          getSourceKey: () => {
+            const source = this.getOriginalCurrentSource();
+            if (!source) return '';
+            try {
+              return buildSourceUrl(source, this.ikGlobalSettings_);
+            } catch {
+              return source.src;
+            }
+          },
           cleanup: this.cleanup_,
           pageLoadStartMonotonic,
         });

@@ -125,6 +125,7 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
     null;
   // The open view's URL, from its load_start. Every row of the view carries it.
   let viewSourceUrl: string | null = null;
+  let viewSourceKey: string | null = null;
   const playedTime = new PlayedTimeCounter(ANALYTICS_MAX_TIMEUPDATE_GAP_MS);
   let stopTicks: (() => void) | undefined;
   let lastReportMonotonic = clock.monotonicNow();
@@ -395,9 +396,11 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
         checkSessionRotation();
         const videoSourceUrl = sig.sourceUrl;
         const prevSourceUrl = viewSourceUrl;
-        const isVideoChange = !!videoSourceUrl && !!prevSourceUrl && videoSourceUrl !== prevSourceUrl;
+        const sourceKey = sig.sourceKey || videoSourceUrl;
+        const isVideoChange = !!sourceKey && !!viewSourceKey && sourceKey !== viewSourceKey;
 
         viewSourceUrl = videoSourceUrl;
+        viewSourceKey = sourceKey;
         player.resetSourceState();
 
         stateMachine.dispatch(

@@ -26,7 +26,8 @@ function toErrorInfo(err: unknown): AnalyticsErrorInfo {
 
 export function createVideoJsAnalyticsPlayer(
   player: Player,
-  getCurrentSource: () => SourceOptions | null
+  getCurrentSource: () => SourceOptions | null,
+  getSourceKey: () => string
 ): AnalyticsPlayer {
   const playerAny = player as any;
   let loadSource: SourceOptions | null = null;
@@ -88,7 +89,7 @@ export function createVideoJsAnalyticsPlayer(
       announcedSource = source;
       renderedBitrate = undefined;
       loadSource = source;
-      onSignal({ type: 'load_start', sourceUrl: sourceUrl || source?.src || '' });
+      onSignal({ type: 'load_start', sourceUrl: sourceUrl || source?.src || '', sourceKey: getSourceKey() });
     };
     on('ikplayheld', (_event: unknown, data?: { sourceUrl?: string }) => {
       announceLoadStart(data?.sourceUrl);
@@ -100,6 +101,7 @@ export function createVideoJsAnalyticsPlayer(
       if (getCurrentSource() !== lastLoadStartSource) announceLoadStart(data?.sourceUrl);
     });
     on('ikplaycancel', () => {
+      if (!heldPlaySent) return;
       heldPlaySent = false;
       onSignal({ type: 'pause' });
     });
@@ -115,7 +117,11 @@ export function createVideoJsAnalyticsPlayer(
         return;
       }
       heldPlaySent = false;
-      onSignal({ type: 'load_start', sourceUrl: player.currentSrc?.() || loadSource?.src || '' });
+      onSignal({
+        type: 'load_start',
+        sourceUrl: player.currentSrc?.() || loadSource?.src || '',
+        sourceKey: getSourceKey(),
+      });
     });
 
     on('play', () => {

@@ -65,7 +65,7 @@ export class PlaylistMenuItem extends Component {
         playlistManager.loadPlaylistItem(idx);
       }
       if (this.playOnSelect) {
-        this.player_.one('loadstart', () => this.player_.play());
+        player.play()?.catch(() => {});
       }
     }
   }

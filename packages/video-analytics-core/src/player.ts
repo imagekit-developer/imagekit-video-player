@@ -6,7 +6,11 @@ export interface AnalyticsErrorInfo {
 
 export type PlayerSignal =
   | { type: 'player_ready' }
-  | { type: 'load_start'; sourceUrl: string }
+  /**
+   * `sourceUrl` is the URL being played, reported on every row. `sourceKey` identifies the source
+   * the app asked for; a new view is a video change when it differs. Defaults to `sourceUrl`.
+   */
+  | { type: 'load_start'; sourceUrl: string; sourceKey?: string }
   | { type: 'play' }
   | { type: 'playing' }
   | { type: 'pause' }

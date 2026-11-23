@@ -20,6 +20,8 @@ export interface AnalyticsTrackerOptions {
   imagekitId: string;
   player: Player;
   getCurrentSource: () => SourceOptions | null;
+  /** Identifies the current source for video-change detection: its URL before signing. */
+  getSourceKey: () => string;
   cleanup: CleanupRegistry;
   pageLoadStartMonotonic?: number;
 }
@@ -35,11 +37,11 @@ export interface AnalyticsTrackerHandle {
 }
 
 export function createAnalyticsTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle {
-  const { config, imagekitId, player, getCurrentSource, cleanup, pageLoadStartMonotonic } = options;
+  const { config, imagekitId, player, getCurrentSource, getSourceKey, cleanup, pageLoadStartMonotonic } = options;
   const tracker = createCoreAnalyticsTracker({
     config,
     imagekitId,
-    player: createVideoJsAnalyticsPlayer(player, getCurrentSource),
+    player: createVideoJsAnalyticsPlayer(player, getCurrentSource, getSourceKey),
     platform: browserPlatform,
     integration: { name: PLUGIN_NAME, version: PLUGIN_VERSION },
     initMonotonicMs: pageLoadStartMonotonic ?? (typeof performance !== 'undefined' ? performance.now() : 0),
