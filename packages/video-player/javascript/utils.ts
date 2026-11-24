@@ -38,6 +38,17 @@ export function filterTrQueryParam(url: URL, allowedParams: ReadonlySet<string>)
     }
   }
 }
+
+/**
+ * Builds the URL the player will play: ABS suffix and transformations applied, not yet signed.
+ * @param input - String URL or SourceOptions object
+ * @param opts - ImageKit player options
+ */
+export function buildSourceUrl(input: string | SourceOptions, opts: IKPlayerOptions): string {
+  const { src, transformation } = resolveSourceUrlAndTransformations(input, opts);
+  return ikBuild({ src, urlEndpoint: '', transformation });
+}
+
 /**
  * Prepares a video source by applying ABS suffix, transformations, and signing.
  * @param input - String URL or SourceOptions object
@@ -51,14 +62,7 @@ export async function prepareSource(
   let source: SourceOptions =
     typeof input === 'string' ? { src: input } : { ...input };
 
-  const { src: finalSrc, transformation: finalTransformations } =
-    resolveSourceUrlAndTransformations(source, opts);
-
-  source.src = ikBuild({
-    src: finalSrc,
-    urlEndpoint: '',
-    transformation: finalTransformations,
-  });
+  source.src = buildSourceUrl(source, opts);
 
   if (opts.signerFn) {
     try {

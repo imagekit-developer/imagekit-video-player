@@ -7,8 +7,14 @@ export const ANALYTICS_MAX_BATCH_SIZE = 50;
 
 export const ANALYTICS_TIMEUPDATE_THROTTLE_MS = 2000;
 
-/** If media-time advance exceeds this × wall ms since last emit, treat as seek/scrub (played_delta_ms = 0). */
-export const ANALYTICS_MAX_PLAYBACK_SPEED_FACTOR = 3;
+/** Stalls shorter than this (e.g. the blip right after a seek) are not rebuffers. */
+export const ANALYTICS_MIN_REBUFFER_MS = 250;
+
+/** How often the playhead is read while playing, besides native `timeupdate`s. */
+export const ANALYTICS_PLAYHEAD_TICK_MS = 100;
+
+/** Longest gap between native `timeupdate`s while playing (HTML spec: 15–250 ms); caps the time estimated at a seek. */
+export const ANALYTICS_MAX_TIMEUPDATE_GAP_MS = 250;
 
 /** Conservative ceiling on final GET URL bytes. */
 export const ANALYTICS_URL_SAFE_LIMIT_BYTES = 4000;
@@ -22,7 +28,7 @@ export const ANALYTICS_RAW_JSON_FLUSH_THRESHOLD = 6000;
 /**
  * Session inactivity timeout. After this much wall-clock time without a meaningful
  * user signal (play / seeking / load_start), the next user action rotates session_id
- * and starts a new view marked `is_resumed_playback = true`. Industry default (Mux: 60 min).
+ * and starts a new view marked `is_resumed_playback = true`. 60 min is the common industry default.
  */
 export const ANALYTICS_SESSION_INACTIVITY_TIMEOUT_MS = 60 * 60 * 1000;
 

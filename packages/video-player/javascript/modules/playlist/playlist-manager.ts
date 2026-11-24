@@ -183,7 +183,8 @@ export class PlaylistManager {
     const menuOptions = {
       className: uiOpts.className,
       horizontal: uiOpts.direction === 'horizontal',
-      showDescription: uiOpts.showDescription
+      showDescription: uiOpts.showDescription,
+      playOnSelect: uiOpts.playOnSelect
     };
 
     const menu = new PlaylistMenu(this.player_, this.playlist_, menuOptions, this.playerOptions_);

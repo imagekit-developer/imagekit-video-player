@@ -25,6 +25,14 @@ export interface ImageKitVideoPlayerPluginInstance {
    * No-op when analytics is disabled.
    */
   reportError(error: ReportableError): void;
+  /**
+   * Replace all analytics custom dimensions, e.g. after the viewer signs in.
+   * Events already recorded keep their previous values. Invalid keys or empty
+   * values are dropped with a console warning. No-op when analytics is disabled.
+   */
+  setCustomDimensions(dims: Record<string, string>): void;
+  /** The custom dimensions currently in effect; `{}` when analytics is disabled. */
+  getCustomDimensions(): Record<string, string>;
 }
 
 /** The shape returned by `mapError`. All fields are optional — omitted fields keep their original value. */
@@ -75,6 +83,8 @@ export interface AnalyticsConfig {
      * }
      */
     mapError?: (error: RawPlayerError) => MappedError | undefined | null;
+    /** Logs every analytics event and beacon to the console. */
+    debug?: boolean;
 }
 
 export interface IKPlayerOptions {
