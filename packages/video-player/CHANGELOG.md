@@ -7,6 +7,7 @@
 - Added `@imagekit/video-player/utils` with the helpers that build the source, poster, subtitle and chapters URLs the player loads
 - Skin colours are driven by the `--color-base`, `--color-text` and `--color-accent` tokens; unset tokens keep the existing look
 - Tooltips and menu content inherit the player's font family
+- Fixed the ±10s skip icons sitting above and left of the other control-bar icons
 
 ## [1.0.0-beta.7]
 

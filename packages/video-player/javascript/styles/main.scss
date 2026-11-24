@@ -293,7 +293,8 @@ $spacing-progress-interactive-hover: -1.4rem;
         width: 1.8em;
         height: 1.8em;
         font-size: inherit;
-        align-self: anchor-center;
+        inset: 0;
+        margin: auto;
     }
 
     .vjs-skip-backward-10 .vjs-icon-placeholder::before,
@@ -307,7 +308,8 @@ $spacing-progress-interactive-hover: -1.4rem;
         width: 1.8em;
         height: 1.8em;
         font-size: inherit;
-        align-self: anchor-center; 
+        inset: 0;
+        margin: auto;
     }
 
     .vjs-control-bar {
