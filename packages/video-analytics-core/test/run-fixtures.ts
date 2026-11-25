@@ -31,6 +31,7 @@ interface FixtureSignal {
   type: string;
   src?: string;
   to?: number;
+  from?: number;
   code?: string;
   bitrate?: number;
   rate?: number;
@@ -374,7 +375,9 @@ function applySignal(
       return player.emit({ type: 'waiting' });
     case 'seeking':
       player.seekTo(s.to ?? 0);
-      return player.emit({ type: 'seeking' });
+      return player.emit(s.from === undefined ? { type: 'seeking' } : { type: 'seeking', fromTime: s.from / 1000 });
+    case 'jump':
+      return player.seekTo(s.to ?? 0);
     case 'pause_while_seeking':
       return player.pauseWhileSeeking();
     case 'seeked':

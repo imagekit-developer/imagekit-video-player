@@ -9,7 +9,7 @@ show for it, and `rows`: every row the tracker sent for it.
 | `views.json` | V1–V9 |
 | `playing-time.json` | P1–P8 |
 | `rebuffering.json` | R1–R8 |
-| `seeking.json` | S1–S9 |
+| `seeking.json` | S1–S10 |
 | `lifecycle.json` | L1–L9 |
 
 The web core runs them with `yarn test` (`../run-fixtures.ts`); the Android and iOS ports must
@@ -54,8 +54,9 @@ scenarios run whose rows changed (review the diff: it shows exactly which rows c
 |---|---|
 | `load_start` (`src`) | New source, playhead 0, then the signal |
 | `play`, `playing`, `pause`, `waiting`, `ended` | The player signal (`playing` starts the playhead) |
-| `seeking` (`to`) | Playhead jumps to `to` ms before the signal, as browsers report it |
+| `seeking` (`to`, `from`) | Playhead jumps to `to` ms before the signal, as browsers report it; `from` (ms) is sent as the signal's `fromTime` |
 | `seeked` | The player signal |
+| `jump` (`to`) | Playhead jumps to `to` ms with no signal (AVPlayer: a seek not noticed yet) |
 | `pause_while_seeking` | Playback stays stopped after the seek; no signal (bindings drop a pause during a seek) |
 | `error` (`code`) | Fatal player error |
 | `report_error` (`code`) | `tracker.reportError` (non-fatal) |

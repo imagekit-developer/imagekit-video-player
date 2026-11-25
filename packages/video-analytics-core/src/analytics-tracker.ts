@@ -16,7 +16,8 @@ import {
 } from './constants';
 import { PlayedTimeCounter } from './played-time-counter';
 import { scheduleRepeating } from './timers';
-import { createPlayerInstanceId, createPlaybackId, createEventId, sessionStoreFor } from './id-factory';
+import { createPlayerInstanceId, createPlaybackId, createEventId } from './ids';
+import { sessionStoreFor } from './session-store';
 import { AnalyticsStateMachine } from './analytics-state-machine';
 import { encodeEventRowV1 } from './wire-format-v1';
 import { createBatchQueue } from './batch-queue';
@@ -364,9 +365,9 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
    * Same, at a seek or source change, where the player already reports the new position.
    * Returns the position left.
    */
-  const stopCountingAtJump = (): number => {
+  const stopCountingAtJump = (knownFromMs?: number): number => {
     stopTimer();
-    const fromMs = playedTime.seek(clock.monotonicNow());
+    const fromMs = playedTime.seek(clock.monotonicNow(), knownFromMs);
     if (playedTime.hasUnreported) report();
     return fromMs;
   };
@@ -444,7 +445,7 @@ function createTracker(options: AnalyticsTrackerOptions): AnalyticsTrackerHandle
       case 'seeking': {
         // A drag sends several `seeking`s; only the first sees whether playback was running.
         if (playedTime.isCounting) resumeCountingAfterSeek = true;
-        const fromMs = stopCountingAtJump();
+        const fromMs = stopCountingAtJump(secondsToMs(sig.fromTime));
         checkSessionRotation();
         stateMachine.dispatch({ type: 'seeking', fromPositionMs: fromMs }, captureContext);
         break;

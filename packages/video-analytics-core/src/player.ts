@@ -15,7 +15,11 @@ export type PlayerSignal =
   | { type: 'playing' }
   | { type: 'pause' }
   | { type: 'timeupdate' }
-  | { type: 'seeking' }
+  /**
+   * `fromTime`: where the seek left from, in seconds. Send it when the jump is only noticed after the
+   * playhead moved (AVPlayer); without it the tracker estimates it from the last playhead it saw.
+   */
+  | { type: 'seeking'; fromTime?: number }
   | { type: 'seeked' }
   | { type: 'waiting' }
   /** A different rendition is on screen (e.g. the decoded frame size changed). */

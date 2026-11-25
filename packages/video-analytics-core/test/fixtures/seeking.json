@@ -332,5 +332,39 @@
       {"t": 25000, "view": "v1", "session": "s1", "order": 19, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1400, "playback_time_instant_ms": 1500, "playing_time_ms": 14000, "played_delta_ms": 1400},
       {"t": 25000, "view": "v1", "session": "s1", "order": 20, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 1500, "playing_time_ms": 14000, "view_end_reason": "navigation"}
     ]
+  },
+  {
+    "id": "S10",
+    "title": "Seek noticed after the jump (AVPlayer): the player gives the position left",
+    "signals": [
+      {"t": 0, "type": "load_start"},
+      {"t": 0, "type": "play"},
+      {"t": 0, "type": "playing"},
+      {"t": 5000, "type": "jump", "to": 30000},
+      {"t": 5100, "type": "seeking", "to": 30000, "from": 5000},
+      {"t": 5200, "type": "seeked"},
+      {"t": 5200, "type": "playing"},
+      {"t": 8200, "type": "unload"}
+    ],
+    "expected": [
+      {"startupMs": 0, "playingMs": 8000, "seekCount": 1, "seekMs": 100}
+    ],
+    "rows": [
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "sessioninit", "ms_from_previous_event": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "playerready", "previous_event": "sessioninit", "ms_from_previous_event": 0, "player_startup_time_ms": 0, "page_load_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 1, "event": "viewinit", "ms_from_previous_event": 0, "video_source_url": "https://ik.imagekit.io/demo/sample.mp4", "video_source_type": "mp4", "video_total_duration_ms": 60000, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 2, "event": "play", "previous_event": "viewinit", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 3, "event": "viewstarted", "previous_event": "play", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0, "video_startup_time_ms": 0},
+      {"t": 0, "view": "v1", "session": "s1", "order": 4, "event": "playing", "previous_event": "viewstarted", "ms_from_previous_event": 0, "playback_time_instant_ms": 0, "playing_time_ms": 0},
+      {"t": 2000, "view": "v1", "session": "s1", "order": 5, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 0, "playback_time_instant_ms": 2000, "playing_time_ms": 2000, "played_delta_ms": 2000},
+      {"t": 4000, "view": "v1", "session": "s1", "order": 6, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 2000, "playback_time_instant_ms": 4000, "playing_time_ms": 4000, "played_delta_ms": 2000},
+      {"t": 5100, "view": "v1", "session": "s1", "order": 7, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1100, "playback_time_instant_ms": 5000, "playing_time_ms": 5000, "played_delta_ms": 1000},
+      {"t": 5100, "view": "v1", "session": "s1", "order": 8, "event": "seeking", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 5000, "from_position_ms": 5000},
+      {"t": 5200, "view": "v1", "session": "s1", "order": 9, "event": "seeked", "previous_event": "seeking", "ms_from_previous_event": 100, "playback_time_instant_ms": 30000, "playing_time_ms": 5000, "to_position_ms": 30000, "seek_time_ms": 100},
+      {"t": 5200, "view": "v1", "session": "s1", "order": 10, "event": "playing", "previous_event": "seeked", "ms_from_previous_event": 0, "playback_time_instant_ms": 30000, "playing_time_ms": 5000},
+      {"t": 7100, "view": "v1", "session": "s1", "order": 11, "event": "timeupdate", "previous_event": "playing", "ms_from_previous_event": 1900, "playback_time_instant_ms": 31900, "playing_time_ms": 6900, "played_delta_ms": 1900},
+      {"t": 8200, "view": "v1", "session": "s1", "order": 12, "event": "timeupdate", "previous_event": "timeupdate", "ms_from_previous_event": 1100, "playback_time_instant_ms": 33000, "playing_time_ms": 8000, "played_delta_ms": 1100},
+      {"t": 8200, "view": "v1", "session": "s1", "order": 13, "event": "viewend", "previous_event": "timeupdate", "ms_from_previous_event": 0, "playback_time_instant_ms": 33000, "playing_time_ms": 8000, "view_end_reason": "navigation"}
+    ]
   }
 ]
