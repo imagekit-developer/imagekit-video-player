@@ -2,7 +2,7 @@
 
 [![Node CI](https://img.shields.io/badge/Node-CI-blue)](https://github.com/imagekit-developer/imagekit-video-player)
 [![npm version](https://img.shields.io/npm/v/@imagekit/video-player.svg)](https://www.npmjs.com/package/@imagekit/video-player)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Twitter Follow](https://img.shields.io/twitter/follow/imagekitio?style=social)](https://twitter.com/imagekitio)
 
 ## Introduction
@@ -30,6 +30,31 @@ npm install @imagekit/video-player
 ## TypeScript support
 
 The SDK is written in TypeScript, offering first-class TypeScript support. Enjoy excellent type safety and IntelliSense in your IDE. You can use it in your TypeScript projects without any additional configuration.
+
+## Local development
+
+This is a Yarn workspaces + Lerna monorepo. From the repository root:
+
+```bash
+nvm use # Use the Node version from .nvmrc
+corepack enable # Enable the configured Yarn version
+yarn install --immutable # Install dependencies from the lockfile
+yarn build # Build all workspaces
+yarn dev # Build, then run workspace dev scripts in parallel
+```
+
+Framework examples are in `examples/` (`javascript`, `react`, `vue`, and `astro`). Run one from the repository root, for example:
+
+```bash
+cd examples/react && yarn dev
+```
+
+The JavaScript example needs ImageKit credentials in a `.env` file: `IMAGEKIT_PUBLIC_KEY`, `IMAGEKIT_PRIVATE_KEY`, and `IMAGEKIT_URL_ENDPOINT`. The signer server is in `imagekit-signer-server/`; create the `.env` file there, then run:
+
+```bash
+cd imagekit-signer-server
+npm install && npm run dev
+```
 
 ## Documentation
 
