@@ -10,6 +10,15 @@ interface LogoButtonOptions {
 
 const ClickableComponent = videojs.getComponent('ClickableComponent');
 
+const parseUrl = (value: string | undefined): URL | null => {
+  if (!value) return null;
+  try {
+    return new URL(value, document.baseURI);
+  } catch {
+    return null;
+  }
+};
+
 class LogoButton extends ClickableComponent {
   constructor(player: Player, options?: LogoButtonOptions) {
     super(player, options);
@@ -26,18 +35,23 @@ class LogoButton extends ClickableComponent {
     }
 
     const { showLogo, logoImageUrl, logoOnclickUrl, logoAltText } = opts.logo;
-    const display = showLogo ? 'block' : 'none';
-    const bgImage = logoImageUrl ? `background-image: url(${logoImageUrl})` : '';
+    const imageUrl = parseUrl(logoImageUrl);
+    const linkUrl = parseUrl(logoOnclickUrl);
+    const isHttpLink = !!linkUrl && (linkUrl.protocol === 'https:' || linkUrl.protocol === 'http:');
     const name = logoAltText || this.localize('Logo');
 
-    return videojs.dom.createEl('a', {}, {
+    const el = videojs.dom.createEl('a', {}, {
       class: 'vjs-control vjs-logo-button',
-      href: logoOnclickUrl || '#',
+      href: isHttpLink ? linkUrl.href : '#',
       target: '_blank',
       rel: 'noopener noreferrer',
-      style: `display: ${display}; ${bgImage}`,
       'aria-label': this.localize('{1} (opens in a new tab)', [name])
-    });
+    }) as HTMLAnchorElement;
+
+    // Set through CSSOM with a quoted url(), so the URL can't add other declarations.
+    el.style.display = showLogo ? 'block' : 'none';
+    if (imageUrl) el.style.backgroundImage = `url(${JSON.stringify(imageUrl.href)})`;
+    return el;
   }
 }
 
