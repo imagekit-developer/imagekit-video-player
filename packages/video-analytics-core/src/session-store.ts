@@ -1,8 +1,6 @@
 /**
- * Generates and manages analytics identifiers.
- * session_id persisted in host storage; others generated per lifecycle.
- *
- * Session rotates on 60-min inactivity OR 24-h hard cap (whichever comes first).
+ * The analytics session, persisted in host storage.
+ * Rotates on 60-min inactivity OR 24-h hard cap (whichever comes first).
  */
 import {
   ANALYTICS_SESSION_INACTIVITY_TIMEOUT_MS,
@@ -10,14 +8,11 @@ import {
   ANALYTICS_SESSION_ACTIVITY_THROTTLE_MS,
 } from './constants';
 import type { KeyValueStorage } from './platform';
+import { randomId } from './ids';
 
 const SESSION_STORAGE_KEY = 'ik_analytics_session_id';
 const SESSION_START_KEY = 'ik_analytics_session_start';
 const SESSION_LAST_ACTIVITY_KEY = 'ik_analytics_session_last_activity';
-
-function randomId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-}
 
 function formatSessionStartDate(ts: number): string {
   return new Date(ts).toISOString().slice(0, 10);
@@ -126,17 +121,4 @@ function createSessionStore(storage: KeyValueStorage): SessionStore {
   }
 
   return { resolve };
-}
-
-export function createPlayerInstanceId(): string {
-  return randomId();
-}
-
-/** One per view. */
-export function createPlaybackId(): string {
-  return randomId();
-}
-
-export function createEventId(): string {
-  return randomId();
 }

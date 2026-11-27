@@ -81,6 +81,7 @@ Review each row's **Expected** column. That is the contract. Each row has a scen
 | S7 | pg 0, sk 5,000 → 20,000, pause during the seek (dropped by the binding), sd 5,100, sk 30,000 → 40,000, sd, leave 31,000 | Playing 5,000; 2 seeks; no `timeupdate` with nothing played |
 | S8 | ls 0, sk → 750,000, sd, sk → 760,000, sd, pl + pg 8,000, leave 10,000 | 2 seeks, 2nd from 750,000; playing 2,000; nothing counted before `pg` |
 | S9 | pg 0, end at 12,500, sk → 0, sd, `waiting` while stopped, pl + pg 10 s later | No rebuffer; playing 14,000 |
+| S10 | pg 0, playhead jumps to 30,000 at 5,000 with no signal, sk at 5,100 with from 5,000 (AVPlayer notices seeks late), sd 5,200, pg 5,200, leave 8,200 | 1 seek, 100; `from_position_ms` 5,000; playing 8,000 (nothing counted across the jump) |
 
 ## 5. Lifecycle
 

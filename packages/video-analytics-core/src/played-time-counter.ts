@@ -47,12 +47,16 @@ export class PlayedTimeCounter {
   }
 
   /**
-   * Stops counting at a seek. The player already reports the target, so the time played since the
-   * playhead last moved is estimated at the last rate. A playhead that has not moved for longer than
-   * `maxEstimateMs` was not playing, so nothing is added. Returns the position the seek left from.
+   * Stops counting at a seek and returns the position it left from. With `fromMs` (known to the
+   * player), counting stops there. Otherwise the player already reports the target, so the time
+   * played since the playhead last moved is estimated at the last rate; a playhead that has not
+   * moved for longer than `maxEstimateMs` was not playing, so nothing is added.
    */
-  seek(now: number): number {
-    if (this.counting) {
+  seek(now: number, fromMs?: number): number {
+    if (fromMs !== undefined) {
+      if (this.counting) this.stop(fromMs, now, this.rate);
+      else this.position = fromMs;
+    } else if (this.counting) {
       const sinceMove = now - this.lastMoveAt;
       const played = sinceMove <= this.maxEstimateMs ? Math.round(sinceMove * this.rate) : 0;
       this.total += played;
