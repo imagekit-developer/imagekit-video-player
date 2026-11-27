@@ -460,49 +460,5 @@ final class AVPlayerAdapter: AnalyticsPlayer {
             fit: gravity == .resize ? "fill" : "contain"
         )
     }
-
-    // MARK: seek(to:)
-
-    func seek(
-        to time: CMTime,
-        toleranceBefore: CMTime?,
-        toleranceAfter: CMTime?,
-        completionHandler: (@Sendable (Bool) -> Void)?
-    ) {
-        guard let player else {
-            completionHandler?(false)
-            return
-        }
-        let generation: Int?
-        if listener != nil, player.currentItem != nil {
-            let began = detector.wrapperBegan(currentTime: currentSeconds(), nowMs: monotonicNow())
-            generation = began.generation
-            emitSeekOutputs(began.outputs)
-        } else {
-            generation = nil
-        }
-        let done: @Sendable (Bool) -> Void = { [weak self] finished in
-            onMain {
-                if let generation { self?.wrapperSeekCompleted(generation, finished) }
-                completionHandler?(finished)
-            }
-        }
-        if let toleranceBefore, let toleranceAfter {
-            player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter, completionHandler: done)
-        } else {
-            player.seek(to: time, completionHandler: done)
-        }
-    }
-
-    private func wrapperSeekCompleted(_ generation: Int, _ finished: Bool) {
-        guard listener != nil else { return }
-        emitSeekOutputs(detector.wrapperCompleted(
-            generation: generation,
-            finished: finished,
-            currentTime: currentSeconds(),
-            rate: currentRate(),
-            nowMs: monotonicNow()
-        ))
-    }
 }
 #endif

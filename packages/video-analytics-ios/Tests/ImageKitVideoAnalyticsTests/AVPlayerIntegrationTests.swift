@@ -212,37 +212,6 @@ final class AVPlayerIntegrationTests: XCTestCase {
         XCTAssertTrue(h.named("seeking").isEmpty, "\(h.names)")
     }
 
-    func testSeekWhilePlayingViaWrapper() throws {
-        let h = Harness(mp4Url)
-        h.player.play()
-        h.waitFor("playing")
-        h.wait(2)
-        let from = h.seconds()
-        let completion = Completion()
-        let started = SystemClock.monotonicMs()
-        h.monitor.seek(to: CMTime(seconds: 30, preferredTimescale: 600), completionHandler: completion.handler)
-        let seeked = try XCTUnwrap(h.waitFor("seeked", timeout: 10), "\(h.names)")
-        h.wait(1)
-        h.player.pause()
-        let pause = try XCTUnwrap(h.waitFor("pause", timeout: 2), "\(h.names)")
-        h.dispose()
-        let seeking = try XCTUnwrap(h.named("seeking").first)
-        XCTAssertEqual(h.named("seeking").count, 1, "\(h.names)")
-        XCTAssertEqual(h.named("seeked").count, 1, "\(h.names)")
-        XCTAssertEqual(seeking.fromPositionMs ?? 0, from * 1000, accuracy: 150)
-        XCTAssertEqual(seeked.toPositionMs ?? 0, 30000, accuracy: 600)
-        // The wrapper sends `seeking` at the call; `seeked` comes once the clock runs at the target,
-        // which is after the completion handler.
-        let real = try XCTUnwrap(completion.ms) - started
-        let seekTime = try XCTUnwrap(seeked.seekTimeMs)
-        let lost = playedTimeLost(seeking: seeking, landedMs: 30000, pause: pause)
-        print("MEASURE wrapper playing mp4: real \(Int(real)) ms, seek_time_ms \(Int(seekTime)), played lost \(Int(lost)) ms")
-        XCTAssertGreaterThanOrEqual(seekTime, real - 5)
-        XCTAssertLessThan(seekTime, real + 150)
-        XCTAssertLessThan(abs(lost), 50)
-        XCTAssertEqual(h.named("pause").count, 1, "\(h.names)")
-    }
-
     func testSeekWhilePlayingDirectlyOnMp4() throws {
         let h = Harness(mp4Url)
         h.player.play()
@@ -294,24 +263,24 @@ final class AVPlayerIntegrationTests: XCTestCase {
         XCTAssertTrue(update.videoCodec?.hasPrefix("avc1.") == true, "\(update.videoCodec ?? "nil")")
     }
 
-    func testSeekWhilePausedDirectAndViaWrapper() throws {
+    func testTwoSeeksWhilePaused() throws {
         let h = Harness(mp4Url)
         h.player.play()
         h.waitFor("playing")
         h.wait(1.5)
         h.player.pause()
         h.wait(0.5)
-        let directCompletion = Completion()
+        let firstCompletion = Completion()
         var started = SystemClock.monotonicMs()
-        h.player.seek(to: CMTime(seconds: 40, preferredTimescale: 600), completionHandler: directCompletion.handler)
+        h.player.seek(to: CMTime(seconds: 40, preferredTimescale: 600), completionHandler: firstCompletion.handler)
         let first = try XCTUnwrap(h.waitFor("seeked", timeout: 5), "\(h.names)")
-        let directReal = try XCTUnwrap(directCompletion.ms) - started
+        let firstReal = try XCTUnwrap(firstCompletion.ms) - started
         h.wait(0.6)
-        let wrapperCompletion = Completion()
+        let secondCompletion = Completion()
         started = SystemClock.monotonicMs()
-        h.monitor.seek(to: CMTime(seconds: 60, preferredTimescale: 600), completionHandler: wrapperCompletion.handler)
+        h.player.seek(to: CMTime(seconds: 60, preferredTimescale: 600), completionHandler: secondCompletion.handler)
         let second = try XCTUnwrap(h.waitFor("seeked", count: 2, timeout: 5), "\(h.names)")
-        let wrapperReal = try XCTUnwrap(wrapperCompletion.ms) - started
+        let secondReal = try XCTUnwrap(secondCompletion.ms) - started
         h.wait(0.6)
         h.player.play()
         h.waitFor("playing", count: 2)
@@ -322,12 +291,12 @@ final class AVPlayerIntegrationTests: XCTestCase {
         XCTAssertEqual(h.named("seeking").first?.fromPositionMs ?? 0, 1500, accuracy: 700)
         XCTAssertEqual(h.named("seeking").last?.fromPositionMs ?? 0, 40000, accuracy: 200)
         XCTAssertEqual(second.toPositionMs ?? 0, 60000, accuracy: 600)
-        let directTime = try XCTUnwrap(first.seekTimeMs)
-        let wrapperTime = try XCTUnwrap(second.seekTimeMs)
-        print("MEASURE paused mp4: direct real \(Int(directReal)) ms, seek_time_ms \(Int(directTime)); "
-            + "wrapper real \(Int(wrapperReal)) ms, seek_time_ms \(Int(wrapperTime))")
-        XCTAssertLessThan(abs(directTime - directReal), 50)
-        XCTAssertEqual(wrapperTime, wrapperReal, accuracy: 10, "a paused wrapper seek finishes at its completion")
+        let firstTime = try XCTUnwrap(first.seekTimeMs)
+        let secondTime = try XCTUnwrap(second.seekTimeMs)
+        print("MEASURE paused mp4: first real \(Int(firstReal)) ms, seek_time_ms \(Int(firstTime)); "
+            + "second real \(Int(secondReal)) ms, seek_time_ms \(Int(secondTime))")
+        XCTAssertLessThan(abs(firstTime - firstReal), 50)
+        XCTAssertLessThan(abs(secondTime - secondReal), 50)
     }
 
     func testBurstOfSeeksIsOneSeek() {
@@ -387,7 +356,7 @@ final class AVPlayerIntegrationTests: XCTestCase {
         let h = Harness(mp4Url)
         h.waitReady()
         let duration = try XCTUnwrap(h.player.currentItem?.duration.seconds)
-        h.monitor.seek(to: CMTime(seconds: duration - 1.5, preferredTimescale: 600))
+        h.player.seek(to: CMTime(seconds: duration - 1.5, preferredTimescale: 600))
         h.waitFor("seeked", timeout: 5)
         h.player.play()
         XCTAssertNotNil(h.waitFor("ended", timeout: 10), "\(h.names)")

@@ -12,8 +12,6 @@
 //    adapter probes `currentTime()` every `runningProbeMs`. A jump before the seek finished is the
 //    same seek (a burst while playing); one after it is a new seek, as on web, where a scrub over
 //    buffered media fires `seeking` / `seeked` for each position.
-//  - The `seek(to:)` wrapper sends `seeking` itself, with the exact position, and suppresses
-//    detection until its latest seek completes with `finished == true`.
 //  - After the end of the item, the first reading away from the end is a seek from the end (a loop
 //    is `ended → seeking → seeked`). An item change starts over.
 // Positions are in seconds, wall times in monotonic ms.
@@ -24,7 +22,6 @@ struct SeekDetector {
     }
 
     static let jumpTolerance = 0.5
-    static let wrapperTimeoutMs = 10_000.0
     static let runningProbeMs = 20.0
     /// Allowance over the rate for a tick that counts as running, for jitter between ticks.
     private static let runningRateTolerance = 1.5
@@ -44,20 +41,15 @@ struct SeekDetector {
     /// Playing, at the target and agreeing with `currentTime()`: the seek finishes once the clock runs.
     private var landed = false
     private var endedPosition: Double?
-    private(set) var wrapperGeneration = 0
-    private var wrapperInFlight = false
-    private var wrapperStartedMs = 0.0
 
     /// Whether the adapter should `probe` every `runningProbeMs`.
     var awaitsRunningClock: Bool {
-        isSeeking && landed && !wrapperInFlight
+        isSeeking && landed
     }
 
     /// New item: forget everything; readings start from `position`.
     mutating func reset(position: Double?, rate: Double, nowMs: Double) {
-        let generation = wrapperGeneration
         self = SeekDetector()
-        wrapperGeneration = generation + 1
         if let position {
             anchor = Reading(position: position, wallMs: nowMs, rate: rate)
             lastAgreeingPosition = position
@@ -98,10 +90,6 @@ struct SeekDetector {
         return [.seeked]
     }
 
-    private mutating func expireWrapper(_ nowMs: Double) {
-        if wrapperInFlight, nowMs - wrapperStartedMs >= Self.wrapperTimeoutMs { wrapperInFlight = false }
-    }
-
     /// A reading away from the end of the item opens a seek from the end.
     private mutating func leaveEnd(_ currentTime: Double) -> [Output]? {
         guard let ended = endedPosition else { return nil }
@@ -112,14 +100,11 @@ struct SeekDetector {
 
     /// Periodic time observer: `time` is the observer's, `currentTime` the player's `currentTime()`.
     mutating func tick(time: Double, currentTime: Double, rate: Double, nowMs: Double) -> [Output] {
-        expireWrapper(nowMs)
         let agrees = abs(currentTime - time) <= Self.jumpTolerance
         let previous = anchor
         var out: [Output] = []
         if let fromEnd = leaveEnd(currentTime) {
             out += fromEnd
-        } else if wrapperInFlight {
-            if !agrees || isJump(time, nowMs) { target = currentTime }
         } else if !isSeeking {
             if !agrees {
                 out += beginSeek(from: lastAgreeingPosition ?? time, to: currentTime)
@@ -134,7 +119,7 @@ struct SeekDetector {
 
         anchor = Reading(position: time, wallMs: nowMs, rate: rate)
 
-        if isSeeking, !wrapperInFlight, agrees, abs(time - target) <= Self.jumpTolerance * 2 {
+        if isSeeking, agrees, abs(time - target) <= Self.jumpTolerance * 2 {
             if rate == 0 {
                 out += finishSeek()
             } else if let previous, isRunning(from: previous, to: time, nowMs, rate) {
@@ -154,12 +139,9 @@ struct SeekDetector {
 
     /// A reading outside the periodic observer: rate or status change, `timeJumped`.
     mutating func observe(currentTime: Double, rate: Double, nowMs: Double) -> [Output] {
-        expireWrapper(nowMs)
         var out: [Output] = []
         if let fromEnd = leaveEnd(currentTime) {
             out += fromEnd
-        } else if wrapperInFlight {
-            if abs(currentTime - target) > Self.jumpTolerance, isJump(currentTime, nowMs) { target = currentTime }
         } else if !isSeeking {
             if isJump(currentTime, nowMs) {
                 out += beginSeek(from: lastAgreeingPosition ?? anchor?.position ?? currentTime, to: currentTime)
@@ -174,45 +156,15 @@ struct SeekDetector {
             anchor = Reading(position: currentTime, wallMs: nowMs, rate: rate)
         }
         // Paused while the seek is still in flight: it finishes where it is, as a paused seek does.
-        if isSeeking, !wrapperInFlight, rate == 0, abs(currentTime - target) <= Self.jumpTolerance {
+        if isSeeking, rate == 0, abs(currentTime - target) <= Self.jumpTolerance {
             out += finishSeek()
         }
         return out
     }
 
-    /// The `seek(to:)` wrapper is about to call `player.seek`, from `currentTime`. Returns the generation
-    /// its completion must present.
-    mutating func wrapperBegan(currentTime: Double, nowMs: Double) -> (generation: Int, outputs: [Output]) {
-        wrapperGeneration += 1
-        wrapperInFlight = true
-        wrapperStartedMs = nowMs
-        let from = endedPosition ?? currentTime
-        endedPosition = nil
-        return (wrapperGeneration, beginSeek(from: from, to: currentTime))
-    }
-
-    /// A wrapper seek's completion. Only the latest seek counts; a cancelled one hands over to detection.
-    mutating func wrapperCompleted(
-        generation: Int,
-        finished: Bool,
-        currentTime: Double,
-        rate: Double,
-        nowMs: Double
-    ) -> [Output] {
-        guard generation == wrapperGeneration, wrapperInFlight else { return [] }
-        wrapperInFlight = false
-        guard finished else { return [] }
-        target = currentTime
-        anchor = Reading(position: currentTime, wallMs: nowMs, rate: rate)
-        if rate == 0 { return finishSeek() }
-        landed = true
-        return []
-    }
-
     /// The item played to its end at `position` (its duration when known).
     mutating func didPlayToEnd(position: Double, nowMs: Double) -> [Output] {
         let out = isSeeking ? finishSeek() : []
-        wrapperInFlight = false
         endedPosition = position
         anchor = Reading(position: position, wallMs: nowMs, rate: 0)
         return out

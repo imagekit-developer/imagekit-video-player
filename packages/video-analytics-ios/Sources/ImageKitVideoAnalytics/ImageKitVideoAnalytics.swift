@@ -220,53 +220,6 @@ extension ImageKitVideoAnalytics {
             tracker?.reportError(AnalyticsErrorInfo(code: error.code, message: error.message, context: error.context))
         }
 
-        /// `AVPlayer.seek(to:completionHandler:)` with exact seek timing; seeks made directly on the
-        /// player are detected from the playhead instead, a little later.
-        public func seek(to time: CMTime, completionHandler: (@Sendable (Bool) -> Void)? = nil) {
-            seekPlayer(to: time, toleranceBefore: nil, toleranceAfter: nil, completionHandler: completionHandler)
-        }
-
-        /// `AVPlayer.seek(to:toleranceBefore:toleranceAfter:completionHandler:)` with exact seek timing.
-        public func seek(
-            to time: CMTime,
-            toleranceBefore: CMTime,
-            toleranceAfter: CMTime,
-            completionHandler: (@Sendable (Bool) -> Void)? = nil
-        ) {
-            seekPlayer(
-                to: time,
-                toleranceBefore: toleranceBefore,
-                toleranceAfter: toleranceAfter,
-                completionHandler: completionHandler
-            )
-        }
-
-        private func seekPlayer(
-            to time: CMTime,
-            toleranceBefore: CMTime?,
-            toleranceAfter: CMTime?,
-            completionHandler: (@Sendable (Bool) -> Void)?
-        ) {
-            if let adapter {
-                adapter.seek(
-                    to: time,
-                    toleranceBefore: toleranceBefore,
-                    toleranceAfter: toleranceAfter,
-                    completionHandler: completionHandler
-                )
-            } else if let player {
-                if let toleranceBefore, let toleranceAfter {
-                    player.seek(to: time, toleranceBefore: toleranceBefore, toleranceAfter: toleranceAfter) { finished in
-                        completionHandler?(finished)
-                    }
-                } else {
-                    player.seek(to: time) { finished in completionHandler?(finished) }
-                }
-            } else {
-                completionHandler?(false)
-            }
-        }
-
         /// The size the player is shown at, in points, for a monitor created with `playerSize`.
         public func setPlayerSize(_ size: CGSize) {
             adapter?.setPlayerSize(size)

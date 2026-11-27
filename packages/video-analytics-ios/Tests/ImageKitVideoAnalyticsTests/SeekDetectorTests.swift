@@ -45,18 +45,6 @@ private struct Driver {
         return p - 0.1 * rate
     }
 
-    mutating func wrapperBegan(_ ms: Double, ct: Double) -> Int {
-        now = ms
-        let began = detector.wrapperBegan(currentTime: ct, nowMs: ms)
-        record(began.outputs)
-        return began.generation
-    }
-
-    mutating func wrapperCompleted(_ ms: Double, _ generation: Int, finished: Bool, ct: Double, rate: Double) {
-        now = ms
-        record(detector.wrapperCompleted(generation: generation, finished: finished, currentTime: ct, rate: rate, nowMs: ms))
-    }
-
     mutating func ended(_ ms: Double, at position: Double) {
         now = ms
         record(detector.didPlayToEnd(position: position, nowMs: ms))
@@ -110,19 +98,6 @@ final class SeekDetectorTests: XCTestCase {
         d.play(from: 5.47, at: 2614, until: 4000)
         XCTAssertEqual(d.seekingFroms.count, 1)
         XCTAssertEqual(d.seekedTimes.count, 1)
-    }
-
-    func testProbesStartAtAWrapperSeeksCompletionWhilePlaying() {
-        var d = Driver()
-        d.observe(1000, ct: 0, rate: 1)
-        let from = d.play(from: 0.1, at: 1100, until: 2400)
-        let generation = d.wrapperBegan(2419, ct: from + 0.019)
-        d.tick(2424, from + 0.024, ct: 5.4)
-        XCTAssertFalse(d.detector.awaitsRunningClock, "the wrapper seek is in flight")
-        d.wrapperCompleted(2468, generation, finished: true, ct: 5.4, rate: 1)
-        XCTAssertTrue(d.detector.awaitsRunningClock)
-        d.probe(2488, ct: 5.41)
-        XCTAssertEqual(d.seekedTimes, [2488])
     }
 
     func testNoProbesWhilePaused() {
@@ -300,53 +275,6 @@ final class SeekDetectorTests: XCTestCase {
         d.tick(4400, 0, rate: 0)
         XCTAssertEqual(d.seekingFroms, [158])
         XCTAssertEqual(d.seekedTimes, [4400])
-    }
-
-    func testWrapperSeekWhilePlaying() {
-        var d = Driver()
-        d.observe(1000, ct: 0, rate: 1)
-        let from = d.play(from: 0.1, at: 1100, until: 2400)
-        let generation = d.wrapperBegan(2419, ct: from + 0.019)
-        assertClose(d.seekingFroms.first, from + 0.019, accuracy: 0.0001)
-        d.tick(2424, from + 0.024, ct: 5.4)
-        d.tick(2456, 5.4)
-        d.wrapperCompleted(2468, generation, finished: true, ct: 5.4, rate: 1)
-        d.tick(2475, 5.4)
-        d.play(from: 5.47, at: 2614, until: 4000)
-        XCTAssertEqual(d.seekingFroms.count, 1)
-        XCTAssertEqual(d.seekedTimes, [2614])
-    }
-
-    func testWrapperBurstUsesOnlyTheLatestCompletion() {
-        var d = Driver(position: 10)
-        let first = d.wrapperBegan(1000, ct: 10)
-        d.tick(1001, 20, rate: 0)
-        let second = d.wrapperBegan(1050, ct: 20)
-        d.wrapperCompleted(1050, first, finished: false, ct: 20, rate: 0)
-        d.tick(1051, 30, rate: 0)
-        XCTAssertTrue(d.seekedTimes.isEmpty, "no seeked while the latest wrapper seek is in flight")
-        d.wrapperCompleted(2001, second, finished: true, ct: 30, rate: 0)
-        XCTAssertEqual(d.seekingFroms, [10, 10])
-        XCTAssertEqual(d.seekedTimes, [2001])
-    }
-
-    func testCancelledWrapperSeekHandsOverToDetection() {
-        var d = Driver(position: 10)
-        let generation = d.wrapperBegan(1000, ct: 10)
-        d.wrapperCompleted(1001, generation, finished: false, ct: 10, rate: 0)
-        d.tick(1100, 40, rate: 0)
-        XCTAssertEqual(d.seekingFroms, [10, 10])
-        XCTAssertEqual(d.seekedTimes, [1100])
-    }
-
-    func testWrapperTimesOut() {
-        var d = Driver(position: 10)
-        _ = d.wrapperBegan(1000, ct: 10)
-        d.tick(1100, 40, rate: 0)
-        d.tick(10_999, 40, rate: 0)
-        XCTAssertTrue(d.seekedTimes.isEmpty)
-        d.tick(11_100, 40, rate: 0)
-        XCTAssertEqual(d.seekedTimes, [11_100])
     }
 
     func testPauseWhileSeekIsFrozenSettlesIt() {
